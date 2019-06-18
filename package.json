@@ -1,0 +1,37 @@
+{
+  "name": "canvas-record",
+  "version": "1.0.0",
+  "description": "A one trick pony package to record and download a video from a canvas animation.",
+  "main": "index.js",
+  "scripts": {
+    "start": "budo demo.js --open --live"
+  },
+  "author": "Damien Seguin (https://dmnsgn.me)",
+  "license": "MIT",
+  "devDependencies": {
+    "budo": "^11.6.2",
+    "canvas-context": "^1.0.3"
+  },
+  "dependencies": {
+    "file-extension": "^4.0.5"
+  },
+  "keywords": [
+    "canvas",
+    "video",
+    "record",
+    "recorder",
+    "capture",
+    "capturer",
+    "download",
+    "downloader",
+    "media-recorder"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/dmnsgn/canvas-record.git"
+  },
+  "homepage": "https://github.com/dmnsgn/canvas-record",
+  "bugs": {
+    "url": "https://github.com/dmnsgn/canvas-record/issues"
+  }
+}
