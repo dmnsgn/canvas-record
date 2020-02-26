@@ -107,7 +107,7 @@ Set `recorder` and `stream` to `null` for GC.
 
 A reference to the `MediaRecorder` (see [https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder](https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder)).
 
-### `canvasRecorder.strem`
+### `canvasRecorder.stream`
 
 A reference to the `CanvasCaptureMediaStream` (see [https://developer.mozilla.org/en-US/docs/Web/API/CanvasCaptureMediaStream](https://developer.mozilla.org/en-US/docs/Web/API/CanvasCaptureMediaStream)).
 
