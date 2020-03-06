@@ -1,6 +1,6 @@
 {
   "name": "canvas-record",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "A one trick pony package to record and download a video from a canvas animation.",
   "main": "index.js",
   "scripts": {
