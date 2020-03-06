@@ -42,10 +42,14 @@ function createCanvasRecorder(canvas, options = {}) {
   recorder.onstop = () => {
     if (download && chunks.length) {
       const blob = new Blob(chunks, { type: mimeType });
-      link.href = URL.createObjectURL(blob);
+      const url = URL.createObjectURL(blob);
+      link.href = url;
 
       const event = new MouseEvent("click");
       link.dispatchEvent(event);
+      setTimeout(() => {
+        URL.revokeObjectURL(url);
+      }, 1);
     }
   };
 
