@@ -143,6 +143,21 @@ async function recordDefaultWebM() {
   canvasRecorder.dispose();
 }
 
+async function recordSetFilename() {
+  const canvasRecorder = createCanvasRecorder(canvas);
+
+  rAFId = requestAnimationFrame(() => {
+    canvasRecorder.filename = "setname.mkv";
+    canvasRecorder.start();
+    animate();
+  });
+  await sleep(DURATION);
+  cancelAnimationFrame(rAFId);
+
+  canvasRecorder.stop();
+  canvasRecorder.dispose();
+}
+
 button.addEventListener("click", async () => {
   await recordRafDefaultFrameRate();
   reset();
@@ -151,6 +166,8 @@ button.addEventListener("click", async () => {
   await recordRafLowFPS();
   reset();
   await recordDefaultWebM();
+  reset();
+  await recordSetFilename();
 });
 
 reset();

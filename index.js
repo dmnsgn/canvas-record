@@ -58,6 +58,9 @@ function createCanvasRecorder(canvas, options = {}) {
       chunks = [];
       recorder.start(timeslice);
     },
+    set filename(name) {
+      link.download = name;
+    },
     step() {
       stream.getVideoTracks()[0].requestFrame();
     },
