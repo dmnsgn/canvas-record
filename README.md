@@ -1,11 +1,22 @@
-# canvas-record [![experimental](http://badges.github.io/stability-badges/dist/experimental.svg)](http://github.com/badges/stability-badges)
+# canvas-record
 
-[![npm version](https://badge.fury.io/js/canvas-record.svg)](https://www.npmjs.com/package/canvas-record)
-[![styled with prettier](https://img.shields.io/badge/styled_with-prettier-ff69b4.svg)](https://github.com/prettier/prettier)
+[![npm version](https://img.shields.io/npm/v/canvas-record)](https://www.npmjs.com/package/canvas-record)
+[![stability-experimental](https://img.shields.io/badge/stability-experimental-orange.svg)](https://www.npmjs.com/package/canvas-record)
+[![npm minzipped size](https://img.shields.io/bundlephobia/minzip/canvas-record)](https://www.npmjs.com/package/canvas-record)
+[![dependencies](https://img.shields.io/david/dmnsgn/canvas-record)](https://github.com/dmnsgn/canvas-record/blob/main/package.json)
+[![types](https://img.shields.io/npm/types/canvas-record)](https://github.com/microsoft/TypeScript)
+[![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-fa6673.svg)](https://conventionalcommits.org)
+[![styled with prettier](https://img.shields.io/badge/styled_with-Prettier-f8bc45.svg?logo=prettier)](https://github.com/prettier/prettier)
+[![linted with eslint](https://img.shields.io/badge/linted_with-ES_Lint-4B32C3.svg?logo=eslint)](https://github.com/eslint/eslint)
+[![license](https://img.shields.io/github/license/dmnsgn/canvas-record)](https://github.com/dmnsgn/canvas-record/blob/main/LICENSE.md)
 
 A one trick pony package to record and download a video from a canvas animation.
 
-![](https://raw.githubusercontent.com/dmnsgn/canvas-record/master/screenshot.gif)
+[![paypal](https://img.shields.io/badge/donate-paypal-informational?logo=paypal)](https://paypal.me/dmnsgn)
+[![coinbase](https://img.shields.io/badge/donate-coinbase-informational?logo=coinbase)](https://commerce.coinbase.com/checkout/56cbdf28-e323-48d8-9c98-7019e72c97f3)
+[![twitter](https://img.shields.io/twitter/follow/dmnsgn?style=social)](https://twitter.com/dmnsgn)
+
+![](https://raw.githubusercontent.com/dmnsgn/canvas-record/main/screenshot.gif)
 
 ## Installation
 
@@ -13,25 +24,23 @@ A one trick pony package to record and download a video from a canvas animation.
 npm install canvas-record
 ```
 
-[![NPM](https://nodei.co/npm/canvas-record.png)](https://nodei.co/npm/canvas-record/)
-
 ## Usage
 
 ```js
-const createCanvasRecorder = require("canvas-record");
-const createCanvasContext = require("canvas-context");
+import canvasRecord from "canvas-record";
+import canvasContext from "canvas-context";
 
 const width = 100;
 const height = 100;
-const { context, canvas } = createCanvasContext("2d", {
+const { context, canvas } = canvasContext("2d", {
   width,
-  height
+  height,
 });
-const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function record() {
   // Create recorder
-  const canvasRecorder = createCanvasRecorder(canvas);
+  const canvasRecorder = canvasRecord(canvas);
   canvasRecorder.start();
 
   // Start canvas animation
@@ -50,67 +59,12 @@ record();
 
 ## API
 
-### `createCanvasRecorder(canvas, options): DOMString | Promise<Blob>`
+<!-- api-start -->
 
-| Option                      | Type                                                                                                                                                        | Default                                | Description                                |
-| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- | ------------------------------------------ |
-| **canvas**                  | HTMLCanvasElement                                                                                                                                           |                                        | The canvas element                         |
-| **options.filename**        | string?                                                                                                                                                     | `Recording YYYY-MM-DD at HH.MM.SS.png` | File name                                  |
-| **options.frameRate**       | number?                                                                                                                                                     | 25                                     | The frame rate used by the `MediaRecorder` |
-| **options.download**        | boolean?                                                                                                                                                    | true                                   | Automatically download the recording       |
-| **options.recorderOptions** | See [https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder#Properties](https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder#Properties)? | true                                   | The `MediaRecorder` options.               |
+Auto-generated API content.
 
-The video `MimeType` is defined by `recorderOptions.mimeType` if present or is inferred from the filename extension (mkv) for `"video/x-matroska;codecs=avc1"` and default to `"video/webm"`.
-
-```js
-// Currently supported by Chrome
-MediaRecorder.isTypeSupported("video/x-matroska;codecs=avc1");
-MediaRecorder.isTypeSupported("video/webm");
-MediaRecorder.isTypeSupported("video/webm;codecs=vp8");
-MediaRecorder.isTypeSupported("video/webm;codecs=vp9");
-MediaRecorder.isTypeSupported("video/webm;codecs=vp8.0");
-MediaRecorder.isTypeSupported("video/webm;codecs=vp9.0");
-MediaRecorder.isTypeSupported("video/webm;codecs=vp8,opus");
-MediaRecorder.isTypeSupported("video/webm;codecs=vp8,pcm");
-MediaRecorder.isTypeSupported("video/WEBM;codecs=VP8,OPUS");
-MediaRecorder.isTypeSupported("video/webm;codecs=vp9,opus");
-MediaRecorder.isTypeSupported("video/webm;codecs=vp8,vp9,opus");
-```
-
-### `canvasRecorder.start(timeslice?: number): void`
-
-| Option        | Type   | Default | Description                                                                                                                                                                                                                                                                                        |
-| ------------- | ------ | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **timeslice** | number |         | The number of milliseconds to record into each Blob. If this parameter isn't included, the entire media duration is recorded into a single Blob unless the requestData() method is called to obtain the Blob and trigger the creation of a new Blob into which the media continues to be recorded. |
-
-### `canvasRecorder.step(): void`
-
-Only needed when there is a need to exactly to capture a canvas state at an instant `t`.
-
-See [https://developer.mozilla.org/en-US/docs/Web/API/CanvasCaptureMediaStreamTrack/requestFrame](https://developer.mozilla.org/en-US/docs/Web/API/CanvasCaptureMediaStreamTrack/requestFrame).
-The CanvasCaptureMediaStreamTrack method requestFrame() requests that a frame be captured from the canvas and sent to the stream. Applications that need to carefully control the timing of rendering and frame capture can use requestFrame() to directly specify when it's time to capture a frame.
-
-To prevent automatic capture of frames, so that frames are only captured when requestFrame() is called, specify a value of 0 for the captureStream() method when creating the stream.
-
-Notes: the technology is still a Working Draft not sure the output is guaranteed to have perfect frames.
-
-### `canvasRecorder.stop(): Blob[] | []`
-
-Stop the recorder which will consecutively call the `recorder.onstop` callback and download the video if not disable in the options.
-Returns the Blob chunk array (or chunks if `timeslice` is specified when starting the recorder).
-
-### `canvasRecorder.dispose(): void`
-
-Set `recorder` and `stream` to `null` for GC.
-
-### `canvasRecorder.recorder`
-
-A reference to the `MediaRecorder` (see [https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder](https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder)).
-
-### `canvasRecorder.stream`
-
-A reference to the `CanvasCaptureMediaStream` (see [https://developer.mozilla.org/en-US/docs/Web/API/CanvasCaptureMediaStream](https://developer.mozilla.org/en-US/docs/Web/API/CanvasCaptureMediaStream)).
+<!-- api-end -->
 
 ## License
 
-MIT. See [license file](https://github.com/dmnsgn/canvas-record/blob/master/LICENSE.md).
+MIT. See [license file](https://github.com/dmnsgn/canvas-record/blob/main/LICENSE.md).

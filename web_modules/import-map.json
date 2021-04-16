@@ -1,0 +1,7 @@
+{
+  "imports": {
+    "canvas-context": "./canvas-context.js",
+    "es-module-shims": "./es-module-shims.js",
+    "file-extension": "./file-extension.js"
+  }
+}

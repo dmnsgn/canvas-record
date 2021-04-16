@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>canvas-record by Damien Seguin (https://github.com/dmnsgn)</title>
+    <style>
+      :root {
+        --color-dark: #404040;
+        --color-light: #f2f2f2;
+        --color-accent: #fd5e62;
+      }
+
+      body {
+        margin: 0;
+        overscroll-behavior: none;
+        font-family: sans-serif;
+        color: var(--color-dark);
+        background-color: var(--color-light);
+      }
+
+      main {
+        padding: 0 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      button {
+        margin-top: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>canvas-record</h1>
+    </main>
+    <script async src="web_modules/es-module-shims.js"></script>
+    <script src="web_modules/import-map.json" type="importmap"></script>
+
+    <script type="module">
+      import canvasRecord from "./index.js";
+
+      import createCanvasContext from "canvas-context";
+
+      const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+      const width = 100;
+      const height = 100;
+      const { context, canvas } = createCanvasContext("2d", {
+        width,
+        height,
+      });
+
+      context.fillRect(0, 0, width, height);
+
+      const mainElement = document.querySelector("main");
+      mainElement.appendChild(canvas);
+
+      const button = document.createElement("button");
+      button.innerText = "Takes videos";
+      mainElement.appendChild(button);
+
+      // Animation
+      const DURATION = 3000;
+      let rAFId;
+      let currentFrame;
+      let rotation;
+
+      function render() {
+        context.clearRect(0, 0, width, height);
+        context.fillStyle = "black";
+        context.fillRect(0, 0, width, height);
+        context.fillStyle = "white";
+        context.fillText(`Frame: ${currentFrame}`, 10, 20);
+
+        context.save();
+        context.translate(width * 0.5, height * 0.5);
+        context.rotate(rotation * Math.PI * 2);
+        context.fillStyle = "salmon";
+        context.fillRect(-10, -10, 20, 20);
+        context.restore();
+      }
+
+      function animate(idealFPS = 60, canvasRecorder = null, onComplete) {
+        if (canvasRecorder) {
+          canvasRecorder.step();
+        }
+
+        currentFrame++;
+        rotation += 0.001;
+
+        render(currentFrame, rotation);
+
+        const dt = currentFrame / ((DURATION / 1000) * idealFPS);
+
+        if (dt >= 1) {
+          if (onComplete) onComplete();
+        } else {
+          rAFId = requestAnimationFrame(() =>
+            animate(idealFPS, canvasRecorder, onComplete)
+          );
+        }
+      }
+
+      function reset() {
+        currentFrame = 0;
+        rotation = 0;
+        render(currentFrame, rotation);
+      }
+
+      // Tests
+      async function recordRafDefaultFrameRate() {
+        const canvasRecorder = canvasRecord(canvas, {
+          filename: "canvas-record-default-fps.mkv",
+        });
+
+        rAFId = requestAnimationFrame(() => {
+          canvasRecorder.start();
+          animate();
+        });
+        await sleep(DURATION);
+        cancelAnimationFrame(rAFId);
+
+        canvasRecorder.stop();
+        canvasRecorder.dispose();
+      }
+
+      async function recordRafStep() {
+        const canvasRecorder = canvasRecord(canvas, {
+          filename: "canvas-record-raf-step.mkv",
+          frameRate: 0,
+        });
+
+        return new Promise((resolve) => {
+          rAFId = requestAnimationFrame(() => {
+            canvasRecorder.start();
+            animate(60, canvasRecorder, () => {
+              cancelAnimationFrame(rAFId);
+
+              canvasRecorder.stop();
+              canvasRecorder.dispose();
+              resolve();
+            });
+          });
+        });
+      }
+
+      async function recordRafLowFPS() {
+        const canvasRecorder = canvasRecord(canvas, {
+          filename: "canvas-record-low-fps.mkv",
+          frameRate: 10,
+        });
+
+        return new Promise((resolve) => {
+          rAFId = requestAnimationFrame(() => {
+            canvasRecorder.start();
+            animate(10, null, () => {
+              cancelAnimationFrame(rAFId);
+
+              canvasRecorder.stop();
+              canvasRecorder.dispose();
+              resolve();
+            });
+          });
+        });
+      }
+
+      async function recordDefaultWebM() {
+        const canvasRecorder = canvasRecord(canvas, {
+          filename: "canvas-record-default-webm.webm",
+        });
+
+        rAFId = requestAnimationFrame(() => {
+          canvasRecorder.start();
+          animate();
+        });
+        await sleep(DURATION);
+        cancelAnimationFrame(rAFId);
+
+        canvasRecorder.stop();
+        canvasRecorder.dispose();
+      }
+
+      async function recordSetFilename() {
+        const canvasRecorder = canvasRecord(canvas);
+
+        rAFId = requestAnimationFrame(() => {
+          canvasRecorder.filename = "setname.mkv";
+          canvasRecorder.start();
+          animate();
+        });
+        await sleep(DURATION);
+        cancelAnimationFrame(rAFId);
+
+        canvasRecorder.stop();
+        canvasRecorder.dispose();
+      }
+
+      button.addEventListener("click", async () => {
+        await recordRafDefaultFrameRate();
+        reset();
+        await recordRafStep();
+        reset();
+        await recordRafLowFPS();
+        reset();
+        await recordDefaultWebM();
+        reset();
+        await recordSetFilename();
+      });
+
+      reset();
+      render();
+    </script>
+  </body>
+</html>

@@ -1,20 +1,7 @@
 {
   "name": "canvas-record",
-  "version": "2.1.0",
+  "version": "1.0.0",
   "description": "A one trick pony package to record and download a video from a canvas animation.",
-  "main": "index.js",
-  "scripts": {
-    "start": "budo demo.js --open --live"
-  },
-  "author": "Damien Seguin (https://dmnsgn.me)",
-  "license": "MIT",
-  "devDependencies": {
-    "budo": "^11.6.3",
-    "canvas-context": "^1.0.3"
-  },
-  "dependencies": {
-    "file-extension": "^4.0.5"
-  },
   "keywords": [
     "canvas",
     "video",
@@ -26,12 +13,33 @@
     "downloader",
     "media-recorder"
   ],
-  "repository": {
-    "type": "git",
-    "url": "git://github.com/dmnsgn/canvas-record.git"
-  },
   "homepage": "https://github.com/dmnsgn/canvas-record",
-  "bugs": {
-    "url": "https://github.com/dmnsgn/canvas-record/issues"
+  "bugs": "https://github.com/dmnsgn/canvas-record/issues",
+  "repository": "dmnsgn/canvas-record",
+  "funding": [
+    {
+      "type": "individual",
+      "url": "https://paypal.me/dmnsgn"
+    },
+    {
+      "type": "individual",
+      "url": "https://commerce.coinbase.com/checkout/56cbdf28-e323-48d8-9c98-7019e72c97f3"
+    }
+  ],
+  "license": "MIT",
+  "author": "Damien Seguin (https://github.com/dmnsgn)",
+  "type": "module",
+  "main": "index.js",
+  "types": "types/index.d.ts",
+  "dependencies": {
+    "file-extension": "^4.0.5"
+  },
+  "devDependencies": {
+    "canvas-context": "^3.0.2",
+    "es-module-shims": "^0.10.4"
+  },
+  "engines": {
+    "node": ">=15.0.0",
+    "npm": ">=7.0.0"
   }
 }
