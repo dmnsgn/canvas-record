@@ -30,6 +30,7 @@
   "author": "Damien Seguin (https://github.com/dmnsgn)",
   "sideEffects": false,
   "type": "module",
+  "exports": "./index.js",
   "main": "index.js",
   "types": "types/index.d.ts",
   "dependencies": {

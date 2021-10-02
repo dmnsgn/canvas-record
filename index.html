@@ -78,7 +78,9 @@
         context.save();
         context.translate(width * 0.5, height * 0.5);
         context.rotate(rotation * Math.PI * 2);
-        context.fillStyle = "salmon";
+        context.fillStyle = `${window
+          .getComputedStyle(document.documentElement)
+          .getPropertyValue("--color-accent")}`;
         context.fillRect(-10, -10, 20, 20);
         context.restore();
       }
