@@ -28,6 +28,7 @@
   ],
   "license": "MIT",
   "author": "Damien Seguin (https://github.com/dmnsgn)",
+  "sideEffects": false,
   "type": "module",
   "main": "index.js",
   "types": "types/index.d.ts",
