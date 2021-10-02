@@ -47,9 +47,7 @@ function canvasRecord(canvas, options = {}) {
   let link = null;
 
   const {
-    filename = `Recording ${date
-      .toISOString()
-      .slice(0, 10)} at ${date
+    filename = `Recording ${date.toISOString().slice(0, 10)} at ${date
       .toTimeString()
       .slice(0, 8)
       .replace(/:/g, ".")}.webm`,
