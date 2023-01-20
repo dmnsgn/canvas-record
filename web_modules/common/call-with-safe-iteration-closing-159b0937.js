@@ -1,0 +1,260 @@
+import { B as defineBuiltIn, w as wellKnownSymbol, g as global_1, G as sharedStore, i as isCallable, j as getBuiltIn, H as internalState, c as createNonEnumerableProperty, b as anObject, l as getMethod, d as functionCall } from './es.error.cause-76796be3.js';
+import { o as objectGetPrototypeOf, c as objectCreate, b as iteratorClose, i as iteratorsCore } from './species-constructor-e3e5cd07.js';
+
+var perform = function (exec) {
+  try {
+    return { error: false, value: exec() };
+  } catch (error) {
+    return { error: true, value: error };
+  }
+};
+
+var defineBuiltIns = function (target, src, options) {
+  for (var key in src) defineBuiltIn(target, key, src[key], options);
+  return target;
+};
+
+var USE_FUNCTION_CONSTRUCTOR = 'USE_FUNCTION_CONSTRUCTOR';
+var ASYNC_ITERATOR = wellKnownSymbol('asyncIterator');
+var AsyncIterator = global_1.AsyncIterator;
+var PassedAsyncIteratorPrototype = sharedStore.AsyncIteratorPrototype;
+var AsyncIteratorPrototype, prototype;
+
+if (PassedAsyncIteratorPrototype) {
+  AsyncIteratorPrototype = PassedAsyncIteratorPrototype;
+} else if (isCallable(AsyncIterator)) {
+  AsyncIteratorPrototype = AsyncIterator.prototype;
+} else if (sharedStore[USE_FUNCTION_CONSTRUCTOR] || global_1[USE_FUNCTION_CONSTRUCTOR]) {
+  try {
+    // eslint-disable-next-line no-new-func -- we have no alternatives without usage of modern syntax
+    prototype = objectGetPrototypeOf(objectGetPrototypeOf(objectGetPrototypeOf(Function('return async function*(){}()')())));
+    if (objectGetPrototypeOf(prototype) === Object.prototype) AsyncIteratorPrototype = prototype;
+  } catch (error) { /* empty */ }
+}
+
+if (!AsyncIteratorPrototype) AsyncIteratorPrototype = {};
+
+if (!isCallable(AsyncIteratorPrototype[ASYNC_ITERATOR])) {
+  defineBuiltIn(AsyncIteratorPrototype, ASYNC_ITERATOR, function () {
+    return this;
+  });
+}
+
+var asyncIteratorPrototype = AsyncIteratorPrototype;
+
+// `CreateIterResultObject` abstract operation
+// https://tc39.es/ecma262/#sec-createiterresultobject
+var createIterResultObject = function (value, done) {
+  return { value: value, done: done };
+};
+
+var Promise = getBuiltIn('Promise');
+
+var ASYNC_ITERATOR_HELPER = 'AsyncIteratorHelper';
+var WRAP_FOR_VALID_ASYNC_ITERATOR = 'WrapForValidAsyncIterator';
+var setInternalState = internalState.set;
+
+var TO_STRING_TAG = wellKnownSymbol('toStringTag');
+
+var createAsyncIteratorProxyPrototype = function (IS_ITERATOR) {
+  var IS_GENERATOR = !IS_ITERATOR;
+  var ASYNC_ITERATOR_PROXY = IS_ITERATOR ? WRAP_FOR_VALID_ASYNC_ITERATOR : ASYNC_ITERATOR_HELPER;
+
+  var getInternalState = internalState.getterFor(ASYNC_ITERATOR_PROXY);
+
+  var getStateOrEarlyExit = function (that) {
+    var stateCompletion = perform(function () {
+      return getInternalState(that);
+    });
+
+    var stateError = stateCompletion.error;
+    var state = stateCompletion.value;
+
+    if (stateError || (IS_GENERATOR && state.done)) {
+      return { exit: true, value: stateError ? Promise.reject(state) : Promise.resolve(createIterResultObject(undefined, true)) };
+    } return { exit: false, value: state };
+  };
+
+  var enqueue = function (state, handler) {
+    var task = function () {
+      var promise = handler();
+      if (IS_GENERATOR) {
+        state.awaiting = promise;
+        var clean = function () {
+          if (state.awaiting === promise) state.awaiting = null;
+        };
+        promise.then(clean, clean);
+      } return promise;
+    };
+
+    return state.awaiting ? state.awaiting = state.awaiting.then(task, task) : task();
+  };
+
+  var AsyncIteratorProxyPrototype = defineBuiltIns(objectCreate(asyncIteratorPrototype), {
+    next: function next() {
+      var stateCompletion = getStateOrEarlyExit(this);
+      var exit = stateCompletion.exit;
+      var state = stateCompletion.value;
+
+      return exit ? state : enqueue(state, function () {
+        var handlerCompletion = perform(function () {
+          return anObject(state.nextHandler(Promise));
+        });
+        var handlerError = handlerCompletion.error;
+        var value = handlerCompletion.value;
+        if (handlerError) state.done = true;
+        return handlerError ? Promise.reject(value) : Promise.resolve(value);
+      });
+    },
+    'return': function () {
+      var stateCompletion = getStateOrEarlyExit(this);
+      var exit = stateCompletion.exit;
+      var state = stateCompletion.value;
+
+      return exit ? state : enqueue(state, function () {
+        state.done = true;
+        var iterator = state.iterator;
+        var returnMethod, result;
+        var completion = perform(function () {
+          if (state.inner) try {
+            iteratorClose(state.inner.iterator, 'return');
+          } catch (error) {
+            return iteratorClose(iterator, 'throw', error);
+          }
+          return getMethod(iterator, 'return');
+        });
+        returnMethod = result = completion.value;
+        if (completion.error) return Promise.reject(result);
+        if (returnMethod === undefined) return Promise.resolve(createIterResultObject(undefined, true));
+        completion = perform(function () {
+          return functionCall(returnMethod, iterator);
+        });
+        result = completion.value;
+        if (completion.error) return Promise.reject(result);
+        return IS_ITERATOR ? Promise.resolve(result) : Promise.resolve(result).then(function (resolved) {
+          anObject(resolved);
+          return createIterResultObject(undefined, true);
+        });
+      });
+    }
+  });
+
+  if (IS_GENERATOR) {
+    createNonEnumerableProperty(AsyncIteratorProxyPrototype, TO_STRING_TAG, 'Async Iterator Helper');
+  }
+
+  return AsyncIteratorProxyPrototype;
+};
+
+var AsyncIteratorHelperPrototype = createAsyncIteratorProxyPrototype(false);
+var WrapForValidAsyncIteratorPrototype = createAsyncIteratorProxyPrototype(true);
+
+var asyncIteratorCreateProxy = function (nextHandler, IS_ITERATOR) {
+  var ASYNC_ITERATOR_PROXY = IS_ITERATOR ? WRAP_FOR_VALID_ASYNC_ITERATOR : ASYNC_ITERATOR_HELPER;
+
+  var AsyncIteratorProxy = function AsyncIterator(record, state) {
+    if (state) {
+      state.iterator = record.iterator;
+      state.next = record.next;
+    } else state = record;
+    state.type = ASYNC_ITERATOR_PROXY;
+    state.nextHandler = nextHandler;
+    state.counter = 0;
+    state.done = false;
+    state.awaiting = null;
+    setInternalState(this, state);
+  };
+
+  AsyncIteratorProxy.prototype = IS_ITERATOR ? WrapForValidAsyncIteratorPrototype : AsyncIteratorHelperPrototype;
+
+  return AsyncIteratorProxy;
+};
+
+var IteratorPrototype = iteratorsCore.IteratorPrototype;
+
+
+
+var ITERATOR_HELPER = 'IteratorHelper';
+var WRAP_FOR_VALID_ITERATOR = 'WrapForValidIterator';
+var setInternalState$1 = internalState.set;
+
+var TO_STRING_TAG$1 = wellKnownSymbol('toStringTag');
+
+var createIteratorProxyPrototype = function (IS_ITERATOR) {
+  var ITERATOR_PROXY = IS_ITERATOR ? WRAP_FOR_VALID_ITERATOR : ITERATOR_HELPER;
+
+  var getInternalState = internalState.getterFor(ITERATOR_PROXY);
+
+  var IteratorProxyPrototype = defineBuiltIns(objectCreate(IteratorPrototype), {
+    next: function next() {
+      var state = getInternalState(this);
+      // for simplification:
+      //   for `%WrapForValidIteratorPrototype%.next` our `nextHandler` returns `IterResultObject`
+      //   for `%IteratorHelperPrototype%.next` - just a value
+      if (IS_ITERATOR) return state.nextHandler();
+      try {
+        var result = state.done ? undefined : state.nextHandler();
+        return createIterResultObject(result, state.done);
+      } catch (error) {
+        state.done = true;
+        throw error;
+      }
+    },
+    'return': function () {
+      var state = getInternalState(this);
+      var iterator = state.iterator;
+      state.done = true;
+      if (IS_ITERATOR) {
+        var returnMethod = getMethod(iterator, 'return');
+        return returnMethod ? functionCall(returnMethod, iterator) : createIterResultObject(undefined, true);
+      }
+      if (state.inner) try {
+        iteratorClose(state.inner.iterator, 'return');
+      } catch (error) {
+        return iteratorClose(iterator, 'throw', error);
+      }
+      iteratorClose(iterator, 'return');
+      return createIterResultObject(undefined, true);
+    }
+  });
+
+  if (!IS_ITERATOR) {
+    createNonEnumerableProperty(IteratorProxyPrototype, TO_STRING_TAG$1, 'Iterator Helper');
+  }
+
+  return IteratorProxyPrototype;
+};
+
+var IteratorHelperPrototype = createIteratorProxyPrototype(false);
+var WrapForValidIteratorPrototype = createIteratorProxyPrototype(true);
+
+var iteratorCreateProxy = function (nextHandler, IS_ITERATOR) {
+  var ITERATOR_PROXY = IS_ITERATOR ? WRAP_FOR_VALID_ITERATOR : ITERATOR_HELPER;
+
+  var IteratorProxy = function Iterator(record, state) {
+    if (state) {
+      state.iterator = record.iterator;
+      state.next = record.next;
+    } else state = record;
+    state.type = ITERATOR_PROXY;
+    state.nextHandler = nextHandler;
+    state.counter = 0;
+    state.done = false;
+    setInternalState$1(this, state);
+  };
+
+  IteratorProxy.prototype = IS_ITERATOR ? WrapForValidIteratorPrototype : IteratorHelperPrototype;
+
+  return IteratorProxy;
+};
+
+// call something on iterator step with safe closing on error
+var callWithSafeIterationClosing = function (iterator, fn, value, ENTRIES) {
+  try {
+    return ENTRIES ? fn(anObject(value)[0], value[1]) : fn(value);
+  } catch (error) {
+    iteratorClose(iterator, 'throw', error);
+  }
+};
+
+export { asyncIteratorCreateProxy as a, callWithSafeIterationClosing as b, createIterResultObject as c, iteratorCreateProxy as i };
