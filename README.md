@@ -10,7 +10,7 @@
 [![linted with eslint](https://img.shields.io/badge/linted_with-ES_Lint-4B32C3.svg?logo=eslint)](https://github.com/eslint/eslint)
 [![license](https://img.shields.io/github/license/dmnsgn/canvas-record)](https://github.com/dmnsgn/canvas-record/blob/main/LICENSE.md)
 
-A one trick pony package to record and download a video from a canvas animation.
+A one trick pony package to record and download a video from a canvas (2D/WebGL/WebGPU) animation as MP4, WebM, GIF, PNG/JPG Sequence using WebCodecs and wasm when available.
 
 [![paypal](https://img.shields.io/badge/donate-paypal-informational?logo=paypal)](https://paypal.me/dmnsgn)
 [![coinbase](https://img.shields.io/badge/donate-coinbase-informational?logo=coinbase)](https://commerce.coinbase.com/checkout/56cbdf28-e323-48d8-9c98-7019e72c97f3)
@@ -27,177 +27,242 @@ npm install canvas-record
 ## Usage
 
 ```js
-import canvasRecord from "canvas-record";
-import canvasContext from "canvas-context";
+import { Recorder, RecorderStatus, Encoders } from "canvas-record";
+import createCanvasContext from "canvas-context";
 
-const width = 100;
-const height = 100;
-const { context, canvas } = canvasContext("2d", {
-  width,
-  height,
+// Setup
+const pixelRatio = devicePixelRatio;
+const width = 512;
+const height = 512;
+const { context, canvas } = createCanvasContext("2d", {
+  width: width * pixelRatio,
+  height: height * pixelRatio,
+  contextAttributes: { willReadFrequently: true },
 });
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+Object.assign(canvas.style, { width: `${width}px`, height: `${height}px` });
 
-async function record() {
-  // Create recorder
-  const canvasRecorder = canvasRecord(canvas);
-  canvasRecorder.start();
+const mainElement = document.querySelector("main");
+mainElement.appendChild(canvas);
 
-  // Start canvas animation
-  animate();
+// Animation
+let canvasRecorder;
 
-  // Let it run for 2 seconds
-  await sleep(2000);
+function render() {
+  const width = canvas.width;
+  const height = canvas.height;
 
-  // Stop and dispose
-  canvasRecorder.stop();
-  canvasRecorder.dispose();
+  const t = canvasRecorder.frame / canvasRecorder.frameTotal || Number.EPSILON;
+
+  context.clearRect(0, 0, width, height);
+  context.fillStyle = "red";
+  context.fillRect(0, 0, t * width, height);
 }
 
-record();
+const tick = async () => {
+  render();
+
+  if (canvasRecorder.status !== RecorderStatus.Recording) return;
+  await canvasRecorder.step();
+
+  if (canvasRecorder.status !== RecorderStatus.Stopped) {
+    requestAnimationFrame(() => tick());
+  }
+};
+
+canvasRecorder = new Recorder(context, { name: "canvas-record-example" });
+
+// Start and encode frame 0
+await canvasRecorder.start();
+
+// Animate to encode the rest
+tick(canvasRecorder);
 ```
 
 ## API
+
+Encoder comparison:
+
+| Encoder        | Extension      | Required Web API   | WASM                     | Speed    |
+| -------------- | -------------- | ------------------ | ------------------------ | -------- |
+| `WebCodecs`    | `mp4` / `webm` | WebCodecs          | ✅ (embed, only for mp4) | Fast     |
+| `H264MP4`      | `mp4`          |                    | ✅ (embed)               | Medium   |
+| `FFmpeg`       | `mp4` / `webm` | SharedArrayBuffer  | ✅ (need binary path)    | Slow     |
+| `GIF`          | `gif`          | WebWorkers (wip)   | ❌                       | Fast     |
+| `Frame`        | `png` / `jpg`  | File System Access | ❌                       | Fast     |
+| `MediaCapture` | `mkv` / `webm` | MediaStream        | ❌                       | Realtime |
+
+Note:
+
+- WebCodecs 5-10x faster than H264MP4Encoder and 20x faster than FFmpeg (it needs to mux files after writing png to virtual FS)
+- FFmpeg (mp4 and webm) and WebCodecs (mp4) have a AVC maximum frame size of 9437184 pixels. That's fine until a bit more than 4K 16:9 @ 30fps. So if you need 4K Square or 8K exports, be patient with H264MP4Encoder (which probably also has the 4GB memory limit) or use Frame encoder and mux them manually with FFmpeg CLI.
+- WebCodecs is embedded from [mp4-wasm](https://github.com/mattdesl/mp4-wasm/) for ease of use (FFmpeg will require `encoderOptions.corePath`)
+
+Roadmap:
+
+- [ ] add debug logging
+- [ ] use File System Access for WebCodecs webm
+- [ ] use WebWorkers for gifenc
 
 <!-- api-start -->
 
 ## Modules
 
 <dl>
-<dt><a href="#module_canvasRecord">canvasRecord</a></dt>
-<dd></dd>
+<dt><a href="#module_index">index</a></dt>
+<dd><p>Re-export Recorder, RecorderStatus, all Encoders and utils.</p>
+</dd>
+</dl>
+
+## Classes
+
+<dl>
+<dt><a href="#Recorder">Recorder</a></dt>
+<dd><p>Base Recorder class.</p>
+</dd>
+</dl>
+
+## Functions
+
+<dl>
+<dt><a href="#onStatusChangeCb">onStatusChangeCb(RecorderStatus)</a></dt>
+<dd><p>A callback to notify on the status change. To compare with RecorderStatus enum values.</p>
+</dd>
 </dl>
 
 ## Typedefs
 
 <dl>
-<dt><a href="#CanvasRecordOptions">CanvasRecordOptions</a> : <code>Object</code></dt>
-<dd><p>Options for canvas creation. All optional.</p>
+<dt><a href="#RecorderOptions">RecorderOptions</a> : <code>Object</code></dt>
+<dd><p>Options for recording wrapper. All optional.</p>
 </dd>
 </dl>
 
-<a name="module_canvasRecord"></a>
+<a name="module_index"></a>
 
-## canvasRecord
+## index
 
-- [canvasRecord](#module_canvasRecord)
-  - [canvasRecord(canvas, [options])](#exp_module_canvasRecord--canvasRecord) ⇒ <code>Object</code> ⏏
-    - [~filename](#module_canvasRecord--canvasRecord..filename)
-    - [~stream](#module_canvasRecord--canvasRecord..stream)
-    - [~recorder](#module_canvasRecord--canvasRecord..recorder)
-    - [~start([timeslice])](#module_canvasRecord--canvasRecord..start)
-    - [~step()](#module_canvasRecord--canvasRecord..step)
-    - [~stop()](#module_canvasRecord--canvasRecord..stop) ⇒ <code>Array.&lt;Blob&gt;</code> \| <code>Array</code>
-    - [~dispose()](#module_canvasRecord--canvasRecord..dispose)
+Re-export Recorder, RecorderStatus, all Encoders and utils.
 
-<a name="exp_module_canvasRecord--canvasRecord"></a>
+<a name="Recorder"></a>
 
-### canvasRecord(canvas, [options]) ⇒ <code>Object</code> ⏏
+## Recorder
 
-**Kind**: Exported function  
-**Returns**: <code>Object</code> - The video `MimeType` is defined by `recorderOptions.mimeType` if present or is inferred from the filename extension (mkv) for `"video/x-matroska;codecs=avc1"` and default to `"video/webm"`.  
-**See**: [MediaRecorder#Properties](https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder#Properties)
+Base Recorder class.
 
-```js
-// Currently supported by Chrome
-MediaRecorder.isTypeSupported("video/x-matroska;codecs=avc1");
-MediaRecorder.isTypeSupported("video/webm");
-MediaRecorder.isTypeSupported("video/webm;codecs=vp8");
-MediaRecorder.isTypeSupported("video/webm;codecs=vp9");
-MediaRecorder.isTypeSupported("video/webm;codecs=vp8.0");
-MediaRecorder.isTypeSupported("video/webm;codecs=vp9.0");
-MediaRecorder.isTypeSupported("video/webm;codecs=vp8,opus");
-MediaRecorder.isTypeSupported("video/webm;codecs=vp8,pcm");
-MediaRecorder.isTypeSupported("video/WEBM;codecs=VP8,OPUS");
-MediaRecorder.isTypeSupported("video/webm;codecs=vp9,opus");
-MediaRecorder.isTypeSupported("video/webm;codecs=vp8,vp9,opus");
-```
-
-| Param     | Type                                                     | Default         | Description        |
-| --------- | -------------------------------------------------------- | --------------- | ------------------ |
-| canvas    | <code>HTMLCanvasElement</code>                           |                 | The canvas element |
-| [options] | [<code>CanvasRecordOptions</code>](#CanvasRecordOptions) | <code>{}</code> |                    |
-
-<a name="module_canvasRecord--canvasRecord..filename"></a>
-
-#### canvasRecord~filename
-
-Update the filename. Useful when recording several videovideos.
-
-**Kind**: inner property of [<code>canvasRecord</code>](#exp_module_canvasRecord--canvasRecord)  
-<a name="module_canvasRecord--canvasRecord..stream"></a>
-
-#### canvasRecord~stream
-
-A reference to the `CanvasCaptureMediaStream`
-
-**Kind**: inner property of [<code>canvasRecord</code>](#exp_module_canvasRecord--canvasRecord)  
-**See**: [MDN CanvasCaptureMediaStream](https://developer.mozilla.org/en-US/docs/Web/API/CanvasCaptureMediaStream)  
-<a name="module_canvasRecord--canvasRecord..recorder"></a>
-
-#### canvasRecord~recorder
-
-A reference to the `MediaRecorder`.
-
-**Kind**: inner property of [<code>canvasRecord</code>](#exp_module_canvasRecord--canvasRecord)  
-**See**: [MDN MediaRecorder](https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder)  
-<a name="module_canvasRecord--canvasRecord..start"></a>
-
-#### canvasRecord~start([timeslice])
-
-Start recording.
-
-**Kind**: inner method of [<code>canvasRecord</code>](#exp_module_canvasRecord--canvasRecord)
-
-| Param       | Type                | Description                                                                                                                                                                                                                                                                                        |
-| ----------- | ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [timeslice] | <code>number</code> | The number of milliseconds to record into each Blob. If this parameter isn't included, the entire media duration is recorded into a single Blob unless the requestData() method is called to obtain the Blob and trigger the creation of a new Blob into which the media continues to be recorded. |
-
-<a name="module_canvasRecord--canvasRecord..step"></a>
-
-#### canvasRecord~step()
-
-Only needed when there is a need to exactly to capture a canvas state at an instant `t`.
-
-**Kind**: inner method of [<code>canvasRecord</code>](#exp_module_canvasRecord--canvasRecord)  
-**See**: [MDN CanvasCaptureMediaStreamTrack/requestFrame](https://developer.mozilla.org/en-US/docs/Web/API/CanvasCaptureMediaStreamTrack/requestFrame)
-The CanvasCaptureMediaStreamTrack method requestFrame() requests that a frame be captured from the canvas and sent to the stream. Applications that need to carefully control the timing of rendering and frame capture can use requestFrame() to directly specify when it's time to capture a frame.
-To prevent automatic capture of frames, so that frames are only captured when requestFrame() is called, specify a value of 0 for the captureStream() method when creating the stream.
-
-Notes: the technology is still a Working Draft not sure the output is guaranteed to have perfect frames.  
-<a name="module_canvasRecord--canvasRecord..stop"></a>
-
-#### canvasRecord~stop() ⇒ <code>Array.&lt;Blob&gt;</code> \| <code>Array</code>
-
-Stop the recorder which will consecutively call the `recorder.onstop` callback and download the video if not disable in the options.
-
-**Kind**: inner method of [<code>canvasRecord</code>](#exp_module_canvasRecord--canvasRecord)  
-**Returns**: <code>Array.&lt;Blob&gt;</code> \| <code>Array</code> - Returns the Blob chunk array (or chunks if `timeslice` is specified when starting the recorder).  
-<a name="module_canvasRecord--canvasRecord..dispose"></a>
-
-#### canvasRecord~dispose()
-
-Set `recorder` and `stream` to `null` for GC.
-
-**Kind**: inner method of [<code>canvasRecord</code>](#exp_module_canvasRecord--canvasRecord)  
-<a name="CanvasRecordOptions"></a>
-
-## CanvasRecordOptions : <code>Object</code>
-
-Options for canvas creation. All optional.
-
-**Kind**: global typedef  
+**Kind**: global class
 **Properties**
 
-| Name              | Type                 | Default                                                                 | Description                                 |
-| ----------------- | -------------------- | ----------------------------------------------------------------------- | ------------------------------------------- |
-| [filename]        | <code>string</code>  | <code>&quot;Recording YYYY-MM-DD at HH.MM.SS.png&quot;</code>           | File name.                                  |
-| [frameRate]       | <code>number</code>  | <code>25</code>                                                         | The frame rate used by the `MediaRecorder`. |
-| [download]        | <code>boolean</code> | <code>true</code>                                                       | Automatically download the recording.       |
-| [recorderOptions] | <code>Object</code>  | <code>{audioBitsPerSecond: 128000, videoBitsPerSecond: 2500000 }</code> | The `MediaRecorder` options.                |
+| Name      | Type                 | Default           | Description                                     |
+| --------- | -------------------- | ----------------- | ----------------------------------------------- |
+| [enabled] | <code>boolean</code> | <code>true</code> | Enable/disable pointer interaction and drawing. |
+
+- [Recorder](#Recorder)
+  - [new Recorder(context, options)](#new_Recorder_new)
+  - [.start()](#Recorder+start)
+  - [.step()](#Recorder+step)
+  - [.stop()](#Recorder+stop)
+  - [.dispose()](#Recorder+dispose)
+
+<a name="new_Recorder_new"></a>
+
+### new Recorder(context, options)
+
+| Param   | Type                                             |
+| ------- | ------------------------------------------------ |
+| context | <code>RenderingContext</code>                    |
+| options | [<code>RecorderOptions</code>](#RecorderOptions) |
+
+<a name="Recorder+start"></a>
+
+### recorder.start()
+
+Start the recording by initializing and calling the initial step.
+
+**Kind**: instance method of [<code>Recorder</code>](#Recorder)
+<a name="Recorder+step"></a>
+
+### recorder.step()
+
+Encode a frame and increment the time and the playhead.
+Calls `await canvasRecorder.stop()` when duration is reached.
+
+**Kind**: instance method of [<code>Recorder</code>](#Recorder)
+<a name="Recorder+stop"></a>
+
+### recorder.stop()
+
+Stop the recording and return the recorded buffer.
+If options.download is set, automatically start downloading the resulting file.
+Is called when duration is reached or manually.
+
+**Kind**: instance method of [<code>Recorder</code>](#Recorder)
+<a name="Recorder+dispose"></a>
+
+### recorder.dispose()
+
+Clean up
+
+**Kind**: instance method of [<code>Recorder</code>](#Recorder)
+<a name="RecorderStatus"></a>
+
+## RecorderStatus : <code>enum</code>
+
+Enum for recorder status
+
+**Kind**: global enum
+**Read only**: true
+**Example**
+
+```js
+// Check recorder status before continuing
+if (canvasRecorder.status !== RecorderStatus.Stopped) {
+  rAFId = requestAnimationFrame(() => tick());
+}
+```
+
+<a name="onStatusChangeCb"></a>
+
+## onStatusChangeCb(RecorderStatus)
+
+A callback to notify on the status change. To compare with RecorderStatus enum values.
+
+**Kind**: global function
+
+| Param          | Type                | Description |
+| -------------- | ------------------- | ----------- |
+| RecorderStatus | <code>number</code> | the status  |
+
+<a name="RecorderOptions"></a>
+
+## RecorderOptions : <code>Object</code>
+
+Options for recording wrapper. All optional.
+
+**Kind**: global typedef
+**Properties**
+
+| Name             | Type                                               | Default                                 | Description                                                                                                             |
+| ---------------- | -------------------------------------------------- | --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| [name]           | <code>string</code>                                | <code>&quot;\&quot;\&quot;&quot;</code> | A name for the recorder, used as prefix for the default file name.                                                      |
+| [filename]       | <code>string</code>                                |                                         | Overwrite the file name completely.                                                                                     |
+| [duration]       | <code>number</code>                                | <code>10</code>                         | The recording duration in seconds. If set to Infinity, `await canvasRecorder.stop()` needs to be called manually.       |
+| [frameRate]      | <code>number</code>                                | <code>30</code>                         | The frame rate in frame per seconds. Use `await canvasRecorder.step();` to go to the next frame.                        |
+| [download]       | <code>boolean</code>                               | <code>true</code>                       | Automatically download the recording when duration is reached or when `await canvasRecorder.stop()` is manually called. |
+| [extension]      | <code>boolean</code>                               | <code>&quot;mp4&quot;</code>            | Default file extension: infers which Encoder is selected.                                                               |
+| [encoder]        | <code>Object</code>                                |                                         | A specific encoder. Default encoder based on options.extension: GIF > WebCodecs > H264MP4.                              |
+| [encoderOptions] | <code>Object</code>                                | <code>{}</code>                         | See `src/encoders` or individual packages for a list of options.                                                        |
+| [onStatusChange] | [<code>onStatusChangeCb</code>](#onStatusChangeCb) |                                         |                                                                                                                         |
 
 <!-- api-end -->
 
 ## License
+
+All MIT:
+
+- [mp4-wasm](https://github.com/mattdesl/mp4-wasm/blob/master/LICENSE.md)
+- [h264-mp4-encoder](https://github.com/TrevorSundberg/h264-mp4-encoder/blob/master/LICENSE.md)
+- [@ffmpeg/ffmpeg](https://github.com/ffmpegwasm/ffmpeg.wasm/blob/master/LICENSE)
+- [gifenc](https://github.com/mattdesl/gifenc/blob/master/LICENSE.md)
+- [webm-muxer](https://github.com/Vanilagy/webm-muxer/blob/main/LICENSE)
 
 MIT. See [license file](https://github.com/dmnsgn/canvas-record/blob/main/LICENSE.md).

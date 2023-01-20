@@ -1,17 +1,21 @@
 {
   "name": "canvas-record",
   "version": "3.1.0",
-  "description": "A one trick pony package to record and download a video from a canvas animation.",
+  "description": "A one trick pony package to record and download a video from a canvas (2D/WebGL/WebGPU) animation as MP4, WebM, GIF, PNG/JPG Sequence using WebCodecs and wasm when available.",
   "keywords": [
     "canvas",
-    "video",
     "record",
+    "video",
     "recorder",
     "capture",
-    "capturer",
-    "download",
-    "downloader",
-    "media-recorder"
+    "mp4",
+    "webm",
+    "gif",
+    "sequence",
+    "framesequence",
+    "media-recorder",
+    "ffmpeg",
+    "h264"
   ],
   "homepage": "https://github.com/dmnsgn/canvas-record",
   "bugs": "https://github.com/dmnsgn/canvas-record/issues",
@@ -34,14 +38,20 @@
   "main": "index.js",
   "types": "types/index.d.ts",
   "dependencies": {
-    "file-extension": "^4.0.5"
+    "@ffmpeg/ffmpeg": "^0.11.6",
+    "canvas-screenshot": "^4.1.0",
+    "gifenc": "^1.0.3",
+    "h264-mp4-encoder": "^1.0.12",
+    "webm-muxer": "^1.1.5"
   },
   "devDependencies": {
-    "canvas-context": "^3.0.2",
-    "es-module-shims": "^0.10.4"
+    "canvas-context": "^3.2.0",
+    "es-module-shims": "^1.6.3",
+    "mp4-wasm": "^1.0.6",
+    "tweakpane": "^3.1.2"
   },
   "engines": {
-    "node": ">=15.0.0",
+    "node": ">=16.0.0",
     "npm": ">=7.0.0"
   }
 }
