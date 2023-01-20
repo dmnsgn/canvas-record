@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+# [4.0.0-alpha.1](https://github.com/dmnsgn/canvas-record/compare/v4.0.0-alpha.0...v4.0.0-alpha.1) (2023-01-20)
+
+
+
 # [4.0.0-alpha.0](https://github.com/dmnsgn/canvas-record/compare/v3.1.0...v4.0.0-alpha.0) (2023-01-20)
 
 
