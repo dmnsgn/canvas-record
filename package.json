@@ -1,6 +1,6 @@
 {
   "name": "canvas-record",
-  "version": "3.1.0",
+  "version": "4.0.0-alpha.0",
   "description": "A one trick pony package to record and download a video from a canvas (2D/WebGL/WebGPU) animation as MP4, WebM, GIF, PNG/JPG Sequence using WebCodecs and wasm when available.",
   "keywords": [
     "canvas",

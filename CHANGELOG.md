@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+# [4.0.0-alpha.0](https://github.com/dmnsgn/canvas-record/compare/v3.1.0...v4.0.0-alpha.0) (2023-01-20)
+
+
+### Features
+
+* abstract into Recorder and add WebCodecs, H264MP4, GIF, Frame, MediaCapture and FFmpeg encoders ([8c8335d](https://github.com/dmnsgn/canvas-record/commit/8c8335d5cdeb6654be667e8eab3faf8e61e4f0ec))
+
+
+### BREAKING CHANGES
+
+* add encoders and refactor
+
+
+
 # [3.1.0](https://github.com/dmnsgn/canvas-record/compare/v3.0.0...v3.1.0) (2021-10-02)
 
 

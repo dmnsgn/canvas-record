@@ -133,7 +133,7 @@ Roadmap:
 
 <dl>
 <dt><a href="#RecorderOptions">RecorderOptions</a> : <code>Object</code></dt>
-<dd><p>Options for recording wrapper. All optional.</p>
+<dd><p>Options for recording. All optional.</p>
 </dd>
 </dl>
 
@@ -236,7 +236,7 @@ A callback to notify on the status change. To compare with RecorderStatus enum v
 
 ## RecorderOptions : <code>Object</code>
 
-Options for recording wrapper. All optional.
+Options for recording. All optional.
 
 **Kind**: global typedef
 **Properties**
