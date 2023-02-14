@@ -6,7 +6,7 @@ import Encoder from "./Encoder.js";
 let mp4wasm;
 
 class WebCodecsEncoder extends Encoder {
-  static supportedExtensions = ["mp4", "webm"];
+  static supportedExtensions = ["mp4", "webm", "mkv"];
 
   static defaultOptions = {
     extension: WebCodecsEncoder.supportedExtensions[0],
@@ -25,9 +25,24 @@ class WebCodecsEncoder extends Encoder {
   async init(options) {
     super.init(options);
 
-    if (this.extension === "webm") {
+    if (this.extension === "mp4") {
+      mp4wasm ||= await MP4Wasm(); // { wasmBinary }
+
+      this.encoder = mp4wasm.createWebCodecsEncoder({
+        // codec: "avc1.420034", // Baseline 4.2
+        codec: "avc1.4d0034", // Main 5.2
+        width: this.width,
+        height: this.height,
+        fps: this.frameRate,
+        encoderOptions: {
+          framerate: this.frameRate,
+          ...this.encoderOptions,
+        },
+      });
+    } else {
       this.muxer = new WebMMuxer({
         target: "buffer",
+        type: this.extension === "mkv" ? "matroska" : "webm",
         video: {
           codec: "V_VP9", // Supported: V_VP8, V_VP9, V_AV1, A_OPUS and A_VORBIS
           width: this.width,
@@ -61,25 +76,13 @@ class WebCodecsEncoder extends Encoder {
           )}`
         );
       }
-    } else {
-      mp4wasm ||= await MP4Wasm(); // { wasmBinary }
-
-      this.encoder = mp4wasm.createWebCodecsEncoder({
-        // codec: "avc1.420034", // Baseline 4.2
-        codec: "avc1.4d0034", // Main 5.2
-        width: this.width,
-        height: this.height,
-        fps: this.frameRate,
-        encoderOptions: {
-          framerate: this.frameRate,
-          ...this.encoderOptions,
-        },
-      });
     }
   }
 
   async encode(frame, number) {
-    if (this.extension === "webm") {
+    if (this.extension === "mp4") {
+      await this.encoder.addFrame(frame);
+    } else {
       const keyFrame = number % this.groupOfPictures === 0;
 
       this.encoder.encode(frame, { keyFrame });
@@ -87,18 +90,16 @@ class WebCodecsEncoder extends Encoder {
       if (this.flushFrequency && (number + 1) % this.flushFrequency === 0) {
         await this.encoder.flush();
       }
-    } else {
-      await this.encoder.addFrame(frame);
     }
   }
 
   async stop() {
     let buffer;
-    if (this.extension === "webm") {
+    if (this.extension === "mp4") {
+      buffer = await this.encoder.end();
+    } else {
       await this.encoder.flush();
       buffer = this.muxer.finalize();
-    } else {
-      buffer = await this.encoder.end();
     }
 
     return buffer;

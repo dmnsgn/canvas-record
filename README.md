@@ -82,14 +82,14 @@ tick(canvasRecorder);
 
 Encoder comparison:
 
-| Encoder        | Extension      | Required Web API   | WASM                     | Speed    |
-| -------------- | -------------- | ------------------ | ------------------------ | -------- |
-| `WebCodecs`    | `mp4` / `webm` | WebCodecs          | ✅ (embed, only for mp4) | Fast     |
-| `H264MP4`      | `mp4`          |                    | ✅ (embed)               | Medium   |
-| `FFmpeg`       | `mp4` / `webm` | SharedArrayBuffer  | ✅ (need binary path)    | Slow     |
-| `GIF`          | `gif`          | WebWorkers (wip)   | ❌                       | Fast     |
-| `Frame`        | `png` / `jpg`  | File System Access | ❌                       | Fast     |
-| `MediaCapture` | `mkv` / `webm` | MediaStream        | ❌                       | Realtime |
+| Encoder        | Extension              | Required Web API   | WASM                     | Speed    |
+| -------------- | ---------------------- | ------------------ | ------------------------ | -------- |
+| `WebCodecs`    | `mp4` / `webm` / `mkv` | WebCodecs          | ✅ (embed, only for mp4) | Fast     |
+| `H264MP4`      | `mp4`                  |                    | ✅ (embed)               | Medium   |
+| `FFmpeg`       | `mp4` / `webm`         | SharedArrayBuffer  | ✅ (need binary path)    | Slow     |
+| `GIF`          | `gif`                  | WebWorkers (wip)   | ❌                       | Fast     |
+| `Frame`        | `png` / `jpg`          | File System Access | ❌                       | Fast     |
+| `MediaCapture` | `mkv` / `webm`         | MediaStream        | ❌                       | Realtime |
 
 Note:
 
