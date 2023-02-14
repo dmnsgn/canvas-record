@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+# [4.0.0-alpha.2](https://github.com/dmnsgn/canvas-record/compare/v4.0.0-alpha.1...v4.0.0-alpha.2) (2023-02-14)
+
+
+### Features
+
+* add support for mkv in WebCodecsEncoder ([5ea3352](https://github.com/dmnsgn/canvas-record/commit/5ea3352f74246ca07ecd2e39ad49de65cb6148e3))
+
+
+
 # [4.0.0-alpha.1](https://github.com/dmnsgn/canvas-record/compare/v4.0.0-alpha.0...v4.0.0-alpha.1) (2023-01-20)
 
 
