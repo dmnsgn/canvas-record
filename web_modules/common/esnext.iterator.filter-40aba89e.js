@@ -1,22 +1,11 @@
-import { _ as _export, a as aCallable, b as anObject, d as functionCall, e as isObject } from './es.error.cause-76796be3.js';
-import { g as getIteratorDirect, a as asyncIteratorClose } from './species-constructor-e3e5cd07.js';
-import { a as asyncIteratorCreateProxy, c as createIterResultObject, i as iteratorCreateProxy, b as callWithSafeIterationClosing } from './call-with-safe-iteration-closing-159b0937.js';
-
-// https://github.com/tc39/proposal-iterator-helpers
-
-
-
-
-
-
-
-
-
+import { _ as _export, a as aCallable, b as anObject, d as functionCall, e as isObject } from './es.error.cause-c5e0cc86.js';
+import { g as getIteratorDirect, a as asyncIteratorClose } from './map-iterate-1f81817b.js';
+import { a as asyncIteratorCreateProxy, c as createIterResultObject, i as iteratorCreateProxy, b as callWithSafeIterationClosing } from './call-with-safe-iteration-closing-d974cb4e.js';
 
 var AsyncIteratorProxy = asyncIteratorCreateProxy(function (Promise) {
   var state = this;
   var iterator = state.iterator;
-  var filterer = state.filterer;
+  var predicate = state.predicate;
 
   return new Promise(function (resolve, reject) {
     var doneAndReject = function (error) {
@@ -38,7 +27,7 @@ var AsyncIteratorProxy = asyncIteratorCreateProxy(function (Promise) {
             } else {
               var value = step.value;
               try {
-                var result = filterer(value, state.counter++);
+                var result = predicate(value, state.counter++);
 
                 var handler = function (selected) {
                   selected ? resolve(createIterResultObject(value, false)) : loop();
@@ -57,26 +46,19 @@ var AsyncIteratorProxy = asyncIteratorCreateProxy(function (Promise) {
   });
 });
 
-_export({ target: 'AsyncIterator', proto: true, real: true, forced: true }, {
-  filter: function filter(filterer) {
+// `AsyncIterator.prototype.filter` method
+// https://github.com/tc39/proposal-iterator-helpers
+_export({ target: 'AsyncIterator', proto: true, real: true }, {
+  filter: function filter(predicate) {
     return new AsyncIteratorProxy(getIteratorDirect(this), {
-      filterer: aCallable(filterer)
+      predicate: aCallable(predicate)
     });
   }
 });
 
-// https://github.com/tc39/proposal-iterator-helpers
-
-
-
-
-
-
-
-
 var IteratorProxy = iteratorCreateProxy(function () {
   var iterator = this.iterator;
-  var filterer = this.filterer;
+  var predicate = this.predicate;
   var next = this.next;
   var result, done, value;
   while (true) {
@@ -84,14 +66,16 @@ var IteratorProxy = iteratorCreateProxy(function () {
     done = this.done = !!result.done;
     if (done) return;
     value = result.value;
-    if (callWithSafeIterationClosing(iterator, filterer, [value, this.counter++], true)) return value;
+    if (callWithSafeIterationClosing(iterator, predicate, [value, this.counter++], true)) return value;
   }
 });
 
-_export({ target: 'Iterator', proto: true, real: true, forced: true }, {
-  filter: function filter(filterer) {
+// `Iterator.prototype.filter` method
+// https://github.com/tc39/proposal-iterator-helpers
+_export({ target: 'Iterator', proto: true, real: true }, {
+  filter: function filter(predicate) {
     return new IteratorProxy(getIteratorDirect(this), {
-      filterer: aCallable(filterer)
+      predicate: aCallable(predicate)
     });
   }
 });

@@ -124,6 +124,7 @@ var toIndexedObject = function (it) {
 var documentAll = typeof document == 'object' && document.all;
 
 // https://tc39.es/ecma262/#sec-IsHTMLDDA-internal-slot
+// eslint-disable-next-line unicorn/no-typeof-undefined -- required for testing
 var IS_HTMLDDA = typeof documentAll == 'undefined' && documentAll !== undefined;
 
 var documentAll_1 = {
@@ -159,7 +160,7 @@ var getBuiltIn = function (namespace, method) {
 
 var objectIsPrototypeOf = functionUncurryThis({}.isPrototypeOf);
 
-var engineUserAgent = getBuiltIn('navigator', 'userAgent') || '';
+var engineUserAgent = typeof navigator != 'undefined' && String(navigator.userAgent) || '';
 
 var process = global_1.process;
 var Deno = global_1.Deno;
@@ -273,10 +274,10 @@ var shared = createCommonjsModule(function (module) {
 (module.exports = function (key, value) {
   return sharedStore[key] || (sharedStore[key] = value !== undefined ? value : {});
 })('versions', []).push({
-  version: '3.26.1',
+  version: '3.27.2',
   mode:  'global',
-  copyright: '© 2014-2022 Denis Pushkarev (zloirock.ru)',
-  license: 'https://github.com/zloirock/core-js/blob/v3.26.1/LICENSE',
+  copyright: '© 2014-2023 Denis Pushkarev (zloirock.ru)',
+  license: 'https://github.com/zloirock/core-js/blob/v3.27.2/LICENSE',
   source: 'https://github.com/zloirock/core-js'
 });
 });
@@ -306,21 +307,15 @@ var uid = function (key) {
   return 'Symbol(' + (key === undefined ? '' : key) + ')_' + toString$1(++id + postfix, 36);
 };
 
-var WellKnownSymbolsStore = shared('wks');
 var Symbol$1 = global_1.Symbol;
-var symbolFor = Symbol$1 && Symbol$1['for'];
-var createWellKnownSymbol = useSymbolAsUid ? Symbol$1 : Symbol$1 && Symbol$1.withoutSetter || uid;
+var WellKnownSymbolsStore = shared('wks');
+var createWellKnownSymbol = useSymbolAsUid ? Symbol$1['for'] || Symbol$1 : Symbol$1 && Symbol$1.withoutSetter || uid;
 
 var wellKnownSymbol = function (name) {
-  if (!hasOwnProperty_1(WellKnownSymbolsStore, name) || !(symbolConstructorDetection || typeof WellKnownSymbolsStore[name] == 'string')) {
-    var description = 'Symbol.' + name;
-    if (symbolConstructorDetection && hasOwnProperty_1(Symbol$1, name)) {
-      WellKnownSymbolsStore[name] = Symbol$1[name];
-    } else if (useSymbolAsUid && symbolFor) {
-      WellKnownSymbolsStore[name] = symbolFor(description);
-    } else {
-      WellKnownSymbolsStore[name] = createWellKnownSymbol(description);
-    }
+  if (!hasOwnProperty_1(WellKnownSymbolsStore, name)) {
+    WellKnownSymbolsStore[name] = symbolConstructorDetection && hasOwnProperty_1(Symbol$1, name)
+      ? Symbol$1[name]
+      : createWellKnownSymbol('Symbol.' + name);
   } return WellKnownSymbolsStore[name];
 };
 
@@ -559,8 +554,12 @@ var CONFIGURABLE_FUNCTION_NAME = functionName.CONFIGURABLE;
 
 var enforceInternalState = internalState.enforce;
 var getInternalState = internalState.get;
+var $String = String;
 // eslint-disable-next-line es/no-object-defineproperty -- safe
 var defineProperty = Object.defineProperty;
+var stringSlice = functionUncurryThis(''.slice);
+var replace = functionUncurryThis(''.replace);
+var join = functionUncurryThis([].join);
 
 var CONFIGURABLE_LENGTH = descriptors && !fails(function () {
   return defineProperty(function () { /* empty */ }, 'length', { value: 8 }).length !== 8;
@@ -569,8 +568,8 @@ var CONFIGURABLE_LENGTH = descriptors && !fails(function () {
 var TEMPLATE = String(String).split('String');
 
 var makeBuiltIn = module.exports = function (value, name, options) {
-  if (String(name).slice(0, 7) === 'Symbol(') {
-    name = '[' + String(name).replace(/^Symbol\(([^)]*)\)/, '$1') + ']';
+  if (stringSlice($String(name), 0, 7) === 'Symbol(') {
+    name = '[' + replace($String(name), /^Symbol\(([^)]*)\)/, '$1') + ']';
   }
   if (options && options.getter) name = 'get ' + name;
   if (options && options.setter) name = 'set ' + name;
@@ -589,7 +588,7 @@ var makeBuiltIn = module.exports = function (value, name, options) {
   } catch (error) { /* empty */ }
   var state = enforceInternalState(value);
   if (!hasOwnProperty_1(state, 'source')) {
-    state.source = TEMPLATE.join(typeof name == 'string' ? name : '');
+    state.source = join(TEMPLATE, typeof name == 'string' ? name : '');
   } return value;
 };
 
@@ -982,6 +981,16 @@ var errorStackInstallable = !fails(function () {
   return error.stack !== 7;
 });
 
+// non-standard V8
+var captureStackTrace = Error.captureStackTrace;
+
+var errorStackInstall = function (error, C, stack, dropEntries) {
+  if (errorStackInstallable) {
+    if (captureStackTrace) captureStackTrace(error, C);
+    else createNonEnumerableProperty(error, 'stack', errorStackClear(stack, dropEntries));
+  }
+};
+
 var wrapErrorConstructorWithCause = function (FULL_NAME, wrapper, FORCED, IS_AGGREGATE_ERROR) {
   var STACK_TRACE_LIMIT = 'stackTraceLimit';
   var OPTIONS_POSITION = IS_AGGREGATE_ERROR ? 2 : 1;
@@ -1004,7 +1013,7 @@ var wrapErrorConstructorWithCause = function (FULL_NAME, wrapper, FORCED, IS_AGG
     var message = normalizeStringArgument(IS_AGGREGATE_ERROR ? b : a, undefined);
     var result = IS_AGGREGATE_ERROR ? new OriginalError(a) : new OriginalError();
     if (message !== undefined) createNonEnumerableProperty(result, 'message', message);
-    if (errorStackInstallable) createNonEnumerableProperty(result, 'stack', errorStackClear(result.stack, 2));
+    errorStackInstall(result, WrappedError, result.stack, 2);
     if (this && objectIsPrototypeOf(OriginalErrorPrototype, this)) inheritIfRequired(result, this, WrappedError);
     if (arguments.length > OPTIONS_POSITION) installErrorCause(result, arguments[OPTIONS_POSITION]);
     return result;
@@ -1058,6 +1067,7 @@ var exportWebAssemblyErrorCauseWrapper = function (ERROR_NAME, wrapper) {
   }
 };
 
+// https://tc39.es/ecma262/#sec-nativeerror
 // https://github.com/tc39/proposal-error-cause
 exportGlobalErrorCauseWrapper('Error', function (init) {
   return function Error(message) { return functionApply(init, this, arguments); };
@@ -1090,4 +1100,4 @@ exportWebAssemblyErrorCauseWrapper('RuntimeError', function (init) {
   return function RuntimeError(message) { return functionApply(init, this, arguments); };
 });
 
-export { toObject as A, defineBuiltIn as B, classofRaw as C, functionUncurryThis as D, functionBindNative as E, inspectSource as F, sharedStore as G, internalState as H, uid as I, objectSetPrototypeOf as J, toIntegerOrInfinity as K, indexedObject as L, toPropertyKey as M, toPrimitive as N, toAbsoluteIndex as O, createPropertyDescriptor as P, normalizeStringArgument as Q, errorStackClear as R, inheritIfRequired as S, makeBuiltIn_1 as T, toString_1 as U, _export as _, aCallable as a, anObject as b, createNonEnumerableProperty as c, functionCall as d, isObject as e, fails as f, global_1 as g, hasOwnProperty_1 as h, isCallable as i, getBuiltIn as j, isNullOrUndefined as k, getMethod as l, classof as m, lengthOfArrayLike as n, objectIsPrototypeOf as o, objectKeysInternal as p, enumBugKeys as q, descriptors as r, toIndexedObject as s, tryToString as t, objectDefineProperty as u, v8PrototypeDefineBug as v, wellKnownSymbol as w, sharedKey as x, hiddenKeys as y, documentCreateElement as z };
+export { toObject as A, defineBuiltIn as B, classofRaw as C, functionUncurryThis as D, functionBindNative as E, sharedStore as F, internalState as G, uid as H, objectSetPrototypeOf as I, toIntegerOrInfinity as J, indexedObject as K, inspectSource as L, toPropertyKey as M, toPrimitive as N, toAbsoluteIndex as O, createPropertyDescriptor as P, normalizeStringArgument as Q, errorStackClear as R, inheritIfRequired as S, makeBuiltIn_1 as T, toString_1 as U, _export as _, aCallable as a, anObject as b, createNonEnumerableProperty as c, functionCall as d, isObject as e, fails as f, global_1 as g, hasOwnProperty_1 as h, isCallable as i, getBuiltIn as j, isNullOrUndefined as k, getMethod as l, classof as m, lengthOfArrayLike as n, objectIsPrototypeOf as o, objectKeysInternal as p, enumBugKeys as q, descriptors as r, toIndexedObject as s, tryToString as t, objectDefineProperty as u, v8PrototypeDefineBug as v, wellKnownSymbol as w, sharedKey as x, documentCreateElement as y, hiddenKeys as z };

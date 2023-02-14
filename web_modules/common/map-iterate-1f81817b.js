@@ -1,4 +1,4 @@
-import { a as aCallable, b as anObject, l as getMethod, j as getBuiltIn, d as functionCall, p as objectKeysInternal, q as enumBugKeys, r as descriptors, v as v8PrototypeDefineBug, s as toIndexedObject, u as objectDefineProperty, x as sharedKey, y as hiddenKeys, z as documentCreateElement, f as fails, A as toObject, h as hasOwnProperty_1, i as isCallable, w as wellKnownSymbol, e as isObject, B as defineBuiltIn, C as classofRaw, D as functionUncurryThis, E as functionBindNative, m as classof, F as inspectSource, t as tryToString, k as isNullOrUndefined } from './es.error.cause-76796be3.js';
+import { a as aCallable, b as anObject, l as getMethod, j as getBuiltIn, d as functionCall, p as objectKeysInternal, q as enumBugKeys, r as descriptors, v as v8PrototypeDefineBug, s as toIndexedObject, u as objectDefineProperty, x as sharedKey, y as documentCreateElement, z as hiddenKeys, f as fails, A as toObject, h as hasOwnProperty_1, i as isCallable, w as wellKnownSymbol, e as isObject, B as defineBuiltIn, C as classofRaw, D as functionUncurryThis, E as functionBindNative } from './es.error.cause-c5e0cc86.js';
 
 var getIteratorDirect = function (obj) {
   return {
@@ -232,68 +232,38 @@ var iteratorClose = function (iterator, kind, value) {
   return value;
 };
 
-var noop = function () { /* empty */ };
-var empty = [];
-var construct = getBuiltIn('Reflect', 'construct');
-var constructorRegExp = /^\s*(?:class|function)\b/;
-var exec = functionUncurryThis(constructorRegExp.exec);
-var INCORRECT_TO_STRING = !constructorRegExp.exec(noop);
+// eslint-disable-next-line es/no-map -- safe
+var MapPrototype = Map.prototype;
 
-var isConstructorModern = function isConstructor(argument) {
-  if (!isCallable(argument)) return false;
-  try {
-    construct(noop, empty, argument);
-    return true;
-  } catch (error) {
-    return false;
+var mapHelpers = {
+  // eslint-disable-next-line es/no-map -- safe
+  Map: Map,
+  set: functionUncurryThis(MapPrototype.set),
+  get: functionUncurryThis(MapPrototype.get),
+  has: functionUncurryThis(MapPrototype.has),
+  remove: functionUncurryThis(MapPrototype['delete']),
+  proto: MapPrototype
+};
+
+var iterateSimple = function (iterator, fn, $next) {
+  var next = $next || iterator.next;
+  var step, result;
+  while (!(step = functionCall(next, iterator)).done) {
+    result = fn(step.value);
+    if (result !== undefined) return result;
   }
 };
 
-var isConstructorLegacy = function isConstructor(argument) {
-  if (!isCallable(argument)) return false;
-  switch (classof(argument)) {
-    case 'AsyncFunction':
-    case 'GeneratorFunction':
-    case 'AsyncGeneratorFunction': return false;
-  }
-  try {
-    // we can't check .prototype since constructors produced by .bind haven't it
-    // `Function#toString` throws on some built-it function in some legacy engines
-    // (for example, `DOMQuad` and similar in FF41-)
-    return INCORRECT_TO_STRING || !!exec(constructorRegExp, inspectSource(argument));
-  } catch (error) {
-    return true;
-  }
+var Map$1 = mapHelpers.Map;
+var MapPrototype$1 = mapHelpers.proto;
+var forEach = functionUncurryThis(MapPrototype$1.forEach);
+var entries = functionUncurryThis(MapPrototype$1.entries);
+var next = entries(new Map$1()).next;
+
+var mapIterate = function (map, fn, interruptible) {
+  return interruptible ? iterateSimple(entries(map), function (entry) {
+    return fn(entry[1], entry[0]);
+  }, next) : forEach(map, fn);
 };
 
-isConstructorLegacy.sham = true;
-
-// `IsConstructor` abstract operation
-// https://tc39.es/ecma262/#sec-isconstructor
-var isConstructor = !construct || fails(function () {
-  var called;
-  return isConstructorModern(isConstructorModern.call)
-    || !isConstructorModern(Object)
-    || !isConstructorModern(function () { called = true; })
-    || called;
-}) ? isConstructorLegacy : isConstructorModern;
-
-var $TypeError = TypeError;
-
-// `Assert: IsConstructor(argument) is true`
-var aConstructor = function (argument) {
-  if (isConstructor(argument)) return argument;
-  throw $TypeError(tryToString(argument) + ' is not a constructor');
-};
-
-var SPECIES = wellKnownSymbol('species');
-
-// `SpeciesConstructor` abstract operation
-// https://tc39.es/ecma262/#sec-speciesconstructor
-var speciesConstructor = function (O, defaultConstructor) {
-  var C = anObject(O).constructor;
-  var S;
-  return C === undefined || isNullOrUndefined(S = anObject(C)[SPECIES]) ? defaultConstructor : aConstructor(S);
-};
-
-export { asyncIteratorClose as a, iteratorClose as b, objectCreate as c, isConstructor as d, functionBindContext as f, getIteratorDirect as g, iteratorsCore as i, objectGetPrototypeOf as o, speciesConstructor as s };
+export { asyncIteratorClose as a, iteratorClose as b, objectCreate as c, mapHelpers as d, iterateSimple as e, functionBindContext as f, getIteratorDirect as g, iteratorsCore as i, mapIterate as m, objectGetPrototypeOf as o };

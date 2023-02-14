@@ -1,36 +1,32 @@
-import './common/esnext.iterator.map-6b32b2ff.js';
-import { _ as _export, a as aCallable } from './common/es.error.cause-76796be3.js';
-import { a as asyncIteratorIteration, i as iterate } from './common/iterate-20dac1d0.js';
-import './common/esnext.iterator.constructor-395bd827.js';
-import { g as getIteratorDirect } from './common/species-constructor-e3e5cd07.js';
-import './common/esnext.typed-array.with-7b539861.js';
-import './common/esnext.iterator.filter-c4be8738.js';
+import './common/esnext.iterator.map-5fa67f50.js';
+import { _ as _export, a as aCallable } from './common/es.error.cause-c5e0cc86.js';
+import { a as asyncIteratorIteration, i as iterate } from './common/iterate-46fbe091.js';
+import './common/esnext.iterator.constructor-08a9c867.js';
+import { g as getIteratorDirect } from './common/map-iterate-1f81817b.js';
+import './common/esnext.typed-array.with-c5aeddac.js';
+import './common/esnext.iterator.filter-40aba89e.js';
 import { a as commonjsGlobal } from './common/_commonjsHelpers-0597c316.js';
-import './common/call-with-safe-iteration-closing-159b0937.js';
-
-// https://github.com/tc39/proposal-iterator-helpers
+import './common/call-with-safe-iteration-closing-d974cb4e.js';
 
 var $some = asyncIteratorIteration.some;
 
-_export({ target: 'AsyncIterator', proto: true, real: true, forced: true }, {
-  some: function some(fn) {
-    return $some(this, fn);
+// `AsyncIterator.prototype.some` method
+// https://github.com/tc39/proposal-iterator-helpers
+_export({ target: 'AsyncIterator', proto: true, real: true }, {
+  some: function some(predicate) {
+    return $some(this, predicate);
   }
 });
 
+// `Iterator.prototype.some` method
 // https://github.com/tc39/proposal-iterator-helpers
-
-
-
-
-
-_export({ target: 'Iterator', proto: true, real: true, forced: true }, {
-  some: function some(fn) {
+_export({ target: 'Iterator', proto: true, real: true }, {
+  some: function some(predicate) {
     var record = getIteratorDirect(this);
     var counter = 0;
-    aCallable(fn);
+    aCallable(predicate);
     return iterate(record, function (value, stop) {
-      if (fn(value, counter++)) return stop();
+      if (predicate(value, counter++)) return stop();
     }, { IS_RECORD: true, INTERRUPTED: true }).stopped;
   }
 });

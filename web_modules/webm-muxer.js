@@ -1,35 +1,117 @@
-import { _ as _export } from './common/es.error.cause-76796be3.js';
-import { c as collectionAddAll, a as collectionDeleteAll, m as mapEmplace } from './common/map-emplace-0e3dcf38.js';
-import './common/esnext.typed-array.with-7b539861.js';
-import './common/esnext.iterator.map-6b32b2ff.js';
-import './common/esnext.iterator.filter-c4be8738.js';
-import './common/esnext.iterator.constructor-395bd827.js';
+import { D as functionUncurryThis, _ as _export } from './common/es.error.cause-c5e0cc86.js';
+import './common/esnext.typed-array.with-c5aeddac.js';
+import './common/esnext.iterator.map-5fa67f50.js';
+import './common/esnext.iterator.filter-40aba89e.js';
+import './common/esnext.iterator.constructor-08a9c867.js';
 import { b as getDefaultExportFromCjs, c as createCommonjsModule } from './common/_commonjsHelpers-0597c316.js';
-import './common/species-constructor-e3e5cd07.js';
-import './common/call-with-safe-iteration-closing-159b0937.js';
+import './common/map-iterate-1f81817b.js';
+import './common/call-with-safe-iteration-closing-d974cb4e.js';
+
+// eslint-disable-next-line es/no-weak-set -- safe
+var WeakSetPrototype = WeakSet.prototype;
+
+var weakSetHelpers = {
+  // eslint-disable-next-line es/no-weak-set -- safe
+  WeakSet: WeakSet,
+  add: functionUncurryThis(WeakSetPrototype.add),
+  has: functionUncurryThis(WeakSetPrototype.has),
+  remove: functionUncurryThis(WeakSetPrototype['delete'])
+};
+
+var has = weakSetHelpers.has;
+
+// Perform ? RequireInternalSlot(M, [[WeakSetData]])
+var aWeakSet = function (it) {
+  has(it);
+  return it;
+};
+
+var add = weakSetHelpers.add;
 
 // `WeakSet.prototype.addAll` method
 // https://github.com/tc39/proposal-collection-methods
 _export({ target: 'WeakSet', proto: true, real: true, forced: true }, {
-  addAll: collectionAddAll
+  addAll: function addAll(/* ...elements */) {
+    var set = aWeakSet(this);
+    for (var k = 0, len = arguments.length; k < len; k++) {
+      add(set, arguments[k]);
+    } return set;
+  }
 });
+
+var remove = weakSetHelpers.remove;
 
 // `WeakSet.prototype.deleteAll` method
 // https://github.com/tc39/proposal-collection-methods
 _export({ target: 'WeakSet', proto: true, real: true, forced: true }, {
-  deleteAll: collectionDeleteAll
+  deleteAll: function deleteAll(/* ...elements */) {
+    var collection = aWeakSet(this);
+    var allDeleted = true;
+    var wasDeleted;
+    for (var k = 0, len = arguments.length; k < len; k++) {
+      wasDeleted = remove(collection, arguments[k]);
+      allDeleted = allDeleted && wasDeleted;
+    } return !!allDeleted;
+  }
 });
+
+// eslint-disable-next-line es/no-weak-map -- safe
+var WeakMapPrototype = WeakMap.prototype;
+
+var weakMapHelpers = {
+  // eslint-disable-next-line es/no-weak-map -- safe
+  WeakMap: WeakMap,
+  set: functionUncurryThis(WeakMapPrototype.set),
+  get: functionUncurryThis(WeakMapPrototype.get),
+  has: functionUncurryThis(WeakMapPrototype.has),
+  remove: functionUncurryThis(WeakMapPrototype['delete'])
+};
+
+var has$1 = weakMapHelpers.has;
+
+// Perform ? RequireInternalSlot(M, [[WeakMapData]])
+var aWeakMap = function (it) {
+  has$1(it);
+  return it;
+};
+
+var remove$1 = weakMapHelpers.remove;
 
 // `WeakMap.prototype.deleteAll` method
 // https://github.com/tc39/proposal-collection-methods
 _export({ target: 'WeakMap', proto: true, real: true, forced: true }, {
-  deleteAll: collectionDeleteAll
+  deleteAll: function deleteAll(/* ...elements */) {
+    var collection = aWeakMap(this);
+    var allDeleted = true;
+    var wasDeleted;
+    for (var k = 0, len = arguments.length; k < len; k++) {
+      wasDeleted = remove$1(collection, arguments[k]);
+      allDeleted = allDeleted && wasDeleted;
+    } return !!allDeleted;
+  }
 });
+
+var get = weakMapHelpers.get;
+var has$2 = weakMapHelpers.has;
+var set = weakMapHelpers.set;
 
 // `WeakMap.prototype.emplace` method
 // https://github.com/tc39/proposal-upsert
 _export({ target: 'WeakMap', proto: true, real: true, forced: true }, {
-  emplace: mapEmplace
+  emplace: function emplace(key, handler) {
+    var map = aWeakMap(this);
+    var value, inserted;
+    if (has$2(map, key)) {
+      value = get(map, key);
+      if ('update' in handler) {
+        value = handler.update(value, key, map);
+        set(map, key, value);
+      } return value;
+    }
+    inserted = handler.insert(key, map);
+    set(map, key, inserted);
+    return inserted;
+  }
 });
 
 var webmMuxer = createCommonjsModule(function (module) {
@@ -96,132 +178,6 @@ var webmMuxer = createCommonjsModule(function (module) {
         this.value = value;
       }
     };
-
-    // src/write_target.ts
-    var WriteTarget = class {
-      constructor() {
-        this.pos = 0;
-        this.helper = new Uint8Array(8);
-        this.helperView = new DataView(this.helper.buffer);
-        this.offsets = /* @__PURE__ */new WeakMap();
-        this.dataOffsets = /* @__PURE__ */new WeakMap();
-      }
-      writeFloat32(value) {
-        this.helperView.setFloat32(0, value, false);
-        this.write(this.helper.subarray(0, 4));
-      }
-      writeFloat64(value) {
-        this.helperView.setFloat64(0, value, false);
-        this.write(this.helper);
-      }
-      writeUnsignedInt(value, width = measureUnsignedInt(value)) {
-        let pos = 0;
-        switch (width) {
-          case 6:
-            this.helperView.setUint8(pos++, value / __pow(2, 40) | 0);
-          case 5:
-            this.helperView.setUint8(pos++, value / __pow(2, 32) | 0);
-          case 4:
-            this.helperView.setUint8(pos++, value >> 24);
-          case 3:
-            this.helperView.setUint8(pos++, value >> 16);
-          case 2:
-            this.helperView.setUint8(pos++, value >> 8);
-          case 1:
-            this.helperView.setUint8(pos++, value);
-            break;
-          default:
-            throw new Error("Bad UINT size " + width);
-        }
-        this.write(this.helper.subarray(0, pos));
-      }
-      writeEBMLVarInt(value, width = measureEBMLVarInt(value)) {
-        let pos = 0;
-        switch (width) {
-          case 1:
-            this.helperView.setUint8(pos++, 1 << 7 | value);
-            break;
-          case 2:
-            this.helperView.setUint8(pos++, 1 << 6 | value >> 8);
-            this.helperView.setUint8(pos++, value);
-            break;
-          case 3:
-            this.helperView.setUint8(pos++, 1 << 5 | value >> 16);
-            this.helperView.setUint8(pos++, value >> 8);
-            this.helperView.setUint8(pos++, value);
-            break;
-          case 4:
-            this.helperView.setUint8(pos++, 1 << 4 | value >> 24);
-            this.helperView.setUint8(pos++, value >> 16);
-            this.helperView.setUint8(pos++, value >> 8);
-            this.helperView.setUint8(pos++, value);
-            break;
-          case 5:
-            this.helperView.setUint8(pos++, 1 << 3 | value / __pow(2, 32) & 7);
-            this.helperView.setUint8(pos++, value >> 24);
-            this.helperView.setUint8(pos++, value >> 16);
-            this.helperView.setUint8(pos++, value >> 8);
-            this.helperView.setUint8(pos++, value);
-            break;
-          case 6:
-            this.helperView.setUint8(pos++, 1 << 2 | value / __pow(2, 40) & 3);
-            this.helperView.setUint8(pos++, value / __pow(2, 32) | 0);
-            this.helperView.setUint8(pos++, value >> 24);
-            this.helperView.setUint8(pos++, value >> 16);
-            this.helperView.setUint8(pos++, value >> 8);
-            this.helperView.setUint8(pos++, value);
-            break;
-          default:
-            throw new Error("Bad EBML VINT size " + width);
-        }
-        this.write(this.helper.subarray(0, pos));
-      }
-      writeString(str) {
-        this.write(new Uint8Array(str.split("").map(x => x.charCodeAt(0))));
-      }
-      writeEBML(data) {
-        var _a, _b;
-        if (data instanceof Uint8Array) {
-          this.write(data);
-        } else if (Array.isArray(data)) {
-          for (let elem of data) {
-            this.writeEBML(elem);
-          }
-        } else {
-          this.offsets.set(data, this.pos);
-          this.writeUnsignedInt(data.id);
-          if (Array.isArray(data.data)) {
-            let sizePos = this.pos;
-            let sizeSize = (_a = data.size) != null ? _a : 4;
-            this.seek(this.pos + sizeSize);
-            let startPos = this.pos;
-            this.dataOffsets.set(data, startPos);
-            this.writeEBML(data.data);
-            let size = this.pos - startPos;
-            let endPos = this.pos;
-            this.seek(sizePos);
-            this.writeEBMLVarInt(size, sizeSize);
-            this.seek(endPos);
-          } else if (typeof data.data === "number") {
-            let size = (_b = data.size) != null ? _b : measureUnsignedInt(data.data);
-            this.writeEBMLVarInt(size);
-            this.writeUnsignedInt(data.data, size);
-          } else if (typeof data.data === "string") {
-            this.writeEBMLVarInt(data.data.length);
-            this.writeString(data.data);
-          } else if (data.data instanceof Uint8Array) {
-            this.writeEBMLVarInt(data.data.byteLength, data.size);
-            this.write(data.data);
-          } else if (data.data instanceof EBMLFloat32) {
-            this.writeEBMLVarInt(4);
-            this.writeFloat32(data.data.value);
-          } else if (data.data instanceof EBMLFloat64) {
-            this.writeEBMLVarInt(8);
-            this.writeFloat64(data.data.value);
-          }
-        }
-      }
-    };
     var measureUnsignedInt = value => {
       if (value < 1 << 8) {
         return 1;
@@ -254,25 +210,163 @@ var webmMuxer = createCommonjsModule(function (module) {
         throw new Error("EBML VINT size not supported " + value);
       }
     };
+
+    // src/write_target.ts
+    var _helper, _helperView, _writeFloat32, writeFloat32_fn, _writeFloat64, writeFloat64_fn, _writeUnsignedInt, writeUnsignedInt_fn, _writeString, writeString_fn;
+    var WriteTarget = class {
+      constructor() {
+        __privateAdd(this, _writeFloat32);
+        __privateAdd(this, _writeFloat64);
+        __privateAdd(this, _writeUnsignedInt);
+        __privateAdd(this, _writeString);
+        this.pos = 0;
+        __privateAdd(this, _helper, new Uint8Array(8));
+        __privateAdd(this, _helperView, new DataView(__privateGet(this, _helper).buffer));
+        this.offsets = /* @__PURE__ */new WeakMap();
+        this.dataOffsets = /* @__PURE__ */new WeakMap();
+      }
+      writeEBMLVarInt(value, width = measureEBMLVarInt(value)) {
+        let pos = 0;
+        switch (width) {
+          case 1:
+            __privateGet(this, _helperView).setUint8(pos++, 1 << 7 | value);
+            break;
+          case 2:
+            __privateGet(this, _helperView).setUint8(pos++, 1 << 6 | value >> 8);
+            __privateGet(this, _helperView).setUint8(pos++, value);
+            break;
+          case 3:
+            __privateGet(this, _helperView).setUint8(pos++, 1 << 5 | value >> 16);
+            __privateGet(this, _helperView).setUint8(pos++, value >> 8);
+            __privateGet(this, _helperView).setUint8(pos++, value);
+            break;
+          case 4:
+            __privateGet(this, _helperView).setUint8(pos++, 1 << 4 | value >> 24);
+            __privateGet(this, _helperView).setUint8(pos++, value >> 16);
+            __privateGet(this, _helperView).setUint8(pos++, value >> 8);
+            __privateGet(this, _helperView).setUint8(pos++, value);
+            break;
+          case 5:
+            __privateGet(this, _helperView).setUint8(pos++, 1 << 3 | value / __pow(2, 32) & 7);
+            __privateGet(this, _helperView).setUint8(pos++, value >> 24);
+            __privateGet(this, _helperView).setUint8(pos++, value >> 16);
+            __privateGet(this, _helperView).setUint8(pos++, value >> 8);
+            __privateGet(this, _helperView).setUint8(pos++, value);
+            break;
+          case 6:
+            __privateGet(this, _helperView).setUint8(pos++, 1 << 2 | value / __pow(2, 40) & 3);
+            __privateGet(this, _helperView).setUint8(pos++, value / __pow(2, 32) | 0);
+            __privateGet(this, _helperView).setUint8(pos++, value >> 24);
+            __privateGet(this, _helperView).setUint8(pos++, value >> 16);
+            __privateGet(this, _helperView).setUint8(pos++, value >> 8);
+            __privateGet(this, _helperView).setUint8(pos++, value);
+            break;
+          default:
+            throw new Error("Bad EBML VINT size " + width);
+        }
+        this.write(__privateGet(this, _helper).subarray(0, pos));
+      }
+      writeEBML(data) {
+        var _a, _b;
+        if (data instanceof Uint8Array) {
+          this.write(data);
+        } else if (Array.isArray(data)) {
+          for (let elem of data) {
+            this.writeEBML(elem);
+          }
+        } else {
+          this.offsets.set(data, this.pos);
+          __privateMethod(this, _writeUnsignedInt, writeUnsignedInt_fn).call(this, data.id);
+          if (Array.isArray(data.data)) {
+            let sizePos = this.pos;
+            let sizeSize = (_a = data.size) != null ? _a : 4;
+            this.seek(this.pos + sizeSize);
+            let startPos = this.pos;
+            this.dataOffsets.set(data, startPos);
+            this.writeEBML(data.data);
+            let size = this.pos - startPos;
+            let endPos = this.pos;
+            this.seek(sizePos);
+            this.writeEBMLVarInt(size, sizeSize);
+            this.seek(endPos);
+          } else if (typeof data.data === "number") {
+            let size = (_b = data.size) != null ? _b : measureUnsignedInt(data.data);
+            this.writeEBMLVarInt(size);
+            __privateMethod(this, _writeUnsignedInt, writeUnsignedInt_fn).call(this, data.data, size);
+          } else if (typeof data.data === "string") {
+            this.writeEBMLVarInt(data.data.length);
+            __privateMethod(this, _writeString, writeString_fn).call(this, data.data);
+          } else if (data.data instanceof Uint8Array) {
+            this.writeEBMLVarInt(data.data.byteLength, data.size);
+            this.write(data.data);
+          } else if (data.data instanceof EBMLFloat32) {
+            this.writeEBMLVarInt(4);
+            __privateMethod(this, _writeFloat32, writeFloat32_fn).call(this, data.data.value);
+          } else if (data.data instanceof EBMLFloat64) {
+            this.writeEBMLVarInt(8);
+            __privateMethod(this, _writeFloat64, writeFloat64_fn).call(this, data.data.value);
+          }
+        }
+      }
+    };
+    _helper = new WeakMap();
+    _helperView = new WeakMap();
+    _writeFloat32 = new WeakSet();
+    writeFloat32_fn = function (value) {
+      __privateGet(this, _helperView).setFloat32(0, value, false);
+      this.write(__privateGet(this, _helper).subarray(0, 4));
+    };
+    _writeFloat64 = new WeakSet();
+    writeFloat64_fn = function (value) {
+      __privateGet(this, _helperView).setFloat64(0, value, false);
+      this.write(__privateGet(this, _helper));
+    };
+    _writeUnsignedInt = new WeakSet();
+    writeUnsignedInt_fn = function (value, width = measureUnsignedInt(value)) {
+      let pos = 0;
+      switch (width) {
+        case 6:
+          __privateGet(this, _helperView).setUint8(pos++, value / __pow(2, 40) | 0);
+        case 5:
+          __privateGet(this, _helperView).setUint8(pos++, value / __pow(2, 32) | 0);
+        case 4:
+          __privateGet(this, _helperView).setUint8(pos++, value >> 24);
+        case 3:
+          __privateGet(this, _helperView).setUint8(pos++, value >> 16);
+        case 2:
+          __privateGet(this, _helperView).setUint8(pos++, value >> 8);
+        case 1:
+          __privateGet(this, _helperView).setUint8(pos++, value);
+          break;
+        default:
+          throw new Error("Bad UINT size " + width);
+      }
+      this.write(__privateGet(this, _helper).subarray(0, pos));
+    };
+    _writeString = new WeakSet();
+    writeString_fn = function (str) {
+      this.write(new Uint8Array(str.split("").map(x => x.charCodeAt(0))));
+    };
+    var _buffer, _bytes;
     var ArrayBufferWriteTarget = class extends WriteTarget {
       constructor() {
         super();
-        this.buffer = new ArrayBuffer(__pow(2, 16));
-        this.bytes = new Uint8Array(this.buffer);
+        __privateAdd(this, _buffer, new ArrayBuffer(__pow(2, 16)));
+        __privateAdd(this, _bytes, new Uint8Array(__privateGet(this, _buffer)));
       }
       ensureSize(size) {
-        let newLength = this.buffer.byteLength;
+        let newLength = __privateGet(this, _buffer).byteLength;
         while (newLength < size) newLength *= 2;
-        if (newLength === this.buffer.byteLength) return;
+        if (newLength === __privateGet(this, _buffer).byteLength) return;
         let newBuffer = new ArrayBuffer(newLength);
         let newBytes = new Uint8Array(newBuffer);
-        newBytes.set(this.bytes, 0);
-        this.buffer = newBuffer;
-        this.bytes = newBytes;
+        newBytes.set(__privateGet(this, _bytes), 0);
+        __privateSet(this, _buffer, newBuffer);
+        __privateSet(this, _bytes, newBytes);
       }
       write(data) {
         this.ensureSize(this.pos + data.byteLength);
-        this.bytes.set(data, this.pos);
+        __privateGet(this, _bytes).set(data, this.pos);
         this.pos += data.byteLength;
       }
       seek(newPos) {
@@ -280,16 +374,20 @@ var webmMuxer = createCommonjsModule(function (module) {
       }
       finalize() {
         this.ensureSize(this.pos);
-        return this.buffer.slice(0, this.pos);
+        return __privateGet(this, _buffer).slice(0, this.pos);
       }
     };
+    _buffer = new WeakMap();
+    _bytes = new WeakMap();
     var FILE_CHUNK_SIZE = __pow(2, 24);
     var MAX_CHUNKS_AT_ONCE = 2;
+    var _stream, _chunks;
     var FileSystemWritableFileStreamWriteTarget = class extends WriteTarget {
       constructor(stream) {
         super();
-        this.chunks = [];
-        this.stream = stream;
+        __privateAdd(this, _stream, void 0);
+        __privateAdd(this, _chunks, []);
+        __privateSet(this, _stream, stream);
       }
       write(data) {
         this.writeDataIntoChunks(data, this.pos);
@@ -297,9 +395,9 @@ var webmMuxer = createCommonjsModule(function (module) {
         this.pos += data.byteLength;
       }
       writeDataIntoChunks(data, position) {
-        let chunkIndex = this.chunks.findIndex(x => x.start <= position && position < x.start + FILE_CHUNK_SIZE);
+        let chunkIndex = __privateGet(this, _chunks).findIndex(x => x.start <= position && position < x.start + FILE_CHUNK_SIZE);
         if (chunkIndex === -1) chunkIndex = this.createChunk(position);
-        let chunk = this.chunks[chunkIndex];
+        let chunk = __privateGet(this, _chunks)[chunkIndex];
         let relativePosition = position - chunk.start;
         let toWrite = data.subarray(0, Math.min(FILE_CHUNK_SIZE - relativePosition, data.byteLength));
         chunk.data.set(toWrite, relativePosition);
@@ -311,9 +409,9 @@ var webmMuxer = createCommonjsModule(function (module) {
         if (chunk.written[0].start === 0 && chunk.written[0].end === FILE_CHUNK_SIZE) {
           chunk.shouldFlush = true;
         }
-        if (this.chunks.length > MAX_CHUNKS_AT_ONCE) {
-          for (let i = 0; i < this.chunks.length - 1; i++) {
-            this.chunks[i].shouldFlush = true;
+        if (__privateGet(this, _chunks).length > MAX_CHUNKS_AT_ONCE) {
+          for (let i = 0; i < __privateGet(this, _chunks).length - 1; i++) {
+            __privateGet(this, _chunks)[i].shouldFlush = true;
           }
           this.flushChunks();
         }
@@ -329,22 +427,22 @@ var webmMuxer = createCommonjsModule(function (module) {
           written: [],
           shouldFlush: false
         };
-        this.chunks.push(chunk);
-        this.chunks.sort((a, b) => a.start - b.start);
-        return this.chunks.indexOf(chunk);
+        __privateGet(this, _chunks).push(chunk);
+        __privateGet(this, _chunks).sort((a, b) => a.start - b.start);
+        return __privateGet(this, _chunks).indexOf(chunk);
       }
       flushChunks(force = false) {
-        for (let i = 0; i < this.chunks.length; i++) {
-          let chunk = this.chunks[i];
+        for (let i = 0; i < __privateGet(this, _chunks).length; i++) {
+          let chunk = __privateGet(this, _chunks)[i];
           if (!chunk.shouldFlush && !force) continue;
           for (let section of chunk.written) {
-            this.stream.write({
+            __privateGet(this, _stream).write({
               type: "write",
               data: chunk.data.subarray(section.start, section.end),
               position: chunk.start + section.start
             });
           }
-          this.chunks.splice(i--, 1);
+          __privateGet(this, _chunks).splice(i--, 1);
         }
       }
       seek(newPos) {
@@ -354,6 +452,8 @@ var webmMuxer = createCommonjsModule(function (module) {
         this.flushChunks(true);
       }
     };
+    _stream = new WeakMap();
+    _chunks = new WeakMap();
     var insertSectionIntoFileChunk = (chunk, section) => {
       let low = 0;
       let high = chunk.written.length - 1;
@@ -374,6 +474,59 @@ var webmMuxer = createCommonjsModule(function (module) {
         chunk.written.splice(index + 1, 1);
       }
     };
+    var _sections, _onFlush;
+    var StreamingWriteTarget = class extends WriteTarget {
+      constructor(onFlush) {
+        super();
+        __privateAdd(this, _sections, []);
+        __privateAdd(this, _onFlush, void 0);
+        __privateSet(this, _onFlush, onFlush);
+      }
+      write(data) {
+        __privateGet(this, _sections).push({
+          data: data.slice(),
+          start: this.pos
+        });
+        this.pos += data.byteLength;
+      }
+      seek(newPos) {
+        this.pos = newPos;
+      }
+      flush(done) {
+        if (__privateGet(this, _sections).length === 0) return;
+        let chunks = [];
+        let sorted = [...__privateGet(this, _sections)].sort((a, b) => a.start - b.start);
+        chunks.push({
+          start: sorted[0].start,
+          size: sorted[0].data.byteLength
+        });
+        for (let i = 1; i < sorted.length; i++) {
+          let lastChunk = chunks[chunks.length - 1];
+          let section = sorted[i];
+          if (section.start <= lastChunk.start + lastChunk.size) {
+            lastChunk.size = Math.max(lastChunk.size, section.start + section.data.byteLength - lastChunk.start);
+          } else {
+            chunks.push({
+              start: section.start,
+              size: section.data.byteLength
+            });
+          }
+        }
+        for (let chunk of chunks) {
+          chunk.data = new Uint8Array(chunk.size);
+          for (let section of __privateGet(this, _sections)) {
+            if (chunk.start <= section.start && section.start < chunk.start + chunk.size) {
+              chunk.data.set(section.data, section.start - chunk.start);
+            }
+          }
+          let isLastFlush = done && chunk === chunks[chunks.length - 1];
+          __privateGet(this, _onFlush).call(this, chunk.data, chunk.start, isLastFlush);
+        }
+        __privateGet(this, _sections).length = 0;
+      }
+    };
+    _sections = new WeakMap();
+    _onFlush = new WeakMap();
 
     // src/main.ts
     var VIDEO_TRACK_NUMBER = 1;
@@ -385,9 +538,10 @@ var webmMuxer = createCommonjsModule(function (module) {
     var APP_NAME = "https://github.com/Vanilagy/webm-muxer";
     var SEGMENT_SIZE_BYTES = 6;
     var CLUSTER_SIZE_BYTES = 5;
-    var _target, _options, _segment, _segmentInfo, _seekHead, _tracksElement, _segmentDuration, _colourElement, _videoCodecPrivate, _audioCodecPrivate, _cues, _currentCluster, _currentClusterTimestamp, _duration, _videoChunkQueue, _audioChunkQueue, _lastVideoTimestamp, _lastAudioTimestamp, _colorSpace, _finalized, _createFileHeader, createFileHeader_fn, _writeEBMLHeader, writeEBMLHeader_fn, _createSeekHead, createSeekHead_fn, _createSegmentInfo, createSegmentInfo_fn, _createTracks, createTracks_fn, _createSegment, createSegment_fn, _createCues, createCues_fn, _segmentDataOffset, segmentDataOffset_get, _writeVideoDecoderConfig, writeVideoDecoderConfig_fn, _fixVP9ColorSpace, fixVP9ColorSpace_fn, _createInternalChunk, createInternalChunk_fn, _writeSimpleBlock, writeSimpleBlock_fn, _writeCodecPrivate, writeCodecPrivate_fn, _createNewCluster, createNewCluster_fn, _finalizeCurrentCluster, finalizeCurrentCluster_fn, _ensureNotFinalized, ensureNotFinalized_fn;
+    var _target, _options, _segment, _segmentInfo, _seekHead, _tracksElement, _segmentDuration, _colourElement, _videoCodecPrivate, _audioCodecPrivate, _cues, _currentCluster, _currentClusterTimestamp, _duration, _videoChunkQueue, _audioChunkQueue, _lastVideoTimestamp, _lastAudioTimestamp, _colorSpace, _finalized, _validateOptions, validateOptions_fn, _createFileHeader, createFileHeader_fn, _writeEBMLHeader, writeEBMLHeader_fn, _createSeekHead, createSeekHead_fn, _createSegmentInfo, createSegmentInfo_fn, _createTracks, createTracks_fn, _createSegment, createSegment_fn, _createCues, createCues_fn, _maybeFlushStreamingTarget, maybeFlushStreamingTarget_fn, _segmentDataOffset, segmentDataOffset_get, _writeVideoDecoderConfig, writeVideoDecoderConfig_fn, _fixVP9ColorSpace, fixVP9ColorSpace_fn, _createInternalChunk, createInternalChunk_fn, _writeSimpleBlock, writeSimpleBlock_fn, _writeCodecPrivate, writeCodecPrivate_fn, _createNewCluster, createNewCluster_fn, _finalizeCurrentCluster, finalizeCurrentCluster_fn, _ensureNotFinalized, ensureNotFinalized_fn;
     var WebMMuxer = class {
       constructor(options) {
+        __privateAdd(this, _validateOptions);
         __privateAdd(this, _createFileHeader);
         __privateAdd(this, _writeEBMLHeader);
         __privateAdd(this, _createSeekHead);
@@ -395,6 +549,7 @@ var webmMuxer = createCommonjsModule(function (module) {
         __privateAdd(this, _createTracks);
         __privateAdd(this, _createSegment);
         __privateAdd(this, _createCues);
+        __privateAdd(this, _maybeFlushStreamingTarget);
         __privateAdd(this, _segmentDataOffset);
         __privateAdd(this, _writeVideoDecoderConfig);
         __privateAdd(this, _fixVP9ColorSpace);
@@ -424,11 +579,16 @@ var webmMuxer = createCommonjsModule(function (module) {
         __privateAdd(this, _lastAudioTimestamp, 0);
         __privateAdd(this, _colorSpace, void 0);
         __privateAdd(this, _finalized, false);
+        __privateMethod(this, _validateOptions, validateOptions_fn).call(this, options);
         __privateSet(this, _options, options);
         if (options.target === "buffer") {
           __privateSet(this, _target, new ArrayBufferWriteTarget());
-        } else {
+        } else if (options.target instanceof FileSystemWritableFileStream) {
           __privateSet(this, _target, new FileSystemWritableFileStreamWriteTarget(options.target));
+        } else if (typeof options.target === "function") {
+          __privateSet(this, _target, new StreamingWriteTarget(options.target));
+        } else {
+          throw new Error(`Invalid target: ${options.target}`);
         }
         __privateMethod(this, _createFileHeader, createFileHeader_fn).call(this);
       }
@@ -453,6 +613,7 @@ var webmMuxer = createCommonjsModule(function (module) {
         } else {
           __privateGet(this, _videoChunkQueue).push(internalChunk);
         }
+        __privateMethod(this, _maybeFlushStreamingTarget, maybeFlushStreamingTarget_fn).call(this);
       }
       addAudioChunk(chunk, meta, timestamp) {
         let data = new Uint8Array(chunk.byteLength);
@@ -476,6 +637,7 @@ var webmMuxer = createCommonjsModule(function (module) {
         if (meta == null ? void 0 : meta.decoderConfig) {
           __privateMethod(this, _writeCodecPrivate, writeCodecPrivate_fn).call(this, __privateGet(this, _audioCodecPrivate), meta.decoderConfig.description);
         }
+        __privateMethod(this, _maybeFlushStreamingTarget, maybeFlushStreamingTarget_fn).call(this);
       }
       finalize() {
         while (__privateGet(this, _videoChunkQueue).length > 0) __privateMethod(this, _writeSimpleBlock, writeSimpleBlock_fn).call(this, __privateGet(this, _videoChunkQueue).shift());
@@ -500,6 +662,8 @@ var webmMuxer = createCommonjsModule(function (module) {
           return __privateGet(this, _target).finalize();
         } else if (__privateGet(this, _target) instanceof FileSystemWritableFileStreamWriteTarget) {
           __privateGet(this, _target).finalize();
+        } else if (__privateGet(this, _target) instanceof StreamingWriteTarget) {
+          __privateGet(this, _target).flush(true);
         }
         return null;
       }
@@ -524,6 +688,12 @@ var webmMuxer = createCommonjsModule(function (module) {
     _lastAudioTimestamp = new WeakMap();
     _colorSpace = new WeakMap();
     _finalized = new WeakMap();
+    _validateOptions = new WeakSet();
+    validateOptions_fn = function (options) {
+      if (options.type && options.type !== "webm" && options.type !== "matroska") {
+        throw new Error(`Invalid type: ${options.type}`);
+      }
+    };
     _createFileHeader = new WeakSet();
     createFileHeader_fn = function () {
       __privateMethod(this, _writeEBMLHeader, writeEBMLHeader_fn).call(this);
@@ -532,9 +702,11 @@ var webmMuxer = createCommonjsModule(function (module) {
       __privateMethod(this, _createTracks, createTracks_fn).call(this);
       __privateMethod(this, _createSegment, createSegment_fn).call(this);
       __privateMethod(this, _createCues, createCues_fn).call(this);
+      __privateMethod(this, _maybeFlushStreamingTarget, maybeFlushStreamingTarget_fn).call(this);
     };
     _writeEBMLHeader = new WeakSet();
     writeEBMLHeader_fn = function () {
+      var _a;
       let ebmlHeader = {
         id: 440786851 /* EBML */,
         data: [{
@@ -551,7 +723,7 @@ var webmMuxer = createCommonjsModule(function (module) {
           data: 8
         }, {
           id: 17026 /* DocType */,
-          data: "webm"
+          data: (_a = __privateGet(this, _options).type) != null ? _a : "webm"
         }, {
           id: 17031 /* DocTypeVersion */,
           data: 2
@@ -736,6 +908,12 @@ var webmMuxer = createCommonjsModule(function (module) {
         id: 475249515 /* Cues */,
         data: []
       });
+    };
+    _maybeFlushStreamingTarget = new WeakSet();
+    maybeFlushStreamingTarget_fn = function () {
+      if (__privateGet(this, _target) instanceof StreamingWriteTarget) {
+        __privateGet(this, _target).flush(false);
+      }
     };
     _segmentDataOffset = new WeakSet();
     segmentDataOffset_get = function () {

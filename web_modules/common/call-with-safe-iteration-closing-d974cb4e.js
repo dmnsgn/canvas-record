@@ -1,5 +1,5 @@
-import { B as defineBuiltIn, w as wellKnownSymbol, g as global_1, G as sharedStore, i as isCallable, j as getBuiltIn, H as internalState, c as createNonEnumerableProperty, b as anObject, l as getMethod, d as functionCall } from './es.error.cause-76796be3.js';
-import { o as objectGetPrototypeOf, c as objectCreate, b as iteratorClose, i as iteratorsCore } from './species-constructor-e3e5cd07.js';
+import { B as defineBuiltIn, w as wellKnownSymbol, g as global_1, F as sharedStore, i as isCallable, j as getBuiltIn, c as createNonEnumerableProperty, G as internalState, b as anObject, l as getMethod, d as functionCall } from './es.error.cause-c5e0cc86.js';
+import { o as objectGetPrototypeOf, c as objectCreate, b as iteratorClose, i as iteratorsCore } from './map-iterate-1f81817b.js';
 
 var perform = function (exec) {
   try {
@@ -50,17 +50,14 @@ var createIterResultObject = function (value, done) {
 
 var Promise = getBuiltIn('Promise');
 
+var TO_STRING_TAG = wellKnownSymbol('toStringTag');
 var ASYNC_ITERATOR_HELPER = 'AsyncIteratorHelper';
 var WRAP_FOR_VALID_ASYNC_ITERATOR = 'WrapForValidAsyncIterator';
 var setInternalState = internalState.set;
 
-var TO_STRING_TAG = wellKnownSymbol('toStringTag');
-
 var createAsyncIteratorProxyPrototype = function (IS_ITERATOR) {
   var IS_GENERATOR = !IS_ITERATOR;
-  var ASYNC_ITERATOR_PROXY = IS_ITERATOR ? WRAP_FOR_VALID_ASYNC_ITERATOR : ASYNC_ITERATOR_HELPER;
-
-  var getInternalState = internalState.getterFor(ASYNC_ITERATOR_PROXY);
+  var getInternalState = internalState.getterFor(IS_ITERATOR ? WRAP_FOR_VALID_ASYNC_ITERATOR : ASYNC_ITERATOR_HELPER);
 
   var getStateOrEarlyExit = function (that) {
     var stateCompletion = perform(function () {
@@ -90,7 +87,7 @@ var createAsyncIteratorProxyPrototype = function (IS_ITERATOR) {
     return state.awaiting ? state.awaiting = state.awaiting.then(task, task) : task();
   };
 
-  var AsyncIteratorProxyPrototype = defineBuiltIns(objectCreate(asyncIteratorPrototype), {
+  return defineBuiltIns(objectCreate(asyncIteratorPrototype), {
     next: function next() {
       var stateCompletion = getStateOrEarlyExit(this);
       var exit = stateCompletion.exit;
@@ -117,7 +114,7 @@ var createAsyncIteratorProxyPrototype = function (IS_ITERATOR) {
         var returnMethod, result;
         var completion = perform(function () {
           if (state.inner) try {
-            iteratorClose(state.inner.iterator, 'return');
+            iteratorClose(state.inner.iterator, 'normal');
           } catch (error) {
             return iteratorClose(iterator, 'throw', error);
           }
@@ -138,26 +135,20 @@ var createAsyncIteratorProxyPrototype = function (IS_ITERATOR) {
       });
     }
   });
-
-  if (IS_GENERATOR) {
-    createNonEnumerableProperty(AsyncIteratorProxyPrototype, TO_STRING_TAG, 'Async Iterator Helper');
-  }
-
-  return AsyncIteratorProxyPrototype;
 };
 
-var AsyncIteratorHelperPrototype = createAsyncIteratorProxyPrototype(false);
 var WrapForValidAsyncIteratorPrototype = createAsyncIteratorProxyPrototype(true);
+var AsyncIteratorHelperPrototype = createAsyncIteratorProxyPrototype(false);
+
+createNonEnumerableProperty(AsyncIteratorHelperPrototype, TO_STRING_TAG, 'Async Iterator Helper');
 
 var asyncIteratorCreateProxy = function (nextHandler, IS_ITERATOR) {
-  var ASYNC_ITERATOR_PROXY = IS_ITERATOR ? WRAP_FOR_VALID_ASYNC_ITERATOR : ASYNC_ITERATOR_HELPER;
-
   var AsyncIteratorProxy = function AsyncIterator(record, state) {
     if (state) {
       state.iterator = record.iterator;
       state.next = record.next;
     } else state = record;
-    state.type = ASYNC_ITERATOR_PROXY;
+    state.type = IS_ITERATOR ? WRAP_FOR_VALID_ASYNC_ITERATOR : ASYNC_ITERATOR_HELPER;
     state.nextHandler = nextHandler;
     state.counter = 0;
     state.done = false;
@@ -174,18 +165,15 @@ var IteratorPrototype = iteratorsCore.IteratorPrototype;
 
 
 
+var TO_STRING_TAG$1 = wellKnownSymbol('toStringTag');
 var ITERATOR_HELPER = 'IteratorHelper';
 var WRAP_FOR_VALID_ITERATOR = 'WrapForValidIterator';
 var setInternalState$1 = internalState.set;
 
-var TO_STRING_TAG$1 = wellKnownSymbol('toStringTag');
-
 var createIteratorProxyPrototype = function (IS_ITERATOR) {
-  var ITERATOR_PROXY = IS_ITERATOR ? WRAP_FOR_VALID_ITERATOR : ITERATOR_HELPER;
+  var getInternalState = internalState.getterFor(IS_ITERATOR ? WRAP_FOR_VALID_ITERATOR : ITERATOR_HELPER);
 
-  var getInternalState = internalState.getterFor(ITERATOR_PROXY);
-
-  var IteratorProxyPrototype = defineBuiltIns(objectCreate(IteratorPrototype), {
+  return defineBuiltIns(objectCreate(IteratorPrototype), {
     next: function next() {
       var state = getInternalState(this);
       // for simplification:
@@ -209,34 +197,28 @@ var createIteratorProxyPrototype = function (IS_ITERATOR) {
         return returnMethod ? functionCall(returnMethod, iterator) : createIterResultObject(undefined, true);
       }
       if (state.inner) try {
-        iteratorClose(state.inner.iterator, 'return');
+        iteratorClose(state.inner.iterator, 'normal');
       } catch (error) {
         return iteratorClose(iterator, 'throw', error);
       }
-      iteratorClose(iterator, 'return');
+      iteratorClose(iterator, 'normal');
       return createIterResultObject(undefined, true);
     }
   });
-
-  if (!IS_ITERATOR) {
-    createNonEnumerableProperty(IteratorProxyPrototype, TO_STRING_TAG$1, 'Iterator Helper');
-  }
-
-  return IteratorProxyPrototype;
 };
 
-var IteratorHelperPrototype = createIteratorProxyPrototype(false);
 var WrapForValidIteratorPrototype = createIteratorProxyPrototype(true);
+var IteratorHelperPrototype = createIteratorProxyPrototype(false);
+
+createNonEnumerableProperty(IteratorHelperPrototype, TO_STRING_TAG$1, 'Iterator Helper');
 
 var iteratorCreateProxy = function (nextHandler, IS_ITERATOR) {
-  var ITERATOR_PROXY = IS_ITERATOR ? WRAP_FOR_VALID_ITERATOR : ITERATOR_HELPER;
-
   var IteratorProxy = function Iterator(record, state) {
     if (state) {
       state.iterator = record.iterator;
       state.next = record.next;
     } else state = record;
-    state.type = ITERATOR_PROXY;
+    state.type = IS_ITERATOR ? WRAP_FOR_VALID_ITERATOR : ITERATOR_HELPER;
     state.nextHandler = nextHandler;
     state.counter = 0;
     state.done = false;

@@ -1,21 +1,13 @@
-import { j as getBuiltIn, _ as _export, a as aCallable, b as anObject, d as functionCall, e as isObject } from './es.error.cause-76796be3.js';
-import { g as getIteratorDirect, a as asyncIteratorClose } from './species-constructor-e3e5cd07.js';
-import { i as iterate } from './iterate-20dac1d0.js';
-
-// https://github.com/tc39/proposal-iterator-helpers
-
-
-
-
-
-
-
-
+import { j as getBuiltIn, _ as _export, a as aCallable, b as anObject, d as functionCall, e as isObject } from './es.error.cause-c5e0cc86.js';
+import { g as getIteratorDirect, a as asyncIteratorClose } from './map-iterate-1f81817b.js';
+import { i as iterate } from './iterate-46fbe091.js';
 
 var Promise = getBuiltIn('Promise');
 var $TypeError = TypeError;
 
-_export({ target: 'AsyncIterator', proto: true, real: true, forced: true }, {
+// `AsyncIterator.prototype.reduce` method
+// https://github.com/tc39/proposal-iterator-helpers
+_export({ target: 'AsyncIterator', proto: true, real: true }, {
   reduce: function reduce(reducer /* , initialValue */) {
     var record = getIteratorDirect(this);
     var iterator = record.iterator;
@@ -65,15 +57,11 @@ _export({ target: 'AsyncIterator', proto: true, real: true, forced: true }, {
   }
 });
 
-// https://github.com/tc39/proposal-iterator-helpers
-
-
-
-
-
 var $TypeError$1 = TypeError;
 
-_export({ target: 'Iterator', proto: true, real: true, forced: true }, {
+// `Iterator.prototype.reduce` method
+// https://github.com/tc39/proposal-iterator-helpers
+_export({ target: 'Iterator', proto: true, real: true }, {
   reduce: function reduce(reducer /* , initialValue */) {
     var record = getIteratorDirect(this);
     aCallable(reducer);

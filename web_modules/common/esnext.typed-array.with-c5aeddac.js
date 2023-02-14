@@ -1,5 +1,5 @@
-import { g as global_1, w as wellKnownSymbol, I as uid, J as objectSetPrototypeOf, m as classof, i as isCallable, r as descriptors, h as hasOwnProperty_1, e as isObject, c as createNonEnumerableProperty, u as objectDefineProperty, H as internalState, o as objectIsPrototypeOf, t as tryToString, B as defineBuiltIn, n as lengthOfArrayLike, K as toIntegerOrInfinity, A as toObject, L as indexedObject, C as classofRaw, D as functionUncurryThis, M as toPropertyKey, a as aCallable, N as toPrimitive, f as fails, O as toAbsoluteIndex, j as getBuiltIn, k as isNullOrUndefined } from './es.error.cause-76796be3.js';
-import { o as objectGetPrototypeOf, f as functionBindContext, d as isConstructor, s as speciesConstructor, c as objectCreate } from './species-constructor-e3e5cd07.js';
+import { g as global_1, w as wellKnownSymbol, H as uid, I as objectSetPrototypeOf, m as classof, i as isCallable, r as descriptors, h as hasOwnProperty_1, e as isObject, c as createNonEnumerableProperty, u as objectDefineProperty, G as internalState, o as objectIsPrototypeOf, t as tryToString, B as defineBuiltIn, n as lengthOfArrayLike, J as toIntegerOrInfinity, A as toObject, K as indexedObject, C as classofRaw, j as getBuiltIn, D as functionUncurryThis, f as fails, L as inspectSource, k as isNullOrUndefined, b as anObject, M as toPropertyKey, a as aCallable, N as toPrimitive, O as toAbsoluteIndex } from './es.error.cause-c5e0cc86.js';
+import { o as objectGetPrototypeOf, f as functionBindContext, c as objectCreate, m as mapIterate, d as mapHelpers } from './map-iterate-1f81817b.js';
 
 // eslint-disable-next-line es/no-typed-arrays -- safe
 var arrayBufferBasicDetection = typeof ArrayBuffer != 'undefined' && typeof DataView != 'undefined';
@@ -256,6 +256,52 @@ var isArray = Array.isArray || function isArray(argument) {
   return classofRaw(argument) == 'Array';
 };
 
+var noop = function () { /* empty */ };
+var empty = [];
+var construct = getBuiltIn('Reflect', 'construct');
+var constructorRegExp = /^\s*(?:class|function)\b/;
+var exec = functionUncurryThis(constructorRegExp.exec);
+var INCORRECT_TO_STRING = !constructorRegExp.exec(noop);
+
+var isConstructorModern = function isConstructor(argument) {
+  if (!isCallable(argument)) return false;
+  try {
+    construct(noop, empty, argument);
+    return true;
+  } catch (error) {
+    return false;
+  }
+};
+
+var isConstructorLegacy = function isConstructor(argument) {
+  if (!isCallable(argument)) return false;
+  switch (classof(argument)) {
+    case 'AsyncFunction':
+    case 'GeneratorFunction':
+    case 'AsyncGeneratorFunction': return false;
+  }
+  try {
+    // we can't check .prototype since constructors produced by .bind haven't it
+    // `Function#toString` throws on some built-it function in some legacy engines
+    // (for example, `DOMQuad` and similar in FF41-)
+    return INCORRECT_TO_STRING || !!exec(constructorRegExp, inspectSource(argument));
+  } catch (error) {
+    return true;
+  }
+};
+
+isConstructorLegacy.sham = true;
+
+// `IsConstructor` abstract operation
+// https://tc39.es/ecma262/#sec-isconstructor
+var isConstructor = !construct || fails(function () {
+  var called;
+  return isConstructorModern(isConstructorModern.call)
+    || !isConstructorModern(Object)
+    || !isConstructorModern(function () { called = true; })
+    || called;
+}) ? isConstructorLegacy : isConstructorModern;
+
 var SPECIES = wellKnownSymbol('species');
 var $Array = Array;
 
@@ -353,6 +399,24 @@ var arrayFromConstructorAndList = function (Constructor, list) {
   var result = new Constructor(length);
   while (length > index) result[index] = list[index++];
   return result;
+};
+
+var $TypeError = TypeError;
+
+// `Assert: IsConstructor(argument) is true`
+var aConstructor = function (argument) {
+  if (isConstructor(argument)) return argument;
+  throw $TypeError(tryToString(argument) + ' is not a constructor');
+};
+
+var SPECIES$1 = wellKnownSymbol('species');
+
+// `SpeciesConstructor` abstract operation
+// https://tc39.es/ecma262/#sec-speciesconstructor
+var speciesConstructor = function (O, defaultConstructor) {
+  var C = anObject(O).constructor;
+  var S;
+  return C === undefined || isNullOrUndefined(S = anObject(C)[SPECIES$1]) ? defaultConstructor : aConstructor(S);
 };
 
 var aTypedArrayConstructor$1 = arrayBufferViewCore.aTypedArrayConstructor;
@@ -458,19 +522,18 @@ exportTypedArrayMethod$7('toSorted', function toSorted(compareFn) {
   return sort(A, compareFn);
 });
 
-var slice = functionUncurryThis(''.slice);
-
 var isBigIntArray = function (it) {
-  return slice(classof(it), 0, 3) === 'Big';
+  var klass = classof(it);
+  return klass == 'BigInt64Array' || klass == 'BigUint64Array';
 };
 
-var $TypeError = TypeError;
+var $TypeError$1 = TypeError;
 
 // `ToBigInt` abstract operation
 // https://tc39.es/ecma262/#sec-tobigint
 var toBigInt = function (argument) {
   var prim = toPrimitive(argument, 'number');
-  if (typeof prim == 'number') throw $TypeError("Can't convert number to bigint");
+  if (typeof prim == 'number') throw $TypeError$1("Can't convert number to bigint");
   // eslint-disable-next-line es/no-bigint -- safe
   return BigInt(prim);
 };
@@ -543,11 +606,9 @@ exportTypedArrayMethod$8('toSpliced', function toSpliced(start, deleteCount /* ,
   return A;
 }, !PROPER_ORDER);
 
-var Map = getBuiltIn('Map');
-var MapPrototype = Map.prototype;
-var mapForEach = functionUncurryThis(MapPrototype.forEach);
-var mapHas = functionUncurryThis(MapPrototype.has);
-var mapSet = functionUncurryThis(MapPrototype.set);
+var Map = mapHelpers.Map;
+var mapHas = mapHelpers.has;
+var mapSet = mapHelpers.set;
 var push$2 = functionUncurryThis([].push);
 
 // `Array.prototype.uniqueBy` method
@@ -555,7 +616,7 @@ var push$2 = functionUncurryThis([].push);
 var arrayUniqueBy = function uniqueBy(resolver) {
   var that = toObject(this);
   var length = lengthOfArrayLike(that);
-  var result = arraySpeciesCreate(that, 0);
+  var result = [];
   var map = new Map();
   var resolverFunction = !isNullOrUndefined(resolver) ? aCallable(resolver) : function (value) {
     return value;
@@ -566,20 +627,22 @@ var arrayUniqueBy = function uniqueBy(resolver) {
     key = resolverFunction(item);
     if (!mapHas(map, key)) mapSet(map, key, item);
   }
-  mapForEach(map, function (value) {
+  mapIterate(map, function (value) {
     push$2(result, value);
   });
   return result;
 };
 
 var aTypedArray$9 = arrayBufferViewCore.aTypedArray;
+var getTypedArrayConstructor$5 = arrayBufferViewCore.getTypedArrayConstructor;
 var exportTypedArrayMethod$9 = arrayBufferViewCore.exportTypedArrayMethod;
 var arrayUniqueBy$1 = functionUncurryThis(arrayUniqueBy);
 
 // `%TypedArray%.prototype.uniqueBy` method
 // https://github.com/tc39/proposal-array-unique
 exportTypedArrayMethod$9('uniqueBy', function uniqueBy(resolver) {
-  return typedArrayFromSpeciesAndList(this, arrayUniqueBy$1(aTypedArray$9(this), resolver));
+  aTypedArray$9(this);
+  return arrayFromConstructorAndList(getTypedArrayConstructor$5(this), arrayUniqueBy$1(this, resolver));
 }, true);
 
 var $RangeError = RangeError;
@@ -598,7 +661,7 @@ var arrayWith = function (O, C, index, value) {
 };
 
 var aTypedArray$a = arrayBufferViewCore.aTypedArray;
-var getTypedArrayConstructor$5 = arrayBufferViewCore.getTypedArrayConstructor;
+var getTypedArrayConstructor$6 = arrayBufferViewCore.getTypedArrayConstructor;
 var exportTypedArrayMethod$a = arrayBufferViewCore.exportTypedArrayMethod;
 
 var PROPER_ORDER$1 = !!function () {
@@ -618,5 +681,5 @@ exportTypedArrayMethod$a('with', { 'with': function (index, value) {
   var O = aTypedArray$a(this);
   var relativeIndex = toIntegerOrInfinity(index);
   var actualValue = isBigIntArray(O) ? toBigInt(value) : +value;
-  return arrayWith(O, getTypedArrayConstructor$5(O), relativeIndex, actualValue);
+  return arrayWith(O, getTypedArrayConstructor$6(O), relativeIndex, actualValue);
 } }['with'], !PROPER_ORDER$1);
