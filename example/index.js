@@ -9,6 +9,7 @@ const CONFIG = {
   encoder: "",
   duration: 10,
   frameRate: 30,
+  target: "in-browser",
   ...Object.fromEntries(new URLSearchParams(window.location.search).entries()),
 };
 const pane = new Pane();
@@ -25,6 +26,15 @@ pane.addInput(CONFIG, "encoder", {
   options: Object.keys(Encoders)
     .map((e) => (e === "Encoder" ? "" : e))
     .map((value) => ({ text: value, value })),
+});
+pane.addInput(CONFIG, "target", {
+  options: Array.from(
+    new Set(
+      Object.values(Encoders)
+        .map((Encoder) => Encoder.supportedTargets)
+        .flat()
+    )
+  ).map((value) => ({ text: value, value })),
 });
 pane.addInput(CONFIG, "duration", { step: 1, min: 1, max: 30 });
 pane.addInput(CONFIG, "frameRate", { step: 1, min: 1, max: 30 });

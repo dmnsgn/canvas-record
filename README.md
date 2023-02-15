@@ -10,7 +10,7 @@
 [![linted with eslint](https://img.shields.io/badge/linted_with-ES_Lint-4B32C3.svg?logo=eslint)](https://github.com/eslint/eslint)
 [![license](https://img.shields.io/github/license/dmnsgn/canvas-record)](https://github.com/dmnsgn/canvas-record/blob/main/LICENSE.md)
 
-A one trick pony package to record and download a video from a canvas (2D/WebGL/WebGPU) animation as MP4, WebM, GIF, PNG/JPG Sequence using WebCodecs and wasm when available.
+Record a video in the browser or directly on the File System from a canvas (2D/WebGL/WebGPU) as MP4, WebM, MKV, GIF, PNG/JPG Sequence using WebCodecs and Wasm when available.
 
 [![paypal](https://img.shields.io/badge/donate-paypal-informational?logo=paypal)](https://paypal.me/dmnsgn)
 [![coinbase](https://img.shields.io/badge/donate-coinbase-informational?logo=coinbase)](https://commerce.coinbase.com/checkout/56cbdf28-e323-48d8-9c98-7019e72c97f3)
@@ -100,7 +100,6 @@ Note:
 Roadmap:
 
 - [ ] add debug logging
-- [ ] use File System Access for WebCodecs webm
 - [ ] use WebWorkers for gifenc
 
 <!-- api-start -->

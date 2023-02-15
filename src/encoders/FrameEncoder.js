@@ -1,9 +1,10 @@
 import Encoder from "./Encoder.js";
 
-import { formatDate } from "../utils.js";
+import { downloadBlob, formatDate } from "../utils.js";
 
 class FrameEncoder extends Encoder {
   static supportedExtensions = ["png", "jpg"];
+  static supportedTargets = ["in-browser", "file-system"];
 
   static defaultOptions = {
     frameMethod: "blob",
@@ -14,37 +15,29 @@ class FrameEncoder extends Encoder {
     super({ ...FrameEncoder.defaultOptions, ...options });
   }
 
-  get folderName() {
+  get suggestedName() {
     return `${formatDate(new Date())}${this.paramString}`;
   }
 
   async init(options) {
     super.init(options);
 
-    // Capture frame
-    if (!this.directoryHandle) {
-      const directory = await window.showDirectoryPicker();
-      this.directoryHandle = await directory.getDirectoryHandle(
-        this.folderName,
-        {
-          create: true,
-        }
-      );
+    if (this.target === "file-system") {
+      this.directoryHandle ||= await this.getDirectoryHandle(this.suggestedName);
     }
   }
 
   async writeFile(filename, blob) {
     try {
-      const fileHandle = await this.directoryHandle.getFileHandle(filename, {
-        create: true,
-      });
-
-      if (
-        (await fileHandle.queryPermission({ mode: "readwrite" })) === "granted"
-      ) {
-        const writable = await fileHandle.createWritable();
+      if (this.directoryHandle) {
+        const fileHandle = await this.getFileHandle(filename);
+        const writable = await this.getWritableFileStream(fileHandle);
         await writable.write(blob);
         await writable.close();
+      } else {
+        downloadBlob(filename, [blob], this.mimeType);
+        // Ugh. Required otherwise frames are skipped
+        await new Promise((r) => setTimeout(r, 100));
       }
     } catch (error) {
       console.error(error);

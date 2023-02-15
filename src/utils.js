@@ -1,6 +1,24 @@
 const isWebCodecsSupported = () =>
   typeof window !== "undefined" && typeof window.VideoEncoder === "function";
 
+let link;
+
+const downloadBlob = (filename, blobPart, mimeType) => {
+  link ||= document.createElement("a");
+  link.download = filename;
+
+  const blob = new Blob(blobPart, { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  link.href = url;
+
+  const event = new MouseEvent("click");
+  link.dispatchEvent(event);
+
+  setTimeout(() => {
+    URL.revokeObjectURL(url);
+  }, 1);
+};
+
 const formatDate = (date) =>
   date.toISOString().replace(/:/g, "-").replace("T", "@").replace("Z", "");
 
@@ -28,6 +46,7 @@ class Deferred {
 
 export {
   isWebCodecsSupported,
+  downloadBlob,
   formatDate,
   formatSeconds,
   nextMultiple,

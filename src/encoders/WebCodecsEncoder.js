@@ -2,11 +2,13 @@ import WebMMuxer from "webm-muxer";
 import MP4Wasm from "./mp4.embed.js"; // mp4-wasm
 
 import Encoder from "./Encoder.js";
+import { formatDate } from "../utils.js";
 
 let mp4wasm;
 
 class WebCodecsEncoder extends Encoder {
   static supportedExtensions = ["mp4", "webm", "mkv"];
+  static supportedTargets = ["in-browser", "file-system"];
 
   static defaultOptions = {
     extension: WebCodecsEncoder.supportedExtensions[0],
@@ -16,6 +18,10 @@ class WebCodecsEncoder extends Encoder {
 
   get frameMethod() {
     return this.extension === "mp4" ? "bitmap" : "videoFrame";
+  }
+
+  get suggestedName() {
+    return `${this.name}-${formatDate(new Date())}${this.paramString}`;
   }
 
   constructor(options) {
@@ -40,8 +46,24 @@ class WebCodecsEncoder extends Encoder {
         },
       });
     } else {
+      let target = "buffer";
+      if (this.target === "file-system") {
+        const fileHandle = await this.getFileHandle(this.suggestedName, {
+          types: [
+            {
+              description: "Video File",
+              accept: { [this.mimeType]: [`.${this.extension}`] },
+            },
+          ],
+        });
+
+        this.writableFileStream = target = await this.getWritableFileStream(
+          fileHandle
+        );
+      }
+
       this.muxer = new WebMMuxer({
-        target: "buffer",
+        target,
         type: this.extension === "mkv" ? "matroska" : "webm",
         video: {
           codec: "V_VP9", // Supported: V_VP8, V_VP9, V_AV1, A_OPUS and A_VORBIS
@@ -100,6 +122,10 @@ class WebCodecsEncoder extends Encoder {
     } else {
       await this.encoder.flush();
       buffer = this.muxer.finalize();
+
+      if (this.writableFileStream) {
+        await this.writableFileStream.close();
+      }
     }
 
     return buffer;

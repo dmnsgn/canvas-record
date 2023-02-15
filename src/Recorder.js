@@ -6,6 +6,7 @@ import GIFEncoder from "./encoders/GIFEncoder.js";
 import FrameEncoder from "./encoders/FrameEncoder.js";
 
 import {
+  downloadBlob,
   formatDate,
   formatSeconds,
   isWebCodecsSupported,
@@ -48,12 +49,11 @@ const RecorderStatus = Object.freeze({
  * @property {number} [frameRate=30] The frame rate in frame per seconds. Use `await canvasRecorder.step();` to go to the next frame.
  * @property {boolean} [download=true] Automatically download the recording when duration is reached or when `await canvasRecorder.stop()` is manually called.
  * @property {boolean} [extension="mp4"] Default file extension: infers which Encoder is selected.
+ * @property {string} [target="in-browser"] Default writing target: in-browser or file-system when available.
  * @property {Object} [encoder] A specific encoder. Default encoder based on options.extension: GIF > WebCodecs > H264MP4.
  * @property {Object} [encoderOptions={}] See `src/encoders` or individual packages for a list of options.
  * @property {onStatusChangeCb} [onStatusChange]
  */
-
-let link;
 
 /**
  * Base Recorder class.
@@ -75,22 +75,6 @@ class Recorder {
     mp4: "video/mp4",
     gif: "image/gif",
   };
-
-  static downloadBlob(filename, blobPart, mimeType) {
-    link ||= document.createElement("a");
-    link.download = filename;
-
-    const blob = new Blob(blobPart, { type: mimeType });
-    const url = URL.createObjectURL(blob);
-    link.href = url;
-
-    const event = new MouseEvent("click");
-    link.dispatchEvent(event);
-
-    setTimeout(() => {
-      URL.revokeObjectURL(url);
-    }, 1);
-  }
 
   set width(value) {
     this.encoder.width = value;
@@ -154,6 +138,28 @@ Speedup: x${(this.time / renderTime).toFixed(1)}`,
     return extension;
   }
 
+  getSupportedTarget() {
+    const CurrentEncoder = this.encoder.constructor;
+    let isTargetSupported = CurrentEncoder.supportedTargets.includes(
+      this.target
+    );
+
+    if (this.target === "file-system" && !("showSaveFilePicker" in window)) {
+      isTargetSupported = false;
+    }
+
+    const target = isTargetSupported
+      ? this.target
+      : CurrentEncoder.supportedTargets[0];
+
+    if (!isTargetSupported) {
+      console.warn(
+        `canvas-record: unsupported target for encoder "${CurrentEncoder.name}". Defaulting to "${target}".`
+      );
+    }
+    return target;
+  }
+
   /**
    * @param {RenderingContext} context
    * @param {RecorderOptions} options
@@ -192,6 +198,7 @@ Speedup: x${(this.time / renderTime).toFixed(1)}`,
     this.frameTotal = this.duration * this.frameRate;
 
     const extension = this.getSupportedExtension();
+    const target = this.getSupportedTarget();
 
     await this.encoder.init({
       encoderOptions: this.encoderOptions,
@@ -200,6 +207,7 @@ Speedup: x${(this.time / renderTime).toFixed(1)}`,
       height: this.height,
       frameRate: this.frameRate,
       extension,
+      target,
       mimeType: Recorder.mimeTypes[extension],
       paramString: this.getParamString(),
       debug: this.debug,
@@ -323,7 +331,7 @@ Speedup: x${(this.time / renderTime).toFixed(1)}`,
     const buffer = await this.encoder.stop();
 
     if (this.download && buffer) {
-      Recorder.downloadBlob(
+      downloadBlob(
         this.filename,
         Array.isArray(buffer) ? buffer : [buffer],
         this.encoder.mimeType
