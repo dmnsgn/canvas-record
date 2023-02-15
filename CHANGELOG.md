@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+# [4.0.0-alpha.3](https://github.com/dmnsgn/canvas-record/compare/v4.0.0-alpha.2...v4.0.0-alpha.3) (2023-02-15)
+
+
+### Features
+
+* add target options to allow File System API where possible ([a98e233](https://github.com/dmnsgn/canvas-record/commit/a98e2336ae51c58db26cb2d4a19a613e03d08816))
+
+
+
 # [4.0.0-alpha.2](https://github.com/dmnsgn/canvas-record/compare/v4.0.0-alpha.1...v4.0.0-alpha.2) (2023-02-14)
 
 

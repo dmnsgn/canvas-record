@@ -23,7 +23,9 @@ class FrameEncoder extends Encoder {
     super.init(options);
 
     if (this.target === "file-system") {
-      this.directoryHandle ||= await this.getDirectoryHandle(this.suggestedName);
+      this.directoryHandle ||= await this.getDirectoryHandle(
+        this.suggestedName
+      );
     }
   }
 
