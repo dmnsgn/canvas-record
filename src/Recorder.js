@@ -44,7 +44,6 @@ const RecorderStatus = Object.freeze({
 /**
  * @typedef {Object} RecorderOptions Options for recording. All optional.
  * @property {string} [name=""] A name for the recorder, used as prefix for the default file name.
- * @property {string} [filename] Overwrite the file name completely.
  * @property {number} [duration=10] The recording duration in seconds. If set to Infinity, `await canvasRecorder.stop()` needs to be called manually.
  * @property {number} [frameRate=30] The frame rate in frame per seconds. Use `await canvasRecorder.step();` to go to the next frame.
  * @property {boolean} [download=true] Automatically download the recording when duration is reached or when `await canvasRecorder.stop()` is manually called.
@@ -53,6 +52,11 @@ const RecorderStatus = Object.freeze({
  * @property {Object} [encoder] A specific encoder. Default encoder based on options.extension: GIF > WebCodecs > H264MP4.
  * @property {Object} [encoderOptions={}] See `src/encoders` or individual packages for a list of options.
  * @property {onStatusChangeCb} [onStatusChange]
+ */
+
+/**
+ * @typedef {Object} RecorderStartOptions Options for recording. All optional.
+ * @property {string} [filename] Overwrite the file name completely.
  */
 
 /**
@@ -92,6 +96,8 @@ class Recorder {
   }
 
   get stats() {
+    if (this.status !== RecorderStatus.Recording) return;
+
     const renderTime = (Date.now() - this.startTime.getTime()) / 1000;
     const secondsPerFrame = renderTime / this.frame;
 
@@ -218,8 +224,9 @@ Speedup: x${(this.time / renderTime).toFixed(1)}`,
 
   /**
    * Start the recording by initializing and calling the initial step.
+   * @param {RecorderStartOptions} startOptions
    */
-  async start() {
+  async start({ filename } = {}) {
     await this.init();
 
     // Ensure initializing worked
@@ -229,7 +236,7 @@ Speedup: x${(this.time / renderTime).toFixed(1)}`,
     }
 
     this.startTime = new Date();
-    this.filename ||= this.getDefaultFileName(this.encoder.extension);
+    this.filename = filename || this.getDefaultFileName(this.encoder.extension);
 
     this.#updateStatus(RecorderStatus.Recording);
 

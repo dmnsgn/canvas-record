@@ -108,7 +108,7 @@ function render(canvasRecorder = {}) {
 }
 
 const updateStatus = () => {
-  if (canvasRecorder) {
+  if (canvasRecorder && canvasRecorder.stats?.detail) {
     detailElement.innerHTML = `Status: ${Object.keys(RecorderStatus).find(
       (key) => RecorderStatus[key] === canvasRecorder.status
     )}\nDetails:\n${canvasRecorder.stats.detail}`;
@@ -139,16 +139,15 @@ const reset = async () => {
   }
 
   render();
-  updateStatus();
 };
 
 startButton.on("click", async () => {
   await reset();
 
   canvasRecorder = new Recorder(context, {
+    name: `canvas-record-example-${CONFIG.encoder || "default"}`,
     ...CONFIG,
     encoder: CONFIG.encoder ? new Encoders[`${CONFIG.encoder}`]() : null,
-    name: `canvas-record-example-${CONFIG.encoder || "default"}`,
     debug: true,
     encoderOptions: {
       corePath: new URL(
