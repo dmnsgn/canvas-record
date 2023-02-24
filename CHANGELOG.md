@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+# [4.0.0-alpha.4](https://github.com/dmnsgn/canvas-record/compare/v4.0.0-alpha.3...v4.0.0-alpha.4) (2023-02-24)
+
+
+### Features
+
+* move filename overwrite to start options ([7f09aa5](https://github.com/dmnsgn/canvas-record/commit/7f09aa5385145802d54649777a17aa8073c23895))
+
+
+
 # [4.0.0-alpha.3](https://github.com/dmnsgn/canvas-record/compare/v4.0.0-alpha.2...v4.0.0-alpha.3) (2023-02-15)
 
 

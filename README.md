@@ -134,6 +134,9 @@ Roadmap:
 <dt><a href="#RecorderOptions">RecorderOptions</a> : <code>Object</code></dt>
 <dd><p>Options for recording. All optional.</p>
 </dd>
+<dt><a href="#RecorderStartOptions">RecorderStartOptions</a> : <code>Object</code></dt>
+<dd><p>Options for recording. All optional.</p>
+</dd>
 </dl>
 
 <a name="module_index"></a>
@@ -157,7 +160,7 @@ Base Recorder class.
 
 - [Recorder](#Recorder)
   - [new Recorder(context, options)](#new_Recorder_new)
-  - [.start()](#Recorder+start)
+  - [.start(startOptions)](#Recorder+start)
   - [.step()](#Recorder+step)
   - [.stop()](#Recorder+stop)
   - [.dispose()](#Recorder+dispose)
@@ -173,11 +176,16 @@ Base Recorder class.
 
 <a name="Recorder+start"></a>
 
-### recorder.start()
+### recorder.start(startOptions)
 
 Start the recording by initializing and calling the initial step.
 
 **Kind**: instance method of [<code>Recorder</code>](#Recorder)
+
+| Param        | Type                                                       |
+| ------------ | ---------------------------------------------------------- |
+| startOptions | [<code>RecorderStartOptions</code>](#RecorderStartOptions) |
+
 <a name="Recorder+step"></a>
 
 ### recorder.step()
@@ -243,7 +251,6 @@ Options for recording. All optional.
 | Name             | Type                                               | Default                                           | Description                                                                                                             |
 | ---------------- | -------------------------------------------------- | ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
 | [name]           | <code>string</code>                                | <code>&quot;\&quot;\&quot;&quot;</code>           | A name for the recorder, used as prefix for the default file name.                                                      |
-| [filename]       | <code>string</code>                                |                                                   | Overwrite the file name completely.                                                                                     |
 | [duration]       | <code>number</code>                                | <code>10</code>                                   | The recording duration in seconds. If set to Infinity, `await canvasRecorder.stop()` needs to be called manually.       |
 | [frameRate]      | <code>number</code>                                | <code>30</code>                                   | The frame rate in frame per seconds. Use `await canvasRecorder.step();` to go to the next frame.                        |
 | [download]       | <code>boolean</code>                               | <code>true</code>                                 | Automatically download the recording when duration is reached or when `await canvasRecorder.stop()` is manually called. |
@@ -252,6 +259,19 @@ Options for recording. All optional.
 | [encoder]        | <code>Object</code>                                |                                                   | A specific encoder. Default encoder based on options.extension: GIF > WebCodecs > H264MP4.                              |
 | [encoderOptions] | <code>Object</code>                                | <code>{}</code>                                   | See `src/encoders` or individual packages for a list of options.                                                        |
 | [onStatusChange] | [<code>onStatusChangeCb</code>](#onStatusChangeCb) |                                                   |                                                                                                                         |
+
+<a name="RecorderStartOptions"></a>
+
+## RecorderStartOptions : <code>Object</code>
+
+Options for recording. All optional.
+
+**Kind**: global typedef
+**Properties**
+
+| Name       | Type                | Description                         |
+| ---------- | ------------------- | ----------------------------------- |
+| [filename] | <code>string</code> | Overwrite the file name completely. |
 
 <!-- api-end -->
 
