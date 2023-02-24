@@ -47,7 +47,11 @@ class Encoder {
   }
 
   // Override methods
-  async encode(frame, frameNumber) {}
+  /**
+   * @param {number} frame
+   * @param {number} frameNumber
+   */
+  async encode() {}
   async stop() {}
   dispose() {}
 }

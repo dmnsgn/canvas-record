@@ -96,7 +96,7 @@ class Recorder {
   }
 
   get stats() {
-    if (this.status !== RecorderStatus.Recording) return;
+    if (this.status !== RecorderStatus.Recording) return undefined;
 
     const renderTime = (Date.now() - this.startTime.getTime()) / 1000;
     const secondsPerFrame = renderTime / this.frame;
