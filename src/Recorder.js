@@ -108,7 +108,7 @@ class Recorder {
 Frame: ${this.frame} / ${this.frameTotal}
 Elapsed Time: ${formatSeconds(renderTime)}
 Remaining Time: ${formatSeconds(secondsPerFrame * this.frameTotal - renderTime)}
-Speedup: x${(this.time / renderTime).toFixed(1)}`,
+Speedup: x${(this.time / renderTime).toFixed(3)}`,
     };
   }
 
