@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+# [4.0.0-alpha.5](https://github.com/dmnsgn/canvas-record/compare/v4.0.0-alpha.4...v4.0.0-alpha.5) (2023-03-02)
+
+
+### Features
+
+* make frame/webcodecs encoder inherit recorder filename + keep directory reference ([d820f29](https://github.com/dmnsgn/canvas-record/commit/d820f29d6f791384828a4a9b5e717ab1968a9746))
+
+
+
 # [4.0.0-alpha.4](https://github.com/dmnsgn/canvas-record/compare/v4.0.0-alpha.3...v4.0.0-alpha.4) (2023-02-24)
 
 
