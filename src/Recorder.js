@@ -195,7 +195,7 @@ Speedup: x${(this.time / renderTime).toFixed(1)}`,
    * Sets up the recorder internals and the encoder depending on supported features.
    * @private
    */
-  async init() {
+  async init({ filename } = {}) {
     this.#updateStatus(RecorderStatus.Initializing);
 
     this.deltaTime = 1 / this.frameRate;
@@ -206,6 +206,9 @@ Speedup: x${(this.time / renderTime).toFixed(1)}`,
     const extension = this.getSupportedExtension();
     const target = this.getSupportedTarget();
 
+    this.startTime = new Date();
+    this.filename = filename || this.getDefaultFileName(extension);
+
     await this.encoder.init({
       encoderOptions: this.encoderOptions,
       canvas: this.context.canvas,
@@ -215,7 +218,7 @@ Speedup: x${(this.time / renderTime).toFixed(1)}`,
       extension,
       target,
       mimeType: Recorder.mimeTypes[extension],
-      paramString: this.getParamString(),
+      filename: this.filename,
       debug: this.debug,
     });
 
@@ -226,17 +229,14 @@ Speedup: x${(this.time / renderTime).toFixed(1)}`,
    * Start the recording by initializing and calling the initial step.
    * @param {RecorderStartOptions} startOptions
    */
-  async start({ filename } = {}) {
-    await this.init();
+  async start(startOptions) {
+    await this.init(startOptions);
 
     // Ensure initializing worked
     if (this.status !== RecorderStatus.Initialized) {
       console.debug("canvas-record: recorder not initialized.");
       return;
     }
-
-    this.startTime = new Date();
-    this.filename = filename || this.getDefaultFileName(this.encoder.extension);
 
     this.#updateStatus(RecorderStatus.Recording);
 

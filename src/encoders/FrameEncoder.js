@@ -1,6 +1,6 @@
 import Encoder from "./Encoder.js";
 
-import { downloadBlob, formatDate } from "../utils.js";
+import { downloadBlob } from "../utils.js";
 
 class FrameEncoder extends Encoder {
   static supportedExtensions = ["png", "jpg"];
@@ -15,29 +15,27 @@ class FrameEncoder extends Encoder {
     super({ ...FrameEncoder.defaultOptions, ...options });
   }
 
-  get suggestedName() {
-    return `${formatDate(new Date())}${this.paramString}`;
-  }
-
   async init(options) {
     super.init(options);
 
     if (this.target === "file-system") {
-      this.directoryHandle ||= await this.getDirectoryHandle(
-        this.suggestedName
+      this.directory ||= await this.getDirectory();
+      this.directoryHandle = await this.getDirectoryHandle(
+        this.directory,
+        this.filename
       );
     }
   }
 
-  async writeFile(filename, blob) {
+  async writeFile(frameFileName, blob) {
     try {
       if (this.directoryHandle) {
-        const fileHandle = await this.getFileHandle(filename);
+        const fileHandle = await this.getFileHandle(frameFileName);
         const writable = await this.getWritableFileStream(fileHandle);
         await writable.write(blob);
         await writable.close();
       } else {
-        downloadBlob(filename, [blob], this.mimeType);
+        downloadBlob(frameFileName, [blob], this.mimeType);
         // Ugh. Required otherwise frames are skipped
         await new Promise((r) => setTimeout(r, 100));
       }

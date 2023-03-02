@@ -2,7 +2,6 @@ import WebMMuxer from "webm-muxer";
 import MP4Wasm from "./mp4.embed.js"; // mp4-wasm
 
 import Encoder from "./Encoder.js";
-import { formatDate } from "../utils.js";
 
 let mp4wasm;
 
@@ -18,10 +17,6 @@ class WebCodecsEncoder extends Encoder {
 
   get frameMethod() {
     return this.extension === "mp4" ? "bitmap" : "videoFrame";
-  }
-
-  get suggestedName() {
-    return `${this.name}-${formatDate(new Date())}${this.paramString}`;
   }
 
   constructor(options) {
@@ -48,7 +43,7 @@ class WebCodecsEncoder extends Encoder {
     } else {
       let target = "buffer";
       if (this.target === "file-system") {
-        const fileHandle = await this.getFileHandle(this.suggestedName, {
+        const fileHandle = await this.getFileHandle(this.filename, {
           types: [
             {
               description: "Video File",

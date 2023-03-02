@@ -17,9 +17,12 @@ class Encoder {
   }
 
   // File System API
-  async getDirectoryHandle(name) {
+  async getDirectory() {
     if (!("showDirectoryPicker" in window)) return;
-    const directory = await window.showDirectoryPicker();
+    return await window.showDirectoryPicker();
+  }
+
+  async getDirectoryHandle(directory, name) {
     return await directory.getDirectoryHandle(name, { create: true });
   }
 

@@ -10,6 +10,7 @@ const CONFIG = {
   duration: 10,
   frameRate: 30,
   target: "in-browser",
+  filename: "",
   ...Object.fromEntries(new URLSearchParams(window.location.search).entries()),
 };
 const pane = new Pane();
@@ -38,6 +39,7 @@ pane.addInput(CONFIG, "target", {
 });
 pane.addInput(CONFIG, "duration", { step: 1, min: 1, max: 30 });
 pane.addInput(CONFIG, "frameRate", { step: 1, min: 1, max: 30 });
+pane.addInput(CONFIG, "filename");
 
 const startButton = pane.addButton({ title: "Start Recording" });
 const stopButton = pane.addButton({ title: "Stop Recording" });
@@ -159,7 +161,7 @@ startButton.on("click", async () => {
   console.log(canvasRecorder);
 
   // Start and encode frame 0
-  await canvasRecorder.start();
+  await canvasRecorder.start({ filename: CONFIG.filename });
 
   // Animate to encode the rest
   tick(canvasRecorder);
