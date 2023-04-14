@@ -1,9 +1,11 @@
+import {
+  Muxer,
+  ArrayBufferTarget,
+  FileSystemWritableFileStreamTarget,
+} from "mp4-muxer";
 import WebMMuxer from "webm-muxer";
-import MP4Wasm from "./mp4.embed.js"; // mp4-wasm
 
 import Encoder from "./Encoder.js";
-
-let mp4wasm;
 
 class WebCodecsEncoder extends Encoder {
   static supportedExtensions = ["mp4", "webm", "mkv"];
@@ -16,7 +18,7 @@ class WebCodecsEncoder extends Encoder {
   };
 
   get frameMethod() {
-    return this.extension === "mp4" ? "bitmap" : "videoFrame";
+    return "videoFrame";
   }
 
   constructor(options) {
@@ -26,37 +28,37 @@ class WebCodecsEncoder extends Encoder {
   async init(options) {
     super.init(options);
 
-    if (this.extension === "mp4") {
-      mp4wasm ||= await MP4Wasm(); // { wasmBinary }
+    let target = "buffer";
+    if (this.target === "file-system") {
+      const fileHandle = await this.getFileHandle(this.filename, {
+        types: [
+          {
+            description: "Video File",
+            accept: { [this.mimeType]: [`.${this.extension}`] },
+          },
+        ],
+      });
 
-      this.encoder = mp4wasm.createWebCodecsEncoder({
-        // codec: "avc1.420034", // Baseline 4.2
-        codec: "avc1.4d0034", // Main 5.2
-        width: this.width,
-        height: this.height,
-        fps: this.frameRate,
-        encoderOptions: {
-          framerate: this.frameRate,
-          ...this.encoderOptions,
+      this.writableFileStream = target = await this.getWritableFileStream(
+        fileHandle
+      );
+      if (this.extension === "mp4") {
+        target = new FileSystemWritableFileStreamTarget(target);
+      }
+    }
+
+    if (this.extension === "mp4") {
+      this.muxer = new Muxer({
+        target: target === "buffer" ? new ArrayBufferTarget() : target,
+        video: {
+          codec: "avc", // Supported: "avc" | "hevc"
+          width: this.width,
+          height: this.height,
         },
+        firstTimestampBehavior: "offset", // "strict" | "offset" | "permissive"
+        ...this.muxerOptions,
       });
     } else {
-      let target = "buffer";
-      if (this.target === "file-system") {
-        const fileHandle = await this.getFileHandle(this.filename, {
-          types: [
-            {
-              description: "Video File",
-              accept: { [this.mimeType]: [`.${this.extension}`] },
-            },
-          ],
-        });
-
-        this.writableFileStream = target = await this.getWritableFileStream(
-          fileHandle
-        );
-      }
-
       this.muxer = new WebMMuxer({
         target,
         type: this.extension === "mkv" ? "matroska" : "webm",
@@ -66,61 +68,64 @@ class WebCodecsEncoder extends Encoder {
           height: this.height,
           frameRate: this.frameRate,
         },
+        ...this.muxerOptions,
       });
-      this.encoder = new VideoEncoder({
-        output: (chunk, meta) => this.muxer.addVideoChunk(chunk, meta),
-        error: (e) => console.error(e),
-      });
+    }
 
-      const config = {
-        codec: "vp09.00.10.08",
-        width: this.width,
-        height: this.height,
-        frameRate: this.frameRate,
-        bitrate: 20_000_000,
-        alpha: "discard", // "keep"
-        bitrateMode: "variable", // "constant"
-        latencyMode: "realtime", // "quality"
-        hardwareAcceleration: "no-preference", // "prefer-hardware" "prefer-software"
-        ...this.encoderOptions,
-      };
+    this.encoder = new VideoEncoder({
+      output: (chunk, meta) => {
+        console.log(chunk, meta);
+        return this.muxer.addVideoChunk(chunk, meta);
+      },
+      error: (e) => console.error(e),
+    });
 
-      this.encoder.configure(config);
-      if (!(await VideoEncoder.isConfigSupported(config)).supported) {
-        throw new Error(
-          `canvas-record: Unsupported VideoEncoder config\n ${JSON.stringify(
-            config
-          )}`
-        );
-      }
+    const config = {
+      codec: this.extension === "mp4" ? "avc1.640028" : "vp09.00.10.08",
+      width: this.width,
+      height: this.height,
+      frameRate: this.frameRate,
+      bitrate: 1e6,
+      // alpha: "discard", // "keep"
+      // bitrateMode: "variable", // "constant"
+      // latencyMode: "quality", // "realtime" (faster encoding)
+      // hardwareAcceleration: "no-preference", // "prefer-hardware" "prefer-software"
+      ...this.encoderOptions,
+    };
+
+    this.encoder.configure(config);
+    if (!(await VideoEncoder.isConfigSupported(config)).supported) {
+      throw new Error(
+        `canvas-record: Unsupported VideoEncoder config\n ${JSON.stringify(
+          config
+        )}`
+      );
     }
   }
 
   async encode(frame, number) {
-    if (this.extension === "mp4") {
-      await this.encoder.addFrame(frame);
-    } else {
-      const keyFrame = number % this.groupOfPictures === 0;
+    const keyFrame = number % this.groupOfPictures === 0;
 
-      this.encoder.encode(frame, { keyFrame });
-      frame.close();
-      if (this.flushFrequency && (number + 1) % this.flushFrequency === 0) {
-        await this.encoder.flush();
-      }
+    this.encoder.encode(frame, { keyFrame });
+    frame.close();
+    if (this.flushFrequency && (number + 1) % this.flushFrequency === 0) {
+      await this.encoder.flush();
     }
   }
 
   async stop() {
+    await this.encoder.flush();
+
     let buffer;
     if (this.extension === "mp4") {
-      buffer = await this.encoder.end();
+      this.muxer.finalize();
+      buffer = this.muxer.target?.buffer;
     } else {
-      await this.encoder.flush();
       buffer = this.muxer.finalize();
+    }
 
-      if (this.writableFileStream) {
-        await this.writableFileStream.close();
-      }
+    if (this.writableFileStream) {
+      await this.writableFileStream.close();
     }
 
     return buffer;

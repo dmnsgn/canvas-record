@@ -28,9 +28,7 @@ class Encoder {
 
   async getFileHandle(name, options) {
     if (this.directoryHandle) {
-      return await this.directoryHandle.getFileHandle(name, {
-        create: true,
-      });
+      return await this.directoryHandle.getFileHandle(name, { create: true });
     }
 
     if (!("showSaveFilePicker" in window)) return;
