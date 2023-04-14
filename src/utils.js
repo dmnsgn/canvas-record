@@ -1,4 +1,4 @@
-const isWebCodecsSupported = () =>
+const isWebCodecsSupported =
   typeof window !== "undefined" && typeof window.VideoEncoder === "function";
 
 let link;
