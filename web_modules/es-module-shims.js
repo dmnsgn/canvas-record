@@ -1,17 +1,16 @@
-import './common/esnext.iterator.map-5fa67f50.js';
-import { _ as _export, a as aCallable } from './common/es.error.cause-c5e0cc86.js';
-import { a as asyncIteratorIteration, i as iterate } from './common/iterate-46fbe091.js';
-import './common/esnext.iterator.constructor-08a9c867.js';
-import { g as getIteratorDirect } from './common/map-iterate-1f81817b.js';
-import './common/esnext.typed-array.with-c5aeddac.js';
-import './common/esnext.iterator.filter-40aba89e.js';
+import './common/esnext.iterator.map-e7744f39.js';
+import { _ as _export, a as aCallable } from './common/es.error.cause-2f8d9604.js';
+import { a as asyncIteratorIteration, i as iterate } from './common/iterate-966bdd3a.js';
+import { g as getIteratorDirect } from './common/map-iterate-37f9c416.js';
+import './common/es.typed-array.with-f2537e55.js';
+import './common/esnext.iterator.filter-e5b60a34.js';
 import { a as commonjsGlobal } from './common/_commonjsHelpers-0597c316.js';
-import './common/call-with-safe-iteration-closing-d974cb4e.js';
+import './common/call-with-safe-iteration-closing-7bbb2406.js';
 
 var $some = asyncIteratorIteration.some;
 
 // `AsyncIterator.prototype.some` method
-// https://github.com/tc39/proposal-iterator-helpers
+// https://github.com/tc39/proposal-async-iterator-helpers
 _export({ target: 'AsyncIterator', proto: true, real: true }, {
   some: function some(predicate) {
     return $some(this, predicate);
@@ -31,7 +30,7 @@ _export({ target: 'Iterator', proto: true, real: true }, {
   }
 });
 
-/* ES Module Shims 1.6.3 */
+/* ES Module Shims 1.7.1 */
 (function () {
   const hasWindow = typeof window !== 'undefined';
   const hasDocument = typeof document !== 'undefined';
@@ -292,32 +291,45 @@ _export({ target: 'Iterator', proto: true, real: true }, {
   // support browsers without dynamic import support (eg Firefox 6x)
   let supportsJsonAssertions = false;
   let supportsCssAssertions = false;
-  let supportsImportMaps = hasDocument && HTMLScriptElement.supports ? HTMLScriptElement.supports('importmap') : false;
-  let supportsImportMeta = supportsImportMaps;
+  const supports = hasDocument && HTMLScriptElement.supports;
+  let supportsImportMaps = supports && supports.name === 'supports' && supports('importmap');
+  let supportsImportMeta = supportsDynamicImport;
   const importMetaCheck = 'import.meta';
   const cssModulesCheck = `import"x"assert{type:"css"}`;
   const jsonModulesCheck = `import"x"assert{type:"json"}`;
-  const featureDetectionPromise = Promise.resolve(dynamicImportCheck).then(() => {
-    if (!supportsDynamicImport || supportsImportMaps && !cssModulesEnabled && !jsonModulesEnabled) return;
+  let featureDetectionPromise = Promise.resolve(dynamicImportCheck).then(() => {
+    if (!supportsDynamicImport) return;
     if (!hasDocument) return Promise.all([supportsImportMaps || dynamicImport(createBlob(importMetaCheck)).then(() => supportsImportMeta = true, noop), cssModulesEnabled && dynamicImport(createBlob(cssModulesCheck.replace('x', createBlob('', 'text/css')))).then(() => supportsCssAssertions = true, noop), jsonModulesEnabled && dynamicImport(createBlob(jsonModulescheck.replace('x', createBlob('{}', 'text/json')))).then(() => supportsJsonAssertions = true, noop)]);
     return new Promise(resolve => {
       const iframe = document.createElement('iframe');
       iframe.style.display = 'none';
       iframe.setAttribute('nonce', nonce);
       function cb({
-        data: [a, b, c, d]
+        data
       }) {
-        supportsImportMaps = a;
-        supportsImportMeta = b;
-        supportsCssAssertions = c;
-        supportsJsonAssertions = d;
+        // failed feature detection (security policy) -> revert to default assumptions
+        if (Array.isArray(data)) {
+          supportsImportMaps = data[0];
+          supportsImportMeta = data[1];
+          supportsCssAssertions = data[2];
+          supportsJsonAssertions = data[3];
+        }
         resolve();
         document.head.removeChild(iframe);
         window.removeEventListener('message', cb, false);
       }
       window.addEventListener('message', cb, false);
       const importMapTest = `<script nonce=${nonce || ''}>b=(s,type='text/javascript')=>URL.createObjectURL(new Blob([s],{type}));document.head.appendChild(Object.assign(document.createElement('script'),{type:'importmap',nonce:"${nonce}",innerText:\`{"imports":{"x":"\${b('')}"}}\`}));Promise.all([${supportsImportMaps ? 'true,true' : `'x',b('${importMetaCheck}')`}, ${cssModulesEnabled ? `b('${cssModulesCheck}'.replace('x',b('','text/css')))` : 'false'}, ${jsonModulesEnabled ? `b('${jsonModulesCheck}'.replace('x',b('{}','text/json')))` : 'false'}].map(x =>typeof x==='string'?import(x).then(x =>!!x,()=>false):x)).then(a=>parent.postMessage(a,'*'))<${''}/script>`;
-      iframe.onload = () => {
+
+      // Safari will call onload eagerly on head injection, but we don't want the Wechat
+      // path to trigger before setting srcdoc, therefore we track the timing
+      let readyForOnload = false,
+        onloadCalledWhileNotReady = false;
+      function doOnload() {
+        if (!readyForOnload) {
+          onloadCalledWhileNotReady = true;
+          return;
+        }
         // WeChat browser doesn't support setting srcdoc scripts
         // But iframe sandboxes don't support contentDocument so we do this as a fallback
         const doc = iframe.contentDocument;
@@ -327,17 +339,22 @@ _export({ target: 'Iterator', proto: true, real: true }, {
           s.innerHTML = importMapTest.slice(15 + (nonce ? nonce.length : 0), -9);
           doc.head.appendChild(s);
         }
-      };
+      }
+      iframe.onload = doOnload;
       // WeChat browser requires append before setting srcdoc
       document.head.appendChild(iframe);
+
       // setting srcdoc is not supported in React native webviews on iOS
       // setting src to a blob URL results in a navigation event in webviews
       // document.write gives usability warnings
+      readyForOnload = true;
       if ('srcdoc' in iframe) iframe.srcdoc = importMapTest;else iframe.contentDocument.write(importMapTest);
+      // retrigger onload for Safari only if necessary
+      if (onloadCalledWhileNotReady) doOnload();
     });
   });
 
-  /* es-module-lexer 1.1.0 */
+  /* es-module-lexer 1.2.1 */
   let e,
     a,
     r,
@@ -354,49 +371,49 @@ _export({ target: 'Iterator', proto: true, real: true }, {
         a[i++] = (255 & r) << 8 | r >>> 8;
       }
     },
-    f = "xportmportlassetafromsyncunctionssertvoyiedelecontininstantybreareturdebuggeawaithrwhileforifcatcfinallels";
-  let t, c$1, n;
+    t = "xportmportlassetaromsyncunctionssertvoyiedelecontininstantybreareturdebuggeawaithrwhileforifcatcfinallels";
+  let c$1, f, n;
   function parse(l, k = "@") {
-    t = l, c$1 = k;
-    const u = 2 * t.length + (2 << 18);
+    c$1 = l, f = k;
+    const u = 2 * c$1.length + (2 << 18);
     if (u > i || !e) {
       for (; u > i;) i *= 2;
-      a = new ArrayBuffer(i), s(f, new Uint16Array(a, 16, 106)), e = function (e, a, r) {
+      a = new ArrayBuffer(i), s(t, new Uint16Array(a, 16, 105)), e = function (e, a, r) {
         "use asm";
 
         var i = new e.Int8Array(r),
           s = new e.Int16Array(r),
-          f = new e.Int32Array(r),
-          t = new e.Uint8Array(r),
-          c = new e.Uint16Array(r),
+          t = new e.Int32Array(r),
+          c = new e.Uint8Array(r),
+          f = new e.Uint16Array(r),
           n = 1024;
         function b() {
           var e = 0,
             a = 0,
             r = 0,
-            t = 0,
+            c = 0,
             b = 0,
-            o = 0,
+            u = 0,
             w = 0;
           w = n;
           n = n + 10240 | 0;
           i[795] = 1;
           s[395] = 0;
           s[396] = 0;
-          f[67] = f[2];
+          t[67] = t[2];
           i[796] = 0;
-          f[66] = 0;
+          t[66] = 0;
           i[794] = 0;
-          f[68] = w + 2048;
-          f[69] = w;
+          t[68] = w + 2048;
+          t[69] = w;
           i[797] = 0;
-          e = (f[3] | 0) + -2 | 0;
-          f[70] = e;
-          a = e + (f[64] << 1) | 0;
-          f[71] = a;
+          e = (t[3] | 0) + -2 | 0;
+          t[70] = e;
+          a = e + (t[64] << 1) | 0;
+          t[71] = a;
           e: while (1) {
             r = e + 2 | 0;
-            f[70] = r;
+            t[70] = r;
             if (e >>> 0 >= a >>> 0) {
               b = 18;
               break;
@@ -412,7 +429,7 @@ _export({ target: 'Iterator', proto: true, real: true }, {
                   break;
                 case 101:
                   {
-                    if ((((s[396] | 0) == 0 ? F(r) | 0 : 0) ? (m(e + 4 | 0, 16, 10) | 0) == 0 : 0) ? (l(), (i[795] | 0) == 0) : 0) {
+                    if ((((s[396] | 0) == 0 ? H(r) | 0 : 0) ? (m(e + 4 | 0, 16, 10) | 0) == 0 : 0) ? (l(), (i[795] | 0) == 0) : 0) {
                       b = 9;
                       break e;
                     } else b = 17;
@@ -420,7 +437,7 @@ _export({ target: 'Iterator', proto: true, real: true }, {
                   }
                 case 105:
                   {
-                    if (F(r) | 0 ? (m(e + 4 | 0, 26, 10) | 0) == 0 : 0) {
+                    if (H(r) | 0 ? (m(e + 4 | 0, 26, 10) | 0) == 0 : 0) {
                       k();
                       b = 17;
                     } else b = 17;
@@ -435,7 +452,7 @@ _export({ target: 'Iterator', proto: true, real: true }, {
                   switch (s[e + 4 >> 1] | 0) {
                     case 47:
                       {
-                        E();
+                        P();
                         break a;
                       }
                     case 42:
@@ -458,18 +475,18 @@ _export({ target: 'Iterator', proto: true, real: true }, {
             } while (0);
             if ((b | 0) == 17) {
               b = 0;
-              f[67] = f[70];
+              t[67] = t[70];
             }
-            e = f[70] | 0;
-            a = f[71] | 0;
+            e = t[70] | 0;
+            a = t[71] | 0;
           }
           if ((b | 0) == 9) {
-            e = f[70] | 0;
-            f[67] = e;
+            e = t[70] | 0;
+            t[67] = e;
             b = 19;
           } else if ((b | 0) == 16) {
             i[795] = 0;
-            f[70] = e;
+            t[70] = e;
             b = 19;
           } else if ((b | 0) == 18) if (!(i[794] | 0)) {
             e = r;
@@ -479,9 +496,9 @@ _export({ target: 'Iterator', proto: true, real: true }, {
             if ((b | 0) == 19) {
               e: while (1) {
                 a = e + 2 | 0;
-                f[70] = a;
-                t = a;
-                if (e >>> 0 >= (f[71] | 0) >>> 0) {
+                t[70] = a;
+                c = a;
+                if (e >>> 0 >= (t[71] | 0) >>> 0) {
                   b = 82;
                   break;
                 }
@@ -496,7 +513,7 @@ _export({ target: 'Iterator', proto: true, real: true }, {
                       break;
                     case 101:
                       {
-                        if (((s[396] | 0) == 0 ? F(a) | 0 : 0) ? (m(e + 4 | 0, 16, 10) | 0) == 0 : 0) {
+                        if (((s[396] | 0) == 0 ? H(a) | 0 : 0) ? (m(e + 4 | 0, 16, 10) | 0) == 0 : 0) {
                           l();
                           b = 81;
                         } else b = 81;
@@ -504,7 +521,7 @@ _export({ target: 'Iterator', proto: true, real: true }, {
                       }
                     case 105:
                       {
-                        if (F(a) | 0 ? (m(e + 4 | 0, 26, 10) | 0) == 0 : 0) {
+                        if (H(a) | 0 ? (m(e + 4 | 0, 26, 10) | 0) == 0 : 0) {
                           k();
                           b = 81;
                         } else b = 81;
@@ -512,7 +529,7 @@ _export({ target: 'Iterator', proto: true, real: true }, {
                       }
                     case 99:
                       {
-                        if ((F(a) | 0 ? (m(e + 4 | 0, 36, 8) | 0) == 0 : 0) ? R(s[e + 12 >> 1] | 0) | 0 : 0) {
+                        if ((H(a) | 0 ? (m(e + 4 | 0, 36, 8) | 0) == 0 : 0) ? V(s[e + 12 >> 1] | 0) | 0 : 0) {
                           i[797] = 1;
                           b = 81;
                         } else b = 81;
@@ -520,13 +537,13 @@ _export({ target: 'Iterator', proto: true, real: true }, {
                       }
                     case 40:
                       {
-                        t = f[68] | 0;
+                        c = t[68] | 0;
                         a = s[396] | 0;
                         b = a & 65535;
-                        f[t + (b << 3) >> 2] = 1;
-                        r = f[67] | 0;
+                        t[c + (b << 3) >> 2] = 1;
+                        r = t[67] | 0;
                         s[396] = a + 1 << 16 >> 16;
-                        f[t + (b << 3) + 4 >> 2] = r;
+                        t[c + (b << 3) + 4 >> 2] = r;
                         b = 81;
                         break;
                       }
@@ -540,10 +557,10 @@ _export({ target: 'Iterator', proto: true, real: true }, {
                         a = a + -1 << 16 >> 16;
                         s[396] = a;
                         r = s[395] | 0;
-                        if (r << 16 >> 16 != 0 ? (o = f[(f[69] | 0) + ((r & 65535) + -1 << 2) >> 2] | 0, (f[o + 20 >> 2] | 0) == (f[(f[68] | 0) + ((a & 65535) << 3) + 4 >> 2] | 0)) : 0) {
-                          a = o + 4 | 0;
-                          if (!(f[a >> 2] | 0)) f[a >> 2] = t;
-                          f[o + 12 >> 2] = e + 4;
+                        if (r << 16 >> 16 != 0 ? (u = t[(t[69] | 0) + ((r & 65535) + -1 << 2) >> 2] | 0, (t[u + 20 >> 2] | 0) == (t[(t[68] | 0) + ((a & 65535) << 3) + 4 >> 2] | 0)) : 0) {
+                          a = u + 4 | 0;
+                          if (!(t[a >> 2] | 0)) t[a >> 2] = c;
+                          t[u + 12 >> 2] = e + 4;
                           s[395] = r + -1 << 16 >> 16;
                           b = 81;
                         } else b = 81;
@@ -551,28 +568,28 @@ _export({ target: 'Iterator', proto: true, real: true }, {
                       }
                     case 123:
                       {
-                        b = f[67] | 0;
-                        t = f[61] | 0;
+                        b = t[67] | 0;
+                        c = t[61] | 0;
                         e = b;
                         do {
-                          if ((s[b >> 1] | 0) == 41 & (t | 0) != 0 ? (f[t + 4 >> 2] | 0) == (b | 0) : 0) {
-                            a = f[62] | 0;
-                            f[61] = a;
+                          if ((s[b >> 1] | 0) == 41 & (c | 0) != 0 ? (t[c + 4 >> 2] | 0) == (b | 0) : 0) {
+                            a = t[62] | 0;
+                            t[61] = a;
                             if (!a) {
-                              f[57] = 0;
+                              t[57] = 0;
                               break;
                             } else {
-                              f[a + 28 >> 2] = 0;
+                              t[a + 28 >> 2] = 0;
                               break;
                             }
                           }
                         } while (0);
-                        t = f[68] | 0;
+                        c = t[68] | 0;
                         r = s[396] | 0;
                         b = r & 65535;
-                        f[t + (b << 3) >> 2] = (i[797] | 0) == 0 ? 2 : 6;
+                        t[c + (b << 3) >> 2] = (i[797] | 0) == 0 ? 2 : 6;
                         s[396] = r + 1 << 16 >> 16;
-                        f[t + (b << 3) + 4 >> 2] = e;
+                        t[c + (b << 3) + 4 >> 2] = e;
                         i[797] = 0;
                         b = 81;
                         break;
@@ -584,10 +601,10 @@ _export({ target: 'Iterator', proto: true, real: true }, {
                           b = 49;
                           break e;
                         }
-                        t = f[68] | 0;
+                        c = t[68] | 0;
                         b = e + -1 << 16 >> 16;
                         s[396] = b;
-                        if ((f[t + ((b & 65535) << 3) >> 2] | 0) == 4) {
+                        if ((t[c + ((b & 65535) << 3) >> 2] | 0) == 4) {
                           h();
                           b = 81;
                         } else b = 81;
@@ -609,7 +626,7 @@ _export({ target: 'Iterator', proto: true, real: true }, {
                       switch (s[e + 4 >> 1] | 0) {
                         case 47:
                           {
-                            E();
+                            P();
                             break a;
                           }
                         case 42:
@@ -619,13 +636,13 @@ _export({ target: 'Iterator', proto: true, real: true }, {
                           }
                         default:
                           {
-                            e = f[67] | 0;
-                            t = s[e >> 1] | 0;
+                            e = t[67] | 0;
+                            c = s[e >> 1] | 0;
                             r: do {
-                              if (!(U(t) | 0)) {
-                                switch (t << 16 >> 16) {
+                              if (!(U(c) | 0)) {
+                                switch (c << 16 >> 16) {
                                   case 41:
-                                    if (z(f[(f[68] | 0) + (c[396] << 3) + 4 >> 2] | 0) | 0) {
+                                    if (D(t[(t[68] | 0) + (f[396] << 3) + 4 >> 2] | 0) | 0) {
                                       b = 69;
                                       break r;
                                     } else {
@@ -640,10 +657,10 @@ _export({ target: 'Iterator', proto: true, real: true }, {
                                       break r;
                                     }
                                 }
-                                a = f[68] | 0;
-                                r = c[396] | 0;
-                                if (!(p(f[a + (r << 3) + 4 >> 2] | 0) | 0) ? (f[a + (r << 3) >> 2] | 0) != 6 : 0) b = 66;else b = 69;
-                              } else switch (t << 16 >> 16) {
+                                a = t[68] | 0;
+                                r = f[396] | 0;
+                                if (!(p(t[a + (r << 3) + 4 >> 2] | 0) | 0) ? (t[a + (r << 3) >> 2] | 0) != 6 : 0) b = 66;else b = 69;
+                              } else switch (c << 16 >> 16) {
                                 case 46:
                                   if (((s[e + -2 >> 1] | 0) + -48 & 65535) < 10) {
                                     b = 66;
@@ -678,8 +695,8 @@ _export({ target: 'Iterator', proto: true, real: true }, {
                             r: do {
                               if ((b | 0) == 66) {
                                 b = 0;
-                                if (!(u(e) | 0)) {
-                                  switch (t << 16 >> 16) {
+                                if (!(o(e) | 0)) {
+                                  switch (c << 16 >> 16) {
                                     case 0:
                                       {
                                         b = 69;
@@ -696,21 +713,21 @@ _export({ target: 'Iterator', proto: true, real: true }, {
                                     default:
                                       {}
                                   }
-                                  r = f[3] | 0;
-                                  a = t;
+                                  r = t[3] | 0;
+                                  a = c;
                                   do {
                                     if (e >>> 0 <= r >>> 0) break;
                                     e = e + -2 | 0;
-                                    f[67] = e;
+                                    t[67] = e;
                                     a = s[e >> 1] | 0;
-                                  } while (!(B(a) | 0));
-                                  if (D(a) | 0) {
+                                  } while (!(E(a) | 0));
+                                  if (F(a) | 0) {
                                     do {
                                       if (e >>> 0 <= r >>> 0) break;
                                       e = e + -2 | 0;
-                                      f[67] = e;
-                                    } while (D(s[e >> 1] | 0) | 0);
-                                    if ($(e) | 0) {
+                                      t[67] = e;
+                                    } while (F(s[e >> 1] | 0) | 0);
+                                    if (j(e) | 0) {
                                       g();
                                       i[796] = 0;
                                       b = 81;
@@ -731,12 +748,12 @@ _export({ target: 'Iterator', proto: true, real: true }, {
                       }
                     case 96:
                       {
-                        t = f[68] | 0;
+                        c = t[68] | 0;
                         r = s[396] | 0;
                         b = r & 65535;
-                        f[t + (b << 3) + 4 >> 2] = f[67];
+                        t[c + (b << 3) + 4 >> 2] = t[67];
                         s[396] = r + 1 << 16 >> 16;
-                        f[t + (b << 3) >> 2] = 3;
+                        t[c + (b << 3) >> 2] = 3;
                         h();
                         b = 81;
                         break;
@@ -747,16 +764,16 @@ _export({ target: 'Iterator', proto: true, real: true }, {
                 } while (0);
                 if ((b | 0) == 81) {
                   b = 0;
-                  f[67] = f[70];
+                  t[67] = t[70];
                 }
-                e = f[70] | 0;
+                e = t[70] | 0;
               }
               if ((b | 0) == 36) {
-                Q();
+                T();
                 e = 0;
                 break;
               } else if ((b | 0) == 49) {
-                Q();
+                T();
                 e = 0;
                 break;
               } else if ((b | 0) == 82) {
@@ -772,76 +789,81 @@ _export({ target: 'Iterator', proto: true, real: true }, {
           var e = 0,
             a = 0,
             r = 0,
-            t = 0,
             c = 0,
+            f = 0,
             n = 0,
             b = 0,
             l = 0,
-            k = 0;
-          c = f[70] | 0;
-          n = f[63] | 0;
-          k = c + 12 | 0;
-          f[70] = k;
+            k = 0,
+            o = 0,
+            h = 0,
+            A = 0,
+            C = 0,
+            g = 0;
+          l = t[70] | 0;
+          k = t[63] | 0;
+          g = l + 12 | 0;
+          t[70] = g;
           r = w(1) | 0;
-          e = f[70] | 0;
-          if (!((e | 0) == (k | 0) ? !(I(r) | 0) : 0)) l = 3;
+          e = t[70] | 0;
+          if (!((e | 0) == (g | 0) ? !(I(r) | 0) : 0)) C = 3;
           e: do {
-            if ((l | 0) == 3) {
+            if ((C | 0) == 3) {
               a: do {
                 switch (r << 16 >> 16) {
                   case 123:
                     {
-                      f[70] = e + 2;
+                      t[70] = e + 2;
                       e = w(1) | 0;
-                      r = f[70] | 0;
+                      r = t[70] | 0;
                       while (1) {
-                        if (T(e) | 0) {
+                        if (W(e) | 0) {
                           d(e);
-                          e = (f[70] | 0) + 2 | 0;
-                          f[70] = e;
+                          e = (t[70] | 0) + 2 | 0;
+                          t[70] = e;
                         } else {
-                          P(e) | 0;
-                          e = f[70] | 0;
+                          q(e) | 0;
+                          e = t[70] | 0;
                         }
                         w(1) | 0;
                         e = v(r, e) | 0;
                         if (e << 16 >> 16 == 44) {
-                          f[70] = (f[70] | 0) + 2;
+                          t[70] = (t[70] | 0) + 2;
                           e = w(1) | 0;
                         }
                         a = r;
-                        r = f[70] | 0;
+                        r = t[70] | 0;
                         if (e << 16 >> 16 == 125) {
-                          l = 15;
+                          C = 15;
                           break;
                         }
                         if ((r | 0) == (a | 0)) {
-                          l = 12;
+                          C = 12;
                           break;
                         }
-                        if (r >>> 0 > (f[71] | 0) >>> 0) {
-                          l = 14;
+                        if (r >>> 0 > (t[71] | 0) >>> 0) {
+                          C = 14;
                           break;
                         }
                       }
-                      if ((l | 0) == 12) {
-                        Q();
+                      if ((C | 0) == 12) {
+                        T();
                         break e;
-                      } else if ((l | 0) == 14) {
-                        Q();
+                      } else if ((C | 0) == 14) {
+                        T();
                         break e;
-                      } else if ((l | 0) == 15) {
-                        f[70] = r + 2;
+                      } else if ((C | 0) == 15) {
+                        t[70] = r + 2;
                         break a;
                       }
                       break;
                     }
                   case 42:
                     {
-                      f[70] = e + 2;
+                      t[70] = e + 2;
                       w(1) | 0;
-                      k = f[70] | 0;
-                      v(k, k) | 0;
+                      g = t[70] | 0;
+                      v(g, g) | 0;
                       break;
                     }
                   default:
@@ -850,132 +872,95 @@ _export({ target: 'Iterator', proto: true, real: true }, {
                       switch (r << 16 >> 16) {
                         case 100:
                           {
-                            c = e + 14 | 0;
-                            f[70] = c;
-                            a = w(1) | 0;
-                            if (a << 16 >> 16 == 97) {
-                              a = f[70] | 0;
-                              if ((F(a) | 0 ? (m(a + 2 | 0, 58, 8) | 0) == 0 : 0) ? (t = a + 10 | 0, D(s[t >> 1] | 0) | 0) : 0) {
-                                f[70] = t;
-                                a = w(0) | 0;
-                                l = 23;
-                              } else {
-                                a = 97;
-                                l = 32;
-                              }
-                            } else l = 23;
-                            r: do {
-                              if ((l | 0) == 23) {
-                                if (a << 16 >> 16 == 102) {
-                                  a = f[70] | 0;
-                                  if (!(F(a) | 0)) {
-                                    a = 102;
-                                    l = 32;
-                                    break;
+                            l = e + 14 | 0;
+                            t[70] = l;
+                            switch ((w(1) | 0) << 16 >> 16) {
+                              case 97:
+                                {
+                                  a = t[70] | 0;
+                                  if ((m(a + 2 | 0, 56, 8) | 0) == 0 ? (f = a + 10 | 0, F(s[f >> 1] | 0) | 0) : 0) {
+                                    t[70] = f;
+                                    w(0) | 0;
+                                    C = 22;
                                   }
-                                  if (m(a + 2 | 0, 66, 14) | 0) {
-                                    a = 102;
-                                    l = 32;
-                                    break;
-                                  }
-                                  r = a + 16 | 0;
-                                  a = s[r >> 1] | 0;
-                                  if (!(R(a) | 0)) switch (a << 16 >> 16) {
-                                    case 40:
-                                    case 42:
-                                      break;
-                                    default:
-                                      {
-                                        a = 102;
-                                        l = 32;
-                                        break r;
-                                      }
-                                  }
-                                  f[70] = r;
-                                  a = w(1) | 0;
-                                  if (a << 16 >> 16 == 42) {
-                                    f[70] = (f[70] | 0) + 2;
-                                    a = w(1) | 0;
-                                  }
-                                  if (a << 16 >> 16 == 40) {
-                                    O(e, c, 0, 0);
-                                    f[70] = e + 12;
-                                    break e;
-                                  } else t = 1;
-                                } else t = 0;
-                                r = f[70] | 0;
-                                do {
-                                  if (a << 16 >> 16 == 99) {
-                                    if ((F(r) | 0 ? (m(r + 2 | 0, 36, 8) | 0) == 0 : 0) ? (b = r + 10 | 0, k = s[b >> 1] | 0, R(k) | 0 | k << 16 >> 16 == 123) : 0) {
-                                      f[70] = b;
-                                      a = w(1) | 0;
-                                      if (a << 16 >> 16 == 123) {
-                                        O(e, c, 0, 0);
-                                        f[70] = e + 12;
-                                        break e;
-                                      } else {
-                                        r = f[70] | 0;
-                                        P(a) | 0;
-                                        break;
-                                      }
-                                    } else {
-                                      a = 99;
-                                      l = 40;
-                                    }
-                                  } else l = 40;
-                                } while (0);
-                                if ((l | 0) == 40) {
-                                  P(a) | 0;
-                                  if (!t) {
-                                    l = 43;
-                                    break;
-                                  }
+                                  break;
                                 }
-                                a = f[70] | 0;
-                                if (a >>> 0 > r >>> 0) {
-                                  O(e, c, r, a);
-                                  e = (f[70] | 0) + -2 | 0;
-                                } else l = 43;
+                              case 102:
+                                {
+                                  C = 22;
+                                  break;
+                                }
+                              case 99:
+                                {
+                                  a = t[70] | 0;
+                                  if (((m(a + 2 | 0, 36, 8) | 0) == 0 ? (c = a + 10 | 0, g = s[c >> 1] | 0, V(g) | 0 | g << 16 >> 16 == 123) : 0) ? (t[70] = c, n = w(1) | 0, n << 16 >> 16 != 123) : 0) {
+                                    A = n;
+                                    C = 31;
+                                  }
+                                  break;
+                                }
+                              default:
+                                {}
+                            }
+                            r: do {
+                              if ((C | 0) == 22 ? (b = t[70] | 0, (m(b + 2 | 0, 64, 14) | 0) == 0) : 0) {
+                                r = b + 16 | 0;
+                                a = s[r >> 1] | 0;
+                                if (!(V(a) | 0)) switch (a << 16 >> 16) {
+                                  case 40:
+                                  case 42:
+                                    break;
+                                  default:
+                                    break r;
+                                }
+                                t[70] = r;
+                                a = w(1) | 0;
+                                if (a << 16 >> 16 == 42) {
+                                  t[70] = (t[70] | 0) + 2;
+                                  a = w(1) | 0;
+                                }
+                                if (a << 16 >> 16 != 40) {
+                                  A = a;
+                                  C = 31;
+                                }
                               }
                             } while (0);
-                            if ((l | 0) == 32) {
-                              P(a) | 0;
-                              l = 43;
+                            if ((C | 0) == 31 ? (o = t[70] | 0, q(A) | 0, h = t[70] | 0, h >>> 0 > o >>> 0) : 0) {
+                              $(e, l, o, h);
+                              t[70] = (t[70] | 0) + -2;
+                              break e;
                             }
-                            if ((l | 0) == 43) {
-                              O(e, c, 0, 0);
-                              e = e + 12 | 0;
-                            }
-                            f[70] = e;
+                            $(e, l, 0, 0);
+                            t[70] = e + 12;
                             break e;
                           }
                         case 97:
                           {
-                            f[70] = e + 10;
-                            w(1) | 0;
-                            e = f[70] | 0;
-                            l = 46;
+                            t[70] = e + 10;
+                            w(0) | 0;
+                            e = t[70] | 0;
+                            C = 35;
                             break;
                           }
                         case 102:
                           {
-                            l = 46;
+                            C = 35;
                             break;
                           }
                         case 99:
                           {
-                            if ((m(e + 2 | 0, 36, 8) | 0) == 0 ? (a = e + 10 | 0, B(s[a >> 1] | 0) | 0) : 0) {
-                              f[70] = a;
-                              k = w(1) | 0;
-                              l = f[70] | 0;
-                              P(k) | 0;
-                              k = f[70] | 0;
-                              O(l, k, l, k);
-                              f[70] = (f[70] | 0) + -2;
+                            if ((m(e + 2 | 0, 36, 8) | 0) == 0 ? (a = e + 10 | 0, E(s[a >> 1] | 0) | 0) : 0) {
+                              t[70] = a;
+                              g = w(1) | 0;
+                              C = t[70] | 0;
+                              q(g) | 0;
+                              g = t[70] | 0;
+                              $(C, g, C, g);
+                              t[70] = (t[70] | 0) + -2;
                               break e;
                             }
                             e = e + 4 | 0;
-                            f[70] = e;
+                            t[70] = e;
                             break;
                           }
                         case 108:
@@ -984,60 +969,60 @@ _export({ target: 'Iterator', proto: true, real: true }, {
                         default:
                           break e;
                       }
-                      if ((l | 0) == 46) {
-                        f[70] = e + 16;
+                      if ((C | 0) == 35) {
+                        t[70] = e + 16;
                         e = w(1) | 0;
                         if (e << 16 >> 16 == 42) {
-                          f[70] = (f[70] | 0) + 2;
+                          t[70] = (t[70] | 0) + 2;
                           e = w(1) | 0;
                         }
-                        l = f[70] | 0;
-                        P(e) | 0;
-                        k = f[70] | 0;
-                        O(l, k, l, k);
-                        f[70] = (f[70] | 0) + -2;
+                        C = t[70] | 0;
+                        q(e) | 0;
+                        g = t[70] | 0;
+                        $(C, g, C, g);
+                        t[70] = (t[70] | 0) + -2;
                         break e;
                       }
                       e = e + 4 | 0;
-                      f[70] = e;
+                      t[70] = e;
                       i[795] = 0;
                       r: while (1) {
-                        f[70] = e + 2;
-                        k = w(1) | 0;
-                        e = f[70] | 0;
-                        switch ((P(k) | 0) << 16 >> 16) {
+                        t[70] = e + 2;
+                        g = w(1) | 0;
+                        e = t[70] | 0;
+                        switch ((q(g) | 0) << 16 >> 16) {
                           case 91:
                           case 123:
                             break r;
                           default:
                             {}
                         }
-                        a = f[70] | 0;
+                        a = t[70] | 0;
                         if ((a | 0) == (e | 0)) break e;
-                        O(e, a, e, a);
+                        $(e, a, e, a);
                         if ((w(1) | 0) << 16 >> 16 != 44) break;
-                        e = f[70] | 0;
+                        e = t[70] | 0;
                       }
-                      f[70] = (f[70] | 0) + -2;
+                      t[70] = (t[70] | 0) + -2;
                       break e;
                     }
                 }
               } while (0);
-              k = (w(1) | 0) << 16 >> 16 == 102;
-              e = f[70] | 0;
-              if (k ? (m(e + 2 | 0, 52, 6) | 0) == 0 : 0) {
-                f[70] = e + 8;
-                o(c, w(1) | 0);
-                e = (n | 0) == 0 ? 232 : n + 16 | 0;
+              g = (w(1) | 0) << 16 >> 16 == 102;
+              e = t[70] | 0;
+              if (g ? (m(e + 2 | 0, 50, 6) | 0) == 0 : 0) {
+                t[70] = e + 8;
+                u(l, w(1) | 0);
+                e = (k | 0) == 0 ? 232 : k + 16 | 0;
                 while (1) {
-                  e = f[e >> 2] | 0;
+                  e = t[e >> 2] | 0;
                   if (!e) break e;
-                  f[e + 12 >> 2] = 0;
-                  f[e + 8 >> 2] = 0;
+                  t[e + 12 >> 2] = 0;
+                  t[e + 8 >> 2] = 0;
                   e = e + 16 | 0;
                 }
               }
-              f[70] = e + -2;
+              t[70] = e + -2;
             }
           } while (0);
           return;
@@ -1046,32 +1031,32 @@ _export({ target: 'Iterator', proto: true, real: true }, {
           var e = 0,
             a = 0,
             r = 0,
-            t = 0,
             c = 0,
+            f = 0,
             n = 0;
-          c = f[70] | 0;
-          a = c + 12 | 0;
-          f[70] = a;
+          f = t[70] | 0;
+          e = f + 12 | 0;
+          t[70] = e;
           e: do {
             switch ((w(1) | 0) << 16 >> 16) {
               case 40:
                 {
-                  a = f[68] | 0;
+                  a = t[68] | 0;
                   n = s[396] | 0;
                   r = n & 65535;
-                  f[a + (r << 3) >> 2] = 5;
-                  e = f[70] | 0;
+                  t[a + (r << 3) >> 2] = 5;
+                  e = t[70] | 0;
                   s[396] = n + 1 << 16 >> 16;
-                  f[a + (r << 3) + 4 >> 2] = e;
-                  if ((s[f[67] >> 1] | 0) != 46) {
-                    f[70] = e + 2;
+                  t[a + (r << 3) + 4 >> 2] = e;
+                  if ((s[t[67] >> 1] | 0) != 46) {
+                    t[70] = e + 2;
                     n = w(1) | 0;
-                    A(c, f[70] | 0, 0, e);
-                    a = f[61] | 0;
-                    r = f[69] | 0;
-                    c = s[395] | 0;
-                    s[395] = c + 1 << 16 >> 16;
-                    f[r + ((c & 65535) << 2) >> 2] = a;
+                    A(f, t[70] | 0, 0, e);
+                    a = t[61] | 0;
+                    r = t[69] | 0;
+                    f = s[395] | 0;
+                    s[395] = f + 1 << 16 >> 16;
+                    t[r + ((f & 65535) << 2) >> 2] = a;
                     switch (n << 16 >> 16) {
                       case 39:
                         {
@@ -1085,38 +1070,38 @@ _export({ target: 'Iterator', proto: true, real: true }, {
                         }
                       default:
                         {
-                          f[70] = (f[70] | 0) + -2;
+                          t[70] = (t[70] | 0) + -2;
                           break e;
                         }
                     }
-                    e = (f[70] | 0) + 2 | 0;
-                    f[70] = e;
+                    e = (t[70] | 0) + 2 | 0;
+                    t[70] = e;
                     switch ((w(1) | 0) << 16 >> 16) {
                       case 44:
                         {
-                          f[70] = (f[70] | 0) + 2;
+                          t[70] = (t[70] | 0) + 2;
                           w(1) | 0;
-                          c = f[61] | 0;
-                          f[c + 4 >> 2] = e;
-                          n = f[70] | 0;
-                          f[c + 16 >> 2] = n;
-                          i[c + 24 >> 0] = 1;
-                          f[70] = n + -2;
+                          f = t[61] | 0;
+                          t[f + 4 >> 2] = e;
+                          n = t[70] | 0;
+                          t[f + 16 >> 2] = n;
+                          i[f + 24 >> 0] = 1;
+                          t[70] = n + -2;
                           break e;
                         }
                       case 41:
                         {
                           s[396] = (s[396] | 0) + -1 << 16 >> 16;
-                          n = f[61] | 0;
-                          f[n + 4 >> 2] = e;
-                          f[n + 12 >> 2] = (f[70] | 0) + 2;
+                          n = t[61] | 0;
+                          t[n + 4 >> 2] = e;
+                          t[n + 12 >> 2] = (t[70] | 0) + 2;
                           i[n + 24 >> 0] = 1;
                           s[395] = (s[395] | 0) + -1 << 16 >> 16;
                           break e;
                         }
                       default:
                         {
-                          f[70] = (f[70] | 0) + -2;
+                          t[70] = (t[70] | 0) + -2;
                           break e;
                         }
                     }
@@ -1125,225 +1110,100 @@ _export({ target: 'Iterator', proto: true, real: true }, {
                 }
               case 46:
                 {
-                  f[70] = (f[70] | 0) + 2;
-                  if (((w(1) | 0) << 16 >> 16 == 109 ? (e = f[70] | 0, (m(e + 2 | 0, 44, 6) | 0) == 0) : 0) ? (s[f[67] >> 1] | 0) != 46 : 0) A(c, c, e + 8 | 0, 2);
+                  t[70] = (t[70] | 0) + 2;
+                  if ((w(1) | 0) << 16 >> 16 == 109 ? (a = t[70] | 0, (m(a + 2 | 0, 44, 6) | 0) == 0) : 0) {
+                    e = t[67] | 0;
+                    if (!(G(e) | 0) ? (s[e >> 1] | 0) == 46 : 0) break e;
+                    A(f, f, a + 8 | 0, 2);
+                  }
                   break;
                 }
               case 42:
               case 39:
               case 34:
                 {
-                  t = 17;
+                  c = 18;
                   break;
                 }
               case 123:
                 {
-                  e = f[70] | 0;
+                  e = t[70] | 0;
                   if (s[396] | 0) {
-                    f[70] = e + -2;
+                    t[70] = e + -2;
                     break e;
                   }
                   while (1) {
-                    if (e >>> 0 >= (f[71] | 0) >>> 0) break;
+                    if (e >>> 0 >= (t[71] | 0) >>> 0) break;
                     e = w(1) | 0;
-                    if (!(T(e) | 0)) {
+                    if (!(W(e) | 0)) {
                       if (e << 16 >> 16 == 125) {
-                        t = 32;
+                        c = 33;
                         break;
                       }
                     } else d(e);
-                    e = (f[70] | 0) + 2 | 0;
-                    f[70] = e;
+                    e = (t[70] | 0) + 2 | 0;
+                    t[70] = e;
                   }
-                  if ((t | 0) == 32) f[70] = (f[70] | 0) + 2;
-                  w(1) | 0;
-                  e = f[70] | 0;
-                  if (m(e, 50, 8) | 0) {
-                    Q();
+                  if ((c | 0) == 33) t[70] = (t[70] | 0) + 2;
+                  n = (w(1) | 0) << 16 >> 16 == 102;
+                  e = t[70] | 0;
+                  if (n ? m(e + 2 | 0, 50, 6) | 0 : 0) {
+                    T();
                     break e;
                   }
-                  f[70] = e + 8;
+                  t[70] = e + 8;
                   e = w(1) | 0;
-                  if (T(e) | 0) {
-                    o(c, e);
+                  if (W(e) | 0) {
+                    u(f, e);
                     break e;
                   } else {
-                    Q();
+                    T();
                     break e;
                   }
                 }
               default:
-                if ((f[70] | 0) == (a | 0)) f[70] = c + 10;else t = 17;
+                if ((t[70] | 0) == (e | 0)) t[70] = f + 10;else c = 18;
             }
           } while (0);
           do {
-            if ((t | 0) == 17) {
+            if ((c | 0) == 18) {
               if (s[396] | 0) {
-                f[70] = (f[70] | 0) + -2;
+                t[70] = (t[70] | 0) + -2;
                 break;
               }
-              e = f[71] | 0;
-              a = f[70] | 0;
+              e = t[71] | 0;
+              a = t[70] | 0;
               while (1) {
                 if (a >>> 0 >= e >>> 0) {
-                  t = 24;
+                  c = 25;
                   break;
                 }
                 r = s[a >> 1] | 0;
-                if (T(r) | 0) {
-                  t = 22;
+                if (W(r) | 0) {
+                  c = 23;
                   break;
                 }
                 n = a + 2 | 0;
-                f[70] = n;
+                t[70] = n;
                 a = n;
               }
-              if ((t | 0) == 22) {
-                o(c, r);
+              if ((c | 0) == 23) {
+                u(f, r);
                 break;
-              } else if ((t | 0) == 24) {
-                Q();
+              } else if ((c | 0) == 25) {
+                T();
                 break;
               }
             }
           } while (0);
           return;
         }
-        function u(e) {
-          e = e | 0;
-          e: do {
-            switch (s[e >> 1] | 0) {
-              case 100:
-                switch (s[e + -2 >> 1] | 0) {
-                  case 105:
-                    {
-                      e = S(e + -4 | 0, 90, 2) | 0;
-                      break e;
-                    }
-                  case 108:
-                    {
-                      e = S(e + -4 | 0, 94, 3) | 0;
-                      break e;
-                    }
-                  default:
-                    {
-                      e = 0;
-                      break e;
-                    }
-                }
-              case 101:
-                switch (s[e + -2 >> 1] | 0) {
-                  case 115:
-                    switch (s[e + -4 >> 1] | 0) {
-                      case 108:
-                        {
-                          e = j(e + -6 | 0, 101) | 0;
-                          break e;
-                        }
-                      case 97:
-                        {
-                          e = j(e + -6 | 0, 99) | 0;
-                          break e;
-                        }
-                      default:
-                        {
-                          e = 0;
-                          break e;
-                        }
-                    }
-                  case 116:
-                    {
-                      e = S(e + -4 | 0, 100, 4) | 0;
-                      break e;
-                    }
-                  case 117:
-                    {
-                      e = S(e + -4 | 0, 108, 6) | 0;
-                      break e;
-                    }
-                  default:
-                    {
-                      e = 0;
-                      break e;
-                    }
-                }
-              case 102:
-                {
-                  if ((s[e + -2 >> 1] | 0) == 111 ? (s[e + -4 >> 1] | 0) == 101 : 0) switch (s[e + -6 >> 1] | 0) {
-                    case 99:
-                      {
-                        e = S(e + -8 | 0, 120, 6) | 0;
-                        break e;
-                      }
-                    case 112:
-                      {
-                        e = S(e + -8 | 0, 132, 2) | 0;
-                        break e;
-                      }
-                    default:
-                      {
-                        e = 0;
-                        break e;
-                      }
-                  } else e = 0;
-                  break;
-                }
-              case 107:
-                {
-                  e = S(e + -2 | 0, 136, 4) | 0;
-                  break;
-                }
-              case 110:
-                {
-                  e = e + -2 | 0;
-                  if (j(e, 105) | 0) e = 1;else e = S(e, 144, 5) | 0;
-                  break;
-                }
-              case 111:
-                {
-                  e = j(e + -2 | 0, 100) | 0;
-                  break;
-                }
-              case 114:
-                {
-                  e = S(e + -2 | 0, 154, 7) | 0;
-                  break;
-                }
-              case 116:
-                {
-                  e = S(e + -2 | 0, 168, 4) | 0;
-                  break;
-                }
-              case 119:
-                switch (s[e + -2 >> 1] | 0) {
-                  case 101:
-                    {
-                      e = j(e + -4 | 0, 110) | 0;
-                      break e;
-                    }
-                  case 111:
-                    {
-                      e = S(e + -4 | 0, 176, 3) | 0;
-                      break e;
-                    }
-                  default:
-                    {
-                      e = 0;
-                      break e;
-                    }
-                }
-              default:
-                e = 0;
-            }
-          } while (0);
-          return e | 0;
-        }
-        function o(e, a) {
+        function u(e, a) {
           e = e | 0;
           a = a | 0;
           var r = 0,
             i = 0;
-          r = (f[70] | 0) + 2 | 0;
+          r = (t[70] | 0) + 2 | 0;
           switch (a << 16 >> 16) {
             case 39:
               {
@@ -1358,115 +1218,252 @@ _export({ target: 'Iterator', proto: true, real: true }, {
                 break;
               }
             default:
-              Q();
+              T();
           }
           do {
             if ((i | 0) == 5) {
-              A(e, r, f[70] | 0, 1);
-              f[70] = (f[70] | 0) + 2;
-              i = (w(0) | 0) << 16 >> 16 == 97;
-              a = f[70] | 0;
-              if (i ? (m(a + 2 | 0, 80, 10) | 0) == 0 : 0) {
-                f[70] = a + 12;
-                if ((w(1) | 0) << 16 >> 16 != 123) {
-                  f[70] = a;
-                  break;
-                }
-                e = f[70] | 0;
-                r = e;
-                e: while (1) {
-                  f[70] = r + 2;
-                  r = w(1) | 0;
-                  switch (r << 16 >> 16) {
-                    case 39:
-                      {
-                        d(39);
-                        f[70] = (f[70] | 0) + 2;
-                        r = w(1) | 0;
-                        break;
-                      }
-                    case 34:
-                      {
-                        d(34);
-                        f[70] = (f[70] | 0) + 2;
-                        r = w(1) | 0;
-                        break;
-                      }
-                    default:
-                      r = P(r) | 0;
-                  }
-                  if (r << 16 >> 16 != 58) {
-                    i = 16;
-                    break;
-                  }
-                  f[70] = (f[70] | 0) + 2;
-                  switch ((w(1) | 0) << 16 >> 16) {
-                    case 39:
-                      {
-                        d(39);
-                        break;
-                      }
-                    case 34:
-                      {
-                        d(34);
-                        break;
-                      }
-                    default:
-                      {
-                        i = 20;
-                        break e;
-                      }
-                  }
-                  f[70] = (f[70] | 0) + 2;
-                  switch ((w(1) | 0) << 16 >> 16) {
-                    case 125:
-                      {
-                        i = 25;
-                        break e;
-                      }
-                    case 44:
-                      break;
-                    default:
-                      {
-                        i = 24;
-                        break e;
-                      }
-                  }
-                  f[70] = (f[70] | 0) + 2;
-                  if ((w(1) | 0) << 16 >> 16 == 125) {
-                    i = 25;
-                    break;
-                  }
-                  r = f[70] | 0;
-                }
-                if ((i | 0) == 16) {
-                  f[70] = a;
-                  break;
-                } else if ((i | 0) == 20) {
-                  f[70] = a;
-                  break;
-                } else if ((i | 0) == 24) {
-                  f[70] = a;
-                  break;
-                } else if ((i | 0) == 25) {
-                  i = f[61] | 0;
-                  f[i + 16 >> 2] = e;
-                  f[i + 12 >> 2] = (f[70] | 0) + 2;
-                  break;
-                }
+              A(e, r, t[70] | 0, 1);
+              t[70] = (t[70] | 0) + 2;
+              a = w(0) | 0;
+              e = a << 16 >> 16 == 97;
+              if (e) {
+                r = t[70] | 0;
+                if (m(r + 2 | 0, 78, 10) | 0) i = 11;
+              } else {
+                r = t[70] | 0;
+                if (!(((a << 16 >> 16 == 119 ? (s[r + 2 >> 1] | 0) == 105 : 0) ? (s[r + 4 >> 1] | 0) == 116 : 0) ? (s[r + 6 >> 1] | 0) == 104 : 0)) i = 11;
               }
-              f[70] = a + -2;
+              if ((i | 0) == 11) {
+                t[70] = r + -2;
+                break;
+              }
+              t[70] = r + ((e ? 6 : 4) << 1);
+              if ((w(1) | 0) << 16 >> 16 != 123) {
+                t[70] = r;
+                break;
+              }
+              e = t[70] | 0;
+              a = e;
+              e: while (1) {
+                t[70] = a + 2;
+                a = w(1) | 0;
+                switch (a << 16 >> 16) {
+                  case 39:
+                    {
+                      d(39);
+                      t[70] = (t[70] | 0) + 2;
+                      a = w(1) | 0;
+                      break;
+                    }
+                  case 34:
+                    {
+                      d(34);
+                      t[70] = (t[70] | 0) + 2;
+                      a = w(1) | 0;
+                      break;
+                    }
+                  default:
+                    a = q(a) | 0;
+                }
+                if (a << 16 >> 16 != 58) {
+                  i = 20;
+                  break;
+                }
+                t[70] = (t[70] | 0) + 2;
+                switch ((w(1) | 0) << 16 >> 16) {
+                  case 39:
+                    {
+                      d(39);
+                      break;
+                    }
+                  case 34:
+                    {
+                      d(34);
+                      break;
+                    }
+                  default:
+                    {
+                      i = 24;
+                      break e;
+                    }
+                }
+                t[70] = (t[70] | 0) + 2;
+                switch ((w(1) | 0) << 16 >> 16) {
+                  case 125:
+                    {
+                      i = 29;
+                      break e;
+                    }
+                  case 44:
+                    break;
+                  default:
+                    {
+                      i = 28;
+                      break e;
+                    }
+                }
+                t[70] = (t[70] | 0) + 2;
+                if ((w(1) | 0) << 16 >> 16 == 125) {
+                  i = 29;
+                  break;
+                }
+                a = t[70] | 0;
+              }
+              if ((i | 0) == 20) {
+                t[70] = r;
+                break;
+              } else if ((i | 0) == 24) {
+                t[70] = r;
+                break;
+              } else if ((i | 0) == 28) {
+                t[70] = r;
+                break;
+              } else if ((i | 0) == 29) {
+                i = t[61] | 0;
+                t[i + 16 >> 2] = e;
+                t[i + 12 >> 2] = (t[70] | 0) + 2;
+                break;
+              }
             }
           } while (0);
           return;
+        }
+        function o(e) {
+          e = e | 0;
+          e: do {
+            switch (s[e >> 1] | 0) {
+              case 100:
+                switch (s[e + -2 >> 1] | 0) {
+                  case 105:
+                    {
+                      e = O(e + -4 | 0, 88, 2) | 0;
+                      break e;
+                    }
+                  case 108:
+                    {
+                      e = O(e + -4 | 0, 92, 3) | 0;
+                      break e;
+                    }
+                  default:
+                    {
+                      e = 0;
+                      break e;
+                    }
+                }
+              case 101:
+                switch (s[e + -2 >> 1] | 0) {
+                  case 115:
+                    switch (s[e + -4 >> 1] | 0) {
+                      case 108:
+                        {
+                          e = B(e + -6 | 0, 101) | 0;
+                          break e;
+                        }
+                      case 97:
+                        {
+                          e = B(e + -6 | 0, 99) | 0;
+                          break e;
+                        }
+                      default:
+                        {
+                          e = 0;
+                          break e;
+                        }
+                    }
+                  case 116:
+                    {
+                      e = O(e + -4 | 0, 98, 4) | 0;
+                      break e;
+                    }
+                  case 117:
+                    {
+                      e = O(e + -4 | 0, 106, 6) | 0;
+                      break e;
+                    }
+                  default:
+                    {
+                      e = 0;
+                      break e;
+                    }
+                }
+              case 102:
+                {
+                  if ((s[e + -2 >> 1] | 0) == 111 ? (s[e + -4 >> 1] | 0) == 101 : 0) switch (s[e + -6 >> 1] | 0) {
+                    case 99:
+                      {
+                        e = O(e + -8 | 0, 118, 6) | 0;
+                        break e;
+                      }
+                    case 112:
+                      {
+                        e = O(e + -8 | 0, 130, 2) | 0;
+                        break e;
+                      }
+                    default:
+                      {
+                        e = 0;
+                        break e;
+                      }
+                  } else e = 0;
+                  break;
+                }
+              case 107:
+                {
+                  e = O(e + -2 | 0, 134, 4) | 0;
+                  break;
+                }
+              case 110:
+                {
+                  e = e + -2 | 0;
+                  if (B(e, 105) | 0) e = 1;else e = O(e, 142, 5) | 0;
+                  break;
+                }
+              case 111:
+                {
+                  e = B(e + -2 | 0, 100) | 0;
+                  break;
+                }
+              case 114:
+                {
+                  e = O(e + -2 | 0, 152, 7) | 0;
+                  break;
+                }
+              case 116:
+                {
+                  e = O(e + -2 | 0, 166, 4) | 0;
+                  break;
+                }
+              case 119:
+                switch (s[e + -2 >> 1] | 0) {
+                  case 101:
+                    {
+                      e = B(e + -4 | 0, 110) | 0;
+                      break e;
+                    }
+                  case 111:
+                    {
+                      e = O(e + -4 | 0, 174, 3) | 0;
+                      break e;
+                    }
+                  default:
+                    {
+                      e = 0;
+                      break e;
+                    }
+                }
+              default:
+                e = 0;
+            }
+          } while (0);
+          return e | 0;
         }
         function h() {
           var e = 0,
             a = 0,
             r = 0,
             i = 0;
-          a = f[71] | 0;
-          r = f[70] | 0;
+          a = t[71] | 0;
+          r = t[70] | 0;
           e: while (1) {
             e = r + 2 | 0;
             if (r >>> 0 >= a >>> 0) {
@@ -1499,22 +1496,22 @@ _export({ target: 'Iterator', proto: true, real: true }, {
           }
           if ((a | 0) == 6) {
             e = r + 4 | 0;
-            f[70] = e;
-            a = f[68] | 0;
+            t[70] = e;
+            a = t[68] | 0;
             i = s[396] | 0;
             r = i & 65535;
-            f[a + (r << 3) >> 2] = 4;
+            t[a + (r << 3) >> 2] = 4;
             s[396] = i + 1 << 16 >> 16;
-            f[a + (r << 3) + 4 >> 2] = e;
+            t[a + (r << 3) + 4 >> 2] = e;
           } else if ((a | 0) == 7) {
-            f[70] = e;
-            r = f[68] | 0;
+            t[70] = e;
+            r = t[68] | 0;
             i = (s[396] | 0) + -1 << 16 >> 16;
             s[396] = i;
-            if ((f[r + ((i & 65535) << 3) >> 2] | 0) != 3) Q();
+            if ((t[r + ((i & 65535) << 3) >> 2] | 0) != 3) T();
           } else if ((a | 0) == 10) {
-            f[70] = e;
-            Q();
+            t[70] = e;
+            T();
           }
           return;
         }
@@ -1523,18 +1520,18 @@ _export({ target: 'Iterator', proto: true, real: true }, {
           var a = 0,
             r = 0,
             i = 0;
-          r = f[70] | 0;
+          r = t[70] | 0;
           e: do {
             a = s[r >> 1] | 0;
             a: do {
               if (a << 16 >> 16 != 47) {
                 if (e) {
-                  if (R(a) | 0) break;else break e;
-                } else if (D(a) | 0) break;else break e;
+                  if (V(a) | 0) break;else break e;
+                } else if (F(a) | 0) break;else break e;
               } else switch (s[r + 2 >> 1] | 0) {
                 case 47:
                   {
-                    E();
+                    P();
                     break a;
                   }
                 case 42:
@@ -1549,10 +1546,10 @@ _export({ target: 'Iterator', proto: true, real: true }, {
                   }
               }
             } while (0);
-            i = f[70] | 0;
+            i = t[70] | 0;
             r = i + 2 | 0;
-            f[70] = r;
-          } while (i >>> 0 < (f[71] | 0) >>> 0);
+            t[70] = r;
+          } while (i >>> 0 < (t[71] | 0) >>> 0);
           return a | 0;
         }
         function d(e) {
@@ -1560,12 +1557,12 @@ _export({ target: 'Iterator', proto: true, real: true }, {
           var a = 0,
             r = 0,
             i = 0,
-            t = 0;
-          t = f[71] | 0;
-          a = f[70] | 0;
+            c = 0;
+          c = t[71] | 0;
+          a = t[70] | 0;
           while (1) {
             i = a + 2 | 0;
-            if (a >>> 0 >= t >>> 0) {
+            if (a >>> 0 >= c >>> 0) {
               a = 9;
               break;
             }
@@ -1580,15 +1577,15 @@ _export({ target: 'Iterator', proto: true, real: true }, {
                 a = a + 6 | 0;
                 a = (s[a >> 1] | 0) == 10 ? a : r;
               } else a = r;
-            } else if (X(r) | 0) {
+            } else if (Z(r) | 0) {
               a = 9;
               break;
             } else a = i;
           }
           if ((a | 0) == 9) {
-            f[70] = i;
-            Q();
-          } else if ((a | 0) == 10) f[70] = i;
+            t[70] = i;
+            T();
+          } else if ((a | 0) == 10) t[70] = i;
           return;
         }
         function v(e, a) {
@@ -1596,29 +1593,29 @@ _export({ target: 'Iterator', proto: true, real: true }, {
           a = a | 0;
           var r = 0,
             i = 0,
-            t = 0,
-            c = 0;
-          r = f[70] | 0;
+            c = 0,
+            f = 0;
+          r = t[70] | 0;
           i = s[r >> 1] | 0;
-          c = (e | 0) == (a | 0);
-          t = c ? 0 : e;
-          c = c ? 0 : a;
+          f = (e | 0) == (a | 0);
+          c = f ? 0 : e;
+          f = f ? 0 : a;
           if (i << 16 >> 16 == 97) {
-            f[70] = r + 4;
+            t[70] = r + 4;
             r = w(1) | 0;
-            e = f[70] | 0;
-            if (T(r) | 0) {
+            e = t[70] | 0;
+            if (W(r) | 0) {
               d(r);
-              a = (f[70] | 0) + 2 | 0;
-              f[70] = a;
+              a = (t[70] | 0) + 2 | 0;
+              t[70] = a;
             } else {
-              P(r) | 0;
-              a = f[70] | 0;
+              q(r) | 0;
+              a = t[70] | 0;
             }
             i = w(1) | 0;
-            r = f[70] | 0;
+            r = t[70] | 0;
           }
-          if ((r | 0) != (e | 0)) O(e, a, t, c);
+          if ((r | 0) != (e | 0)) $(e, a, c, f);
           return i | 0;
         }
         function A(e, a, r, s) {
@@ -1626,31 +1623,31 @@ _export({ target: 'Iterator', proto: true, real: true }, {
           a = a | 0;
           r = r | 0;
           s = s | 0;
-          var t = 0,
-            c = 0;
-          t = f[65] | 0;
-          f[65] = t + 32;
-          c = f[61] | 0;
-          f[((c | 0) == 0 ? 228 : c + 28 | 0) >> 2] = t;
-          f[62] = c;
-          f[61] = t;
-          f[t + 8 >> 2] = e;
+          var c = 0,
+            f = 0;
+          c = t[65] | 0;
+          t[65] = c + 32;
+          f = t[61] | 0;
+          t[((f | 0) == 0 ? 228 : f + 28 | 0) >> 2] = c;
+          t[62] = f;
+          t[61] = c;
+          t[c + 8 >> 2] = e;
           if (2 == (s | 0)) e = r;else e = 1 == (s | 0) ? r + 2 | 0 : 0;
-          f[t + 12 >> 2] = e;
-          f[t >> 2] = a;
-          f[t + 4 >> 2] = r;
-          f[t + 16 >> 2] = 0;
-          f[t + 20 >> 2] = s;
-          i[t + 24 >> 0] = 1 == (s | 0) & 1;
-          f[t + 28 >> 2] = 0;
+          t[c + 12 >> 2] = e;
+          t[c >> 2] = a;
+          t[c + 4 >> 2] = r;
+          t[c + 16 >> 2] = 0;
+          t[c + 20 >> 2] = s;
+          i[c + 24 >> 0] = 1 == (s | 0) & 1;
+          t[c + 28 >> 2] = 0;
           return;
         }
         function C() {
           var e = 0,
             a = 0,
             r = 0;
-          r = f[71] | 0;
-          a = f[70] | 0;
+          r = t[71] | 0;
+          a = t[70] | 0;
           e: while (1) {
             e = a + 2 | 0;
             if (a >>> 0 >= r >>> 0) {
@@ -1680,11 +1677,11 @@ _export({ target: 'Iterator', proto: true, real: true }, {
             a = e;
           }
           if ((a | 0) == 6) {
-            f[70] = e;
-            Q();
+            t[70] = e;
+            T();
             e = 0;
           } else if ((a | 0) == 7) {
-            f[70] = e;
+            t[70] = e;
             e = 93;
           }
           return e | 0;
@@ -1694,10 +1691,10 @@ _export({ target: 'Iterator', proto: true, real: true }, {
             a = 0,
             r = 0;
           e: while (1) {
-            e = f[70] | 0;
+            e = t[70] | 0;
             a = e + 2 | 0;
-            f[70] = a;
-            if (e >>> 0 >= (f[71] | 0) >>> 0) {
+            t[70] = a;
+            if (e >>> 0 >= (t[71] | 0) >>> 0) {
               r = 7;
               break;
             }
@@ -1717,14 +1714,14 @@ _export({ target: 'Iterator', proto: true, real: true }, {
                 }
               case 92:
                 {
-                  f[70] = e + 4;
+                  t[70] = e + 4;
                   break;
                 }
               default:
                 {}
             }
           }
-          if ((r | 0) == 7) Q();
+          if ((r | 0) == 7) T();
           return;
         }
         function p(e) {
@@ -1743,17 +1740,17 @@ _export({ target: 'Iterator', proto: true, real: true }, {
               }
             case 104:
               {
-                e = S(e + -2 | 0, 202, 4) | 0;
+                e = O(e + -2 | 0, 200, 4) | 0;
                 break;
               }
             case 121:
               {
-                e = S(e + -2 | 0, 210, 6) | 0;
+                e = O(e + -2 | 0, 208, 6) | 0;
                 break;
               }
             case 101:
               {
-                e = S(e + -2 | 0, 222, 3) | 0;
+                e = O(e + -2 | 0, 220, 3) | 0;
                 break;
               }
             default:
@@ -1766,27 +1763,27 @@ _export({ target: 'Iterator', proto: true, real: true }, {
           var a = 0,
             r = 0,
             i = 0,
-            t = 0,
-            c = 0;
-          t = (f[70] | 0) + 2 | 0;
-          f[70] = t;
-          r = f[71] | 0;
+            c = 0,
+            f = 0;
+          c = (t[70] | 0) + 2 | 0;
+          t[70] = c;
+          r = t[71] | 0;
           while (1) {
-            a = t + 2 | 0;
-            if (t >>> 0 >= r >>> 0) break;
+            a = c + 2 | 0;
+            if (c >>> 0 >= r >>> 0) break;
             i = s[a >> 1] | 0;
-            if (!e ? X(i) | 0 : 0) break;
-            if (i << 16 >> 16 == 42 ? (s[t + 4 >> 1] | 0) == 47 : 0) {
-              c = 8;
+            if (!e ? Z(i) | 0 : 0) break;
+            if (i << 16 >> 16 == 42 ? (s[c + 4 >> 1] | 0) == 47 : 0) {
+              f = 8;
               break;
             }
-            t = a;
+            c = a;
           }
-          if ((c | 0) == 8) {
-            f[70] = a;
-            a = t + 4 | 0;
+          if ((f | 0) == 8) {
+            t[70] = a;
+            a = c + 4 | 0;
           }
-          f[70] = a;
+          t[70] = a;
           return;
         }
         function m(e, a, r) {
@@ -1794,13 +1791,13 @@ _export({ target: 'Iterator', proto: true, real: true }, {
           a = a | 0;
           r = r | 0;
           var s = 0,
-            f = 0;
+            t = 0;
           e: do {
             if (!r) e = 0;else {
               while (1) {
                 s = i[e >> 0] | 0;
-                f = i[a >> 0] | 0;
-                if (s << 24 >> 24 != f << 24 >> 24) break;
+                t = i[a >> 0] | 0;
+                if (s << 24 >> 24 != t << 24 >> 24) break;
                 r = r + -1 | 0;
                 if (!r) {
                   e = 0;
@@ -1810,7 +1807,7 @@ _export({ target: 'Iterator', proto: true, real: true }, {
                   a = a + 1 | 0;
                 }
               }
-              e = (s & 255) - (f & 255) | 0;
+              e = (s & 255) - (t & 255) | 0;
             }
           } while (0);
           return e | 0;
@@ -1870,74 +1867,95 @@ _export({ target: 'Iterator', proto: true, real: true }, {
         }
         function x(e) {
           e = e | 0;
+          var a = 0;
+          a = s[e >> 1] | 0;
+          e: do {
+            if ((a + -9 & 65535) >= 5) {
+              switch (a << 16 >> 16) {
+                case 160:
+                case 32:
+                  {
+                    a = 1;
+                    break e;
+                  }
+                default:
+                  {}
+              }
+              if (I(a) | 0) return a << 16 >> 16 != 46 | (G(e) | 0) | 0;else a = 0;
+            } else a = 1;
+          } while (0);
+          return a | 0;
+        }
+        function S(e) {
+          e = e | 0;
           var a = 0,
             r = 0,
             i = 0,
-            t = 0;
+            c = 0;
           r = n;
           n = n + 16 | 0;
           i = r;
-          f[i >> 2] = 0;
-          f[64] = e;
-          a = f[3] | 0;
-          t = a + (e << 1) | 0;
-          e = t + 2 | 0;
-          s[t >> 1] = 0;
-          f[i >> 2] = e;
-          f[65] = e;
-          f[57] = 0;
-          f[61] = 0;
-          f[59] = 0;
-          f[58] = 0;
-          f[63] = 0;
-          f[60] = 0;
+          t[i >> 2] = 0;
+          t[64] = e;
+          a = t[3] | 0;
+          c = a + (e << 1) | 0;
+          e = c + 2 | 0;
+          s[c >> 1] = 0;
+          t[i >> 2] = e;
+          t[65] = e;
+          t[57] = 0;
+          t[61] = 0;
+          t[59] = 0;
+          t[58] = 0;
+          t[63] = 0;
+          t[60] = 0;
           n = r;
           return a | 0;
         }
-        function S(e, a, r) {
+        function O(e, a, r) {
           e = e | 0;
           a = a | 0;
           r = r | 0;
           var i = 0,
-            t = 0;
+            s = 0;
           i = e + (0 - r << 1) | 0;
-          t = i + 2 | 0;
-          e = f[3] | 0;
-          if (t >>> 0 >= e >>> 0 ? (m(t, a, r << 1) | 0) == 0 : 0) {
-            if ((t | 0) == (e | 0)) e = 1;else e = B(s[i >> 1] | 0) | 0;
+          s = i + 2 | 0;
+          e = t[3] | 0;
+          if (s >>> 0 >= e >>> 0 ? (m(s, a, r << 1) | 0) == 0 : 0) {
+            if ((s | 0) == (e | 0)) e = 1;else e = x(i) | 0;
           } else e = 0;
           return e | 0;
         }
-        function O(e, a, r, i) {
+        function $(e, a, r, i) {
           e = e | 0;
           a = a | 0;
           r = r | 0;
           i = i | 0;
           var s = 0,
-            t = 0;
-          s = f[65] | 0;
-          f[65] = s + 20;
-          t = f[63] | 0;
-          f[((t | 0) == 0 ? 232 : t + 16 | 0) >> 2] = s;
-          f[63] = s;
-          f[s >> 2] = e;
-          f[s + 4 >> 2] = a;
-          f[s + 8 >> 2] = r;
-          f[s + 12 >> 2] = i;
-          f[s + 16 >> 2] = 0;
+            c = 0;
+          s = t[65] | 0;
+          t[65] = s + 20;
+          c = t[63] | 0;
+          t[((c | 0) == 0 ? 232 : c + 16 | 0) >> 2] = s;
+          t[63] = s;
+          t[s >> 2] = e;
+          t[s + 4 >> 2] = a;
+          t[s + 8 >> 2] = r;
+          t[s + 12 >> 2] = i;
+          t[s + 16 >> 2] = 0;
           return;
         }
-        function $(e) {
+        function j(e) {
           e = e | 0;
           switch (s[e >> 1] | 0) {
             case 107:
               {
-                e = S(e + -2 | 0, 136, 4) | 0;
+                e = O(e + -2 | 0, 134, 4) | 0;
                 break;
               }
             case 101:
               {
-                if ((s[e + -2 >> 1] | 0) == 117) e = S(e + -4 | 0, 108, 6) | 0;else e = 0;
+                if ((s[e + -2 >> 1] | 0) == 117) e = O(e + -4 | 0, 106, 6) | 0;else e = 0;
                 break;
               }
             default:
@@ -1945,17 +1963,17 @@ _export({ target: 'Iterator', proto: true, real: true }, {
           }
           return e | 0;
         }
-        function j(e, a) {
+        function B(e, a) {
           e = e | 0;
           a = a | 0;
           var r = 0;
-          r = f[3] | 0;
+          r = t[3] | 0;
           if (r >>> 0 <= e >>> 0 ? (s[e >> 1] | 0) == a << 16 >> 16 : 0) {
-            if ((r | 0) == (e | 0)) r = 1;else r = B(s[e + -2 >> 1] | 0) | 0;
+            if ((r | 0) == (e | 0)) r = 1;else r = E(s[e + -2 >> 1] | 0) | 0;
           } else r = 0;
           return r | 0;
         }
-        function B(e) {
+        function E(e) {
           e = e | 0;
           e: do {
             if ((e + -9 & 65535) < 5) e = 1;else {
@@ -1974,12 +1992,12 @@ _export({ target: 'Iterator', proto: true, real: true }, {
           } while (0);
           return e | 0;
         }
-        function E() {
+        function P() {
           var e = 0,
             a = 0,
             r = 0;
-          e = f[71] | 0;
-          r = f[70] | 0;
+          e = t[71] | 0;
+          r = t[70] | 0;
           e: while (1) {
             a = r + 2 | 0;
             if (r >>> 0 >= e >>> 0) break;
@@ -1991,16 +2009,16 @@ _export({ target: 'Iterator', proto: true, real: true }, {
                 r = a;
             }
           }
-          f[70] = a;
+          t[70] = a;
           return;
         }
-        function P(e) {
+        function q(e) {
           e = e | 0;
           while (1) {
-            if (R(e) | 0) break;
+            if (V(e) | 0) break;
             if (I(e) | 0) break;
-            e = (f[70] | 0) + 2 | 0;
-            f[70] = e;
+            e = (t[70] | 0) + 2 | 0;
+            t[70] = e;
             e = s[e >> 1] | 0;
             if (!(e << 16 >> 16)) {
               e = 0;
@@ -2009,9 +2027,9 @@ _export({ target: 'Iterator', proto: true, real: true }, {
           }
           return e | 0;
         }
-        function q() {
+        function z() {
           var e = 0;
-          e = f[(f[59] | 0) + 20 >> 2] | 0;
+          e = t[(t[59] | 0) + 20 >> 2] | 0;
           switch (e | 0) {
             case 1:
               {
@@ -2024,16 +2042,16 @@ _export({ target: 'Iterator', proto: true, real: true }, {
                 break;
               }
             default:
-              e = e - (f[3] | 0) >> 1;
+              e = e - (t[3] | 0) >> 1;
           }
           return e | 0;
         }
-        function z(e) {
+        function D(e) {
           e = e | 0;
-          if (!(S(e, 182, 5) | 0) ? !(S(e, 192, 3) | 0) : 0) e = S(e, 198, 2) | 0;else e = 1;
+          if (!(O(e, 180, 5) | 0) ? !(O(e, 190, 3) | 0) : 0) e = O(e, 196, 2) | 0;else e = 1;
           return e | 0;
         }
-        function D(e) {
+        function F(e) {
           e = e | 0;
           switch (e << 16 >> 16) {
             case 160:
@@ -2050,129 +2068,134 @@ _export({ target: 'Iterator', proto: true, real: true }, {
           }
           return e | 0;
         }
-        function F(e) {
+        function G(e) {
           e = e | 0;
-          if ((f[3] | 0) == (e | 0)) e = 1;else e = B(s[e + -2 >> 1] | 0) | 0;
+          if ((s[e >> 1] | 0) == 46 ? (s[e + -2 >> 1] | 0) == 46 : 0) e = (s[e + -4 >> 1] | 0) == 46;else e = 0;
           return e | 0;
         }
-        function G() {
-          var e = 0;
-          e = f[(f[60] | 0) + 12 >> 2] | 0;
-          if (!e) e = -1;else e = e - (f[3] | 0) >> 1;
-          return e | 0;
-        }
-        function H() {
-          var e = 0;
-          e = f[(f[59] | 0) + 12 >> 2] | 0;
-          if (!e) e = -1;else e = e - (f[3] | 0) >> 1;
+        function H(e) {
+          e = e | 0;
+          if ((t[3] | 0) == (e | 0)) e = 1;else e = x(e + -2 | 0) | 0;
           return e | 0;
         }
         function J() {
           var e = 0;
-          e = f[(f[60] | 0) + 8 >> 2] | 0;
-          if (!e) e = -1;else e = e - (f[3] | 0) >> 1;
+          e = t[(t[60] | 0) + 12 >> 2] | 0;
+          if (!e) e = -1;else e = e - (t[3] | 0) >> 1;
           return e | 0;
         }
         function K() {
           var e = 0;
-          e = f[(f[59] | 0) + 16 >> 2] | 0;
-          if (!e) e = -1;else e = e - (f[3] | 0) >> 1;
+          e = t[(t[59] | 0) + 12 >> 2] | 0;
+          if (!e) e = -1;else e = e - (t[3] | 0) >> 1;
           return e | 0;
         }
         function L() {
           var e = 0;
-          e = f[(f[59] | 0) + 4 >> 2] | 0;
-          if (!e) e = -1;else e = e - (f[3] | 0) >> 1;
+          e = t[(t[60] | 0) + 8 >> 2] | 0;
+          if (!e) e = -1;else e = e - (t[3] | 0) >> 1;
           return e | 0;
         }
         function M() {
           var e = 0;
-          e = f[59] | 0;
-          e = f[((e | 0) == 0 ? 228 : e + 28 | 0) >> 2] | 0;
-          f[59] = e;
-          return (e | 0) != 0 | 0;
+          e = t[(t[59] | 0) + 16 >> 2] | 0;
+          if (!e) e = -1;else e = e - (t[3] | 0) >> 1;
+          return e | 0;
         }
         function N() {
           var e = 0;
-          e = f[60] | 0;
-          e = f[((e | 0) == 0 ? 232 : e + 16 | 0) >> 2] | 0;
-          f[60] = e;
-          return (e | 0) != 0 | 0;
+          e = t[(t[59] | 0) + 4 >> 2] | 0;
+          if (!e) e = -1;else e = e - (t[3] | 0) >> 1;
+          return e | 0;
         }
         function Q() {
+          var e = 0;
+          e = t[59] | 0;
+          e = t[((e | 0) == 0 ? 228 : e + 28 | 0) >> 2] | 0;
+          t[59] = e;
+          return (e | 0) != 0 | 0;
+        }
+        function R() {
+          var e = 0;
+          e = t[60] | 0;
+          e = t[((e | 0) == 0 ? 232 : e + 16 | 0) >> 2] | 0;
+          t[60] = e;
+          return (e | 0) != 0 | 0;
+        }
+        function T() {
           i[794] = 1;
-          f[66] = (f[70] | 0) - (f[3] | 0) >> 1;
-          f[70] = (f[71] | 0) + 2;
+          t[66] = (t[70] | 0) - (t[3] | 0) >> 1;
+          t[70] = (t[71] | 0) + 2;
           return;
         }
-        function R(e) {
+        function V(e) {
           e = e | 0;
           return (e | 128) << 16 >> 16 == 160 | (e + -9 & 65535) < 5 | 0;
         }
-        function T(e) {
+        function W(e) {
           e = e | 0;
           return e << 16 >> 16 == 39 | e << 16 >> 16 == 34 | 0;
         }
-        function V() {
-          return (f[(f[59] | 0) + 8 >> 2] | 0) - (f[3] | 0) >> 1 | 0;
+        function X() {
+          return (t[(t[59] | 0) + 8 >> 2] | 0) - (t[3] | 0) >> 1 | 0;
         }
-        function W() {
-          return (f[(f[60] | 0) + 4 >> 2] | 0) - (f[3] | 0) >> 1 | 0;
+        function Y() {
+          return (t[(t[60] | 0) + 4 >> 2] | 0) - (t[3] | 0) >> 1 | 0;
         }
-        function X(e) {
+        function Z(e) {
           e = e | 0;
           return e << 16 >> 16 == 13 | e << 16 >> 16 == 10 | 0;
         }
-        function Y() {
-          return (f[f[59] >> 2] | 0) - (f[3] | 0) >> 1 | 0;
-        }
-        function Z() {
-          return (f[f[60] >> 2] | 0) - (f[3] | 0) >> 1 | 0;
-        }
         function _() {
-          return t[(f[59] | 0) + 24 >> 0] | 0 | 0;
+          return (t[t[59] >> 2] | 0) - (t[3] | 0) >> 1 | 0;
         }
-        function ee(e) {
-          e = e | 0;
-          f[3] = e;
-          return;
+        function ee() {
+          return (t[t[60] >> 2] | 0) - (t[3] | 0) >> 1 | 0;
         }
         function ae() {
+          return c[(t[59] | 0) + 24 >> 0] | 0 | 0;
+        }
+        function re(e) {
+          e = e | 0;
+          t[3] = e;
+          return;
+        }
+        function ie() {
           return (i[795] | 0) != 0 | 0;
         }
-        function re() {
-          return f[66] | 0;
+        function se() {
+          return t[66] | 0;
         }
-        function ie(e) {
+        function te(e) {
           e = e | 0;
           n = e + 992 + 15 & -16;
           return 992;
         }
         return {
-          su: ie,
-          ai: K,
-          e: re,
-          ee: W,
-          ele: G,
-          els: J,
-          es: Z,
-          f: ae,
-          id: q,
-          ie: L,
-          ip: _,
-          is: Y,
+          su: te,
+          ai: M,
+          e: se,
+          ee: Y,
+          ele: J,
+          els: L,
+          es: ee,
+          f: ie,
+          id: z,
+          ie: N,
+          ip: ae,
+          is: _,
           p: b,
-          re: N,
-          ri: M,
-          sa: x,
-          se: H,
-          ses: ee,
-          ss: V
+          re: R,
+          ri: Q,
+          sa: S,
+          se: K,
+          ses: re,
+          ss: X
         };
       }("undefined" != typeof self ? self : commonjsGlobal, {}, a), r = e.su(i - (2 << 17));
     }
-    const h = t.length + 1;
-    e.ses(r), e.sa(h - 1), s(t, new Uint16Array(a, r, h)), e.p() || (n = e.e(), o());
+    const h = c$1.length + 1;
+    e.ses(r), e.sa(h - 1), s(c$1, new Uint16Array(a, r, h)), e.p() || (n = e.e(), o());
     const w = [],
       d = [];
     for (; e.ri();) {
@@ -2180,15 +2203,15 @@ _export({ target: 'Iterator', proto: true, real: true }, {
         r = e.ie(),
         i = e.ai(),
         s = e.id(),
-        f = e.ss(),
-        c = e.se();
+        t = e.ss(),
+        f = e.se();
       let n;
-      e.ip() && (n = b(-1 === s ? a : a + 1, t.charCodeAt(-1 === s ? a - 1 : a))), w.push({
+      e.ip() && (n = b(-1 === s ? a : a + 1, c$1.charCodeAt(-1 === s ? a - 1 : a))), w.push({
         n: n,
         s: a,
         e: r,
-        ss: f,
-        se: c,
+        ss: t,
+        se: f,
         d: s,
         a: i
       });
@@ -2198,15 +2221,15 @@ _export({ target: 'Iterator', proto: true, real: true }, {
         r = e.ee(),
         i = e.els(),
         s = e.ele(),
-        f = t.charCodeAt(a),
-        c = i >= 0 ? t.charCodeAt(i) : -1;
+        t = c$1.charCodeAt(a),
+        f = i >= 0 ? c$1.charCodeAt(i) : -1;
       d.push({
         s: a,
         e: r,
         ls: i,
         le: s,
-        n: 34 === f || 39 === f ? b(a + 1, f) : t.slice(a, r),
-        ln: i < 0 ? void 0 : 34 === c || 39 === c ? b(i + 1, c) : t.slice(i, s)
+        n: 34 === t || 39 === t ? b(a + 1, t) : c$1.slice(a, r),
+        ln: i < 0 ? void 0 : 34 === f || 39 === f ? b(i + 1, f) : c$1.slice(i, s)
       });
     }
     return [w, d, !!e.f()];
@@ -2216,15 +2239,15 @@ _export({ target: 'Iterator', proto: true, real: true }, {
     let r = "",
       i = n;
     for (;;) {
-      n >= t.length && o();
-      const e = t.charCodeAt(n);
+      n >= c$1.length && o();
+      const e = c$1.charCodeAt(n);
       if (e === a) break;
-      92 === e ? (r += t.slice(i, n), r += l(), i = n) : (8232 === e || 8233 === e || u(e) && o(), ++n);
+      92 === e ? (r += c$1.slice(i, n), r += l(), i = n) : (8232 === e || 8233 === e || u(e) && o(), ++n);
     }
-    return r += t.slice(i, n++), r;
+    return r += c$1.slice(i, n++), r;
   }
   function l() {
-    let e = t.charCodeAt(++n);
+    let e = c$1.charCodeAt(++n);
     switch (++n, e) {
       case 110:
         return "\n";
@@ -2234,9 +2257,10 @@ _export({ target: 'Iterator', proto: true, real: true }, {
         return String.fromCharCode(k(2));
       case 117:
         return function () {
-          let e;
-          123 === t.charCodeAt(n) ? (++n, e = k(t.indexOf("}", n) - n), ++n, e > 1114111 && o()) : e = k(4);
-          return e <= 65535 ? String.fromCharCode(e) : (e -= 65536, String.fromCharCode(55296 + (e >> 10), 56320 + (1023 & e)));
+          const e = c$1.charCodeAt(n);
+          let a;
+          123 === e ? (++n, a = k(c$1.indexOf("}", n) - n), ++n, a > 1114111 && o()) : a = k(4);
+          return a <= 65535 ? String.fromCharCode(a) : (a -= 65536, String.fromCharCode(55296 + (a >> 10), 56320 + (1023 & a)));
         }();
       case 116:
         return "\t";
@@ -2247,7 +2271,7 @@ _export({ target: 'Iterator', proto: true, real: true }, {
       case 102:
         return "\f";
       case 13:
-        10 === t.charCodeAt(n) && ++n;
+        10 === c$1.charCodeAt(n) && ++n;
       case 10:
         return "";
       case 56:
@@ -2255,9 +2279,9 @@ _export({ target: 'Iterator', proto: true, real: true }, {
         o();
       default:
         if (e >= 48 && e <= 55) {
-          let a = t.substr(n - 1, 3).match(/^[0-7]+/)[0],
+          let a = c$1.substr(n - 1, 3).match(/^[0-7]+/)[0],
             r = parseInt(a, 8);
-          return r > 255 && (a = a.slice(0, -1), r = parseInt(a, 8)), n += a.length - 1, e = t.charCodeAt(n), "0" === a && 56 !== e && 57 !== e || o(), String.fromCharCode(r);
+          return r > 255 && (a = a.slice(0, -1), r = parseInt(a, 8)), n += a.length - 1, e = c$1.charCodeAt(n), "0" === a && 56 !== e && 57 !== e || o(), String.fromCharCode(r);
         }
         return u(e) ? "" : String.fromCharCode(e);
     }
@@ -2268,7 +2292,7 @@ _export({ target: 'Iterator', proto: true, real: true }, {
       i = 0;
     for (let a = 0; a < e; ++a, ++n) {
       let e,
-        s = t.charCodeAt(n);
+        s = c$1.charCodeAt(n);
       if (95 !== s) {
         if (s >= 97) e = s - 97 + 10;else if (s >= 65) e = s - 65 + 10;else {
           if (!(s >= 48 && s <= 57)) break;
@@ -2284,7 +2308,7 @@ _export({ target: 'Iterator', proto: true, real: true }, {
     return 13 === e || 10 === e;
   }
   function o() {
-    throw Object.assign(Error(`Parse error ${c$1}:${t.slice(0, n).split("\n").length}:${n - t.lastIndexOf("\n", n - 1)}`), {
+    throw Object.assign(Error(`Parse error ${f}:${c$1.slice(0, n).split("\n").length}:${n - c$1.lastIndexOf("\n", n - 1)}`), {
       idx: n
     });
   }
@@ -2361,7 +2385,7 @@ _export({ target: 'Iterator', proto: true, real: true }, {
   };
   let baselinePassthrough;
   const initPromise = featureDetectionPromise.then(() => {
-    baselinePassthrough = esmsInitOptions.polyfillEnable !== true && supportsDynamicImport && supportsImportMeta && supportsImportMaps && (!jsonModulesEnabled || supportsJsonAssertions) && (!cssModulesEnabled || supportsCssAssertions) && !importMapSrcOrLazy && !false;
+    baselinePassthrough = esmsInitOptions.polyfillEnable !== true && supportsDynamicImport && supportsImportMeta && supportsImportMaps && (!jsonModulesEnabled || supportsJsonAssertions) && (!cssModulesEnabled || supportsCssAssertions) && !importMapSrcOrLazy;
     if (hasDocument) {
       if (!supportsImportMaps) {
         const supports = HTMLScriptElement.supports || (type => type === 'classic' || type === 'module');
@@ -2425,12 +2449,12 @@ _export({ target: 'Iterator', proto: true, real: true }, {
     lastLoad = undefined;
     resolveDeps(load, seen);
     await lastStaticLoadPromise;
-    if (source && !shimMode && !load.n && !false) {
-      const module = await dynamicImport(createBlob(source), {
+    if (source && !shimMode && !load.n) {
+      if (nativelyLoaded) return;
+      if (revokeBlobURLs) revokeObjectURLs(Object.keys(seen));
+      return await dynamicImport(createBlob(source), {
         errUrl: source
       });
-      if (revokeBlobURLs) revokeObjectURLs(Object.keys(seen));
-      return module;
     }
     if (firstPolyfillLoad && !shimMode && load.n && nativelyLoaded) {
       onpolyfill();
@@ -2708,25 +2732,29 @@ _export({ target: 'Iterator', proto: true, real: true }, {
   function getFetchOpts(script) {
     const fetchOpts = {};
     if (script.integrity) fetchOpts.integrity = script.integrity;
-    if (script.referrerpolicy) fetchOpts.referrerPolicy = script.referrerpolicy;
-    if (script.crossorigin === 'use-credentials') fetchOpts.credentials = 'include';else if (script.crossorigin === 'anonymous') fetchOpts.credentials = 'omit';else fetchOpts.credentials = 'same-origin';
+    if (script.referrerPolicy) fetchOpts.referrerPolicy = script.referrerPolicy;
+    if (script.crossOrigin === 'use-credentials') fetchOpts.credentials = 'include';else if (script.crossOrigin === 'anonymous') fetchOpts.credentials = 'omit';else fetchOpts.credentials = 'same-origin';
     return fetchOpts;
   }
   let lastStaticLoadPromise = Promise.resolve();
   let domContentLoadedCnt = 1;
   function domContentLoadedCheck() {
-    if (--domContentLoadedCnt === 0 && !noLoadEventRetriggers) document.dispatchEvent(new Event('DOMContentLoaded'));
+    if (--domContentLoadedCnt === 0 && !noLoadEventRetriggers && (shimMode || !baselinePassthrough)) {
+      document.dispatchEvent(new Event('DOMContentLoaded'));
+    }
   }
   // this should always trigger because we assume es-module-shims is itself a domcontentloaded requirement
   if (hasDocument) {
     document.addEventListener('DOMContentLoaded', async () => {
       await initPromise;
-      if (shimMode || !baselinePassthrough) domContentLoadedCheck();
+      domContentLoadedCheck();
     });
   }
   let readyStateCompleteCnt = 1;
   function readyStateCompleteCheck() {
-    if (--readyStateCompleteCnt === 0 && !noLoadEventRetriggers) document.dispatchEvent(new Event('readystatechange'));
+    if (--readyStateCompleteCnt === 0 && !noLoadEventRetriggers && (shimMode || !baselinePassthrough)) {
+      document.dispatchEvent(new Event('readystatechange'));
+    }
   }
   const hasNext = script => script.nextSibling || script.parentNode && hasNext(script.parentNode);
   const epCheck = (script, ready) => script.ep || !ready && (!script.src && !script.innerHTML || !hasNext(script)) || script.getAttribute('noshim') !== null || !(script.ep = true);
@@ -2756,7 +2784,13 @@ _export({ target: 'Iterator', proto: true, real: true }, {
     const isDomContentLoadedScript = domContentLoadedCnt > 0;
     if (isBlockingReadyScript) readyStateCompleteCnt++;
     if (isDomContentLoadedScript) domContentLoadedCnt++;
-    const loadPromise = topLevelLoad(script.src || baseUrl, getFetchOpts(script), !script.src && script.innerHTML, !shimMode, isBlockingReadyScript && lastStaticLoadPromise).catch(throwError);
+    const loadPromise = topLevelLoad(script.src || baseUrl, getFetchOpts(script), !script.src && script.innerHTML, !shimMode, isBlockingReadyScript && lastStaticLoadPromise).then(() => {
+      // if the type of the script tag "module-shim", browser does not dispatch a "load" event
+      // see https://github.com/guybedford/es-module-shims/issues/346
+      if (shimMode) {
+        script.dispatchEvent(new Event('load'));
+      }
+    }).catch(throwError);
     if (isBlockingReadyScript) lastStaticLoadPromise = loadPromise.then(readyStateCompleteCheck);
     if (isDomContentLoadedScript) loadPromise.then(domContentLoadedCheck);
   }

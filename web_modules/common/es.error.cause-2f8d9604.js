@@ -274,10 +274,10 @@ var shared = createCommonjsModule(function (module) {
 (module.exports = function (key, value) {
   return sharedStore[key] || (sharedStore[key] = value !== undefined ? value : {});
 })('versions', []).push({
-  version: '3.27.2',
+  version: '3.29.1',
   mode:  'global',
   copyright: '© 2014-2023 Denis Pushkarev (zloirock.ru)',
-  license: 'https://github.com/zloirock/core-js/blob/v3.27.2/LICENSE',
+  license: 'https://github.com/zloirock/core-js/blob/v3.29.1/LICENSE',
   source: 'https://github.com/zloirock/core-js'
 });
 });
@@ -848,6 +848,13 @@ var functionApply = typeof Reflect == 'object' && Reflect.apply || (functionBind
   return call$2.apply(apply, arguments);
 });
 
+var functionUncurryThisAccessor = function (object, key, method) {
+  try {
+    // eslint-disable-next-line es/no-object-getownpropertydescriptor -- safe
+    return functionUncurryThis(aCallable(Object.getOwnPropertyDescriptor(object, key)[method]));
+  } catch (error) { /* empty */ }
+};
+
 var $String$2 = String;
 var $TypeError$6 = TypeError;
 
@@ -870,8 +877,7 @@ var objectSetPrototypeOf = Object.setPrototypeOf || ('__proto__' in {} ? functio
   var test = {};
   var setter;
   try {
-    // eslint-disable-next-line es/no-object-getownpropertydescriptor -- safe
-    setter = functionUncurryThis(Object.getOwnPropertyDescriptor(Object.prototype, '__proto__').set);
+    setter = functionUncurryThisAccessor(Object.prototype, '__proto__', 'set');
     setter(test, []);
     CORRECT_SETTER = test instanceof Array;
   } catch (error) { /* empty */ }
@@ -964,6 +970,7 @@ var $Error = Error;
 var replace = functionUncurryThis(''.replace);
 
 var TEST = (function (arg) { return String($Error(arg).stack); })('zxcasd');
+// eslint-disable-next-line redos/no-vulnerable -- safe
 var V8_OR_CHAKRA_STACK_ENTRY = /\n\s*at [^:]*:[^\n]*/;
 var IS_V8_OR_CHAKRA_STACK = V8_OR_CHAKRA_STACK_ENTRY.test(TEST);
 
@@ -1100,4 +1107,4 @@ exportWebAssemblyErrorCauseWrapper('RuntimeError', function (init) {
   return function RuntimeError(message) { return functionApply(init, this, arguments); };
 });
 
-export { toObject as A, defineBuiltIn as B, classofRaw as C, functionUncurryThis as D, functionBindNative as E, sharedStore as F, internalState as G, uid as H, objectSetPrototypeOf as I, toIntegerOrInfinity as J, indexedObject as K, inspectSource as L, toPropertyKey as M, toPrimitive as N, toAbsoluteIndex as O, createPropertyDescriptor as P, normalizeStringArgument as Q, errorStackClear as R, inheritIfRequired as S, makeBuiltIn_1 as T, toString_1 as U, _export as _, aCallable as a, anObject as b, createNonEnumerableProperty as c, functionCall as d, isObject as e, fails as f, global_1 as g, hasOwnProperty_1 as h, isCallable as i, getBuiltIn as j, isNullOrUndefined as k, getMethod as l, classof as m, lengthOfArrayLike as n, objectIsPrototypeOf as o, objectKeysInternal as p, enumBugKeys as q, descriptors as r, toIndexedObject as s, tryToString as t, objectDefineProperty as u, v8PrototypeDefineBug as v, wellKnownSymbol as w, sharedKey as x, documentCreateElement as y, hiddenKeys as z };
+export { toObject as A, defineBuiltIn as B, classofRaw as C, functionUncurryThis as D, functionBindNative as E, sharedStore as F, internalState as G, makeBuiltIn_1 as H, uid as I, objectSetPrototypeOf as J, toIntegerOrInfinity as K, indexedObject as L, inspectSource as M, toPropertyKey as N, toPrimitive as O, toAbsoluteIndex as P, createPropertyDescriptor as Q, normalizeStringArgument as R, errorStackClear as S, inheritIfRequired as T, functionUncurryThisAccessor as U, toString_1 as V, _export as _, aCallable as a, anObject as b, global_1 as c, isCallable as d, fails as e, functionCall as f, getBuiltIn as g, hasOwnProperty_1 as h, isObject as i, createNonEnumerableProperty as j, isNullOrUndefined as k, getMethod as l, classof as m, lengthOfArrayLike as n, objectIsPrototypeOf as o, objectKeysInternal as p, enumBugKeys as q, descriptors as r, toIndexedObject as s, tryToString as t, objectDefineProperty as u, v8PrototypeDefineBug as v, wellKnownSymbol as w, sharedKey as x, documentCreateElement as y, hiddenKeys as z };

@@ -1,16 +1,14 @@
-import { g as global_1, w as wellKnownSymbol, H as uid, I as objectSetPrototypeOf, m as classof, i as isCallable, r as descriptors, h as hasOwnProperty_1, e as isObject, c as createNonEnumerableProperty, u as objectDefineProperty, G as internalState, o as objectIsPrototypeOf, t as tryToString, B as defineBuiltIn, n as lengthOfArrayLike, J as toIntegerOrInfinity, A as toObject, K as indexedObject, C as classofRaw, j as getBuiltIn, D as functionUncurryThis, f as fails, L as inspectSource, k as isNullOrUndefined, b as anObject, M as toPropertyKey, a as aCallable, N as toPrimitive, O as toAbsoluteIndex } from './es.error.cause-c5e0cc86.js';
-import { o as objectGetPrototypeOf, f as functionBindContext, c as objectCreate, m as mapIterate, d as mapHelpers } from './map-iterate-1f81817b.js';
+import { u as objectDefineProperty, H as makeBuiltIn_1, c as global_1, w as wellKnownSymbol, I as uid, J as objectSetPrototypeOf, m as classof, d as isCallable, r as descriptors, h as hasOwnProperty_1, j as createNonEnumerableProperty, G as internalState, i as isObject, o as objectIsPrototypeOf, t as tryToString, B as defineBuiltIn, n as lengthOfArrayLike, K as toIntegerOrInfinity, A as toObject, L as indexedObject, C as classofRaw, g as getBuiltIn, D as functionUncurryThis, e as fails, M as inspectSource, k as isNullOrUndefined, b as anObject, N as toPropertyKey, a as aCallable, O as toPrimitive, P as toAbsoluteIndex } from './es.error.cause-2f8d9604.js';
+import { o as objectGetPrototypeOf, f as functionBindContext, c as objectCreate, m as mapIterate, d as mapHelpers } from './map-iterate-37f9c416.js';
 
 // eslint-disable-next-line es/no-typed-arrays -- safe
 var arrayBufferBasicDetection = typeof ArrayBuffer != 'undefined' && typeof DataView != 'undefined';
 
-var defineProperty = objectDefineProperty.f;
-
-
-
-
-
-
+var defineBuiltInAccessor = function (target, name, descriptor) {
+  if (descriptor.get) makeBuiltIn_1(descriptor.get, name, { getter: true });
+  if (descriptor.set) makeBuiltIn_1(descriptor.set, name, { setter: true });
+  return objectDefineProperty.f(target, name, descriptor);
+};
 
 var enforceInternalState = internalState.enforce;
 var getInternalState = internalState.get;
@@ -162,9 +160,12 @@ if (NATIVE_ARRAY_BUFFER_VIEWS && objectGetPrototypeOf(Uint8ClampedArrayPrototype
 
 if (descriptors && !hasOwnProperty_1(TypedArrayPrototype, TO_STRING_TAG)) {
   TYPED_ARRAY_TAG_REQUIRED = true;
-  defineProperty(TypedArrayPrototype, TO_STRING_TAG, { get: function () {
-    return isObject(this) ? this[TYPED_ARRAY_TAG] : undefined;
-  } });
+  defineBuiltInAccessor(TypedArrayPrototype, TO_STRING_TAG, {
+    configurable: true,
+    get: function () {
+      return isObject(this) ? this[TYPED_ARRAY_TAG] : undefined;
+    }
+  });
   for (NAME in TypedArrayConstructorsList) if (global_1[NAME]) {
     createNonEnumerableProperty(global_1[NAME], TYPED_ARRAY_TAG, NAME);
   }
@@ -666,7 +667,7 @@ var exportTypedArrayMethod$a = arrayBufferViewCore.exportTypedArrayMethod;
 
 var PROPER_ORDER$1 = !!function () {
   try {
-    // eslint-disable-next-line no-throw-literal, es/no-typed-arrays -- required for testing
+    // eslint-disable-next-line no-throw-literal, es/no-typed-arrays, es/no-array-prototype-with -- required for testing
     new Int8Array(1)['with'](2, { valueOf: function () { throw 8; } });
   } catch (error) {
     // some early implementations, like WebKit, does not follow the final semantic
@@ -683,3 +684,5 @@ exportTypedArrayMethod$a('with', { 'with': function (index, value) {
   var actualValue = isBigIntArray(O) ? toBigInt(value) : +value;
   return arrayWith(O, getTypedArrayConstructor$6(O), relativeIndex, actualValue);
 } }['with'], !PROPER_ORDER$1);
+
+export { defineBuiltInAccessor as d };

@@ -1,5 +1,5 @@
-import { j as getBuiltIn, a as aCallable, b as anObject, d as functionCall, e as isObject, w as wellKnownSymbol, k as isNullOrUndefined, l as getMethod, m as classof, t as tryToString, n as lengthOfArrayLike, o as objectIsPrototypeOf } from './es.error.cause-c5e0cc86.js';
-import { g as getIteratorDirect, a as asyncIteratorClose, f as functionBindContext, b as iteratorClose } from './map-iterate-1f81817b.js';
+import { g as getBuiltIn, a as aCallable, b as anObject, f as functionCall, i as isObject, o as objectIsPrototypeOf, w as wellKnownSymbol, c as global_1, d as isCallable, e as fails, h as hasOwnProperty_1, j as createNonEnumerableProperty, _ as _export, k as isNullOrUndefined, l as getMethod, m as classof, t as tryToString, n as lengthOfArrayLike } from './es.error.cause-2f8d9604.js';
+import { g as getIteratorDirect, a as asyncIteratorClose, i as iteratorsCore, f as functionBindContext, b as iteratorClose } from './map-iterate-37f9c416.js';
 
 var $TypeError = TypeError;
 var MAX_SAFE_INTEGER = 0x1FFFFFFFFFFFFF; // 2 ** 53 - 1 == 9007199254740991
@@ -98,6 +98,46 @@ var asyncIteratorIteration = {
   find: createMethod(4)
 };
 
+var $TypeError$1 = TypeError;
+
+var anInstance = function (it, Prototype) {
+  if (objectIsPrototypeOf(Prototype, it)) return it;
+  throw $TypeError$1('Incorrect invocation');
+};
+
+var IteratorPrototype = iteratorsCore.IteratorPrototype;
+
+
+var TO_STRING_TAG = wellKnownSymbol('toStringTag');
+
+var NativeIterator = global_1.Iterator;
+
+// FF56- have non-standard global helper `Iterator`
+var FORCED =  !isCallable(NativeIterator)
+  || NativeIterator.prototype !== IteratorPrototype
+  // FF44- non-standard `Iterator` passes previous tests
+  || !fails(function () { NativeIterator({}); });
+
+var IteratorConstructor = function Iterator() {
+  anInstance(this, IteratorPrototype);
+};
+
+if (!hasOwnProperty_1(IteratorPrototype, TO_STRING_TAG)) {
+  createNonEnumerableProperty(IteratorPrototype, TO_STRING_TAG, 'Iterator');
+}
+
+if (FORCED || !hasOwnProperty_1(IteratorPrototype, 'constructor') || IteratorPrototype.constructor === Object) {
+  createNonEnumerableProperty(IteratorPrototype, 'constructor', IteratorConstructor);
+}
+
+IteratorConstructor.prototype = IteratorPrototype;
+
+// `Iterator` constructor
+// https://github.com/tc39/proposal-iterator-helpers
+_export({ global: true, constructor: true, forced: FORCED }, {
+  Iterator: IteratorConstructor
+});
+
 var iterators = {};
 
 var ITERATOR = wellKnownSymbol('iterator');
@@ -116,15 +156,15 @@ var getIteratorMethod = function (it) {
     || iterators[classof(it)];
 };
 
-var $TypeError$1 = TypeError;
+var $TypeError$2 = TypeError;
 
 var getIterator = function (argument, usingIterator) {
   var iteratorMethod = arguments.length < 2 ? getIteratorMethod(argument) : usingIterator;
   if (aCallable(iteratorMethod)) return anObject(functionCall(iteratorMethod, argument));
-  throw $TypeError$1(tryToString(argument) + ' is not iterable');
+  throw $TypeError$2(tryToString(argument) + ' is not iterable');
 };
 
-var $TypeError$2 = TypeError;
+var $TypeError$3 = TypeError;
 
 var Result = function (stopped, result) {
   this.stopped = stopped;
@@ -160,7 +200,7 @@ var iterate = function (iterable, unboundFunction, options) {
     iterator = iterable;
   } else {
     iterFn = getIteratorMethod(iterable);
-    if (!iterFn) throw $TypeError$2(tryToString(iterable) + ' is not iterable');
+    if (!iterFn) throw $TypeError$3(tryToString(iterable) + ' is not iterable');
     // optimisation for array iterators
     if (isArrayIteratorMethod(iterFn)) {
       for (index = 0, length = lengthOfArrayLike(iterable); length > index; index++) {
@@ -182,4 +222,4 @@ var iterate = function (iterable, unboundFunction, options) {
   } return new Result(false);
 };
 
-export { asyncIteratorIteration as a, iterators as b, iterate as i };
+export { asyncIteratorIteration as a, anInstance as b, iterators as c, iterate as i };

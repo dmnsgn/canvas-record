@@ -1,12 +1,12 @@
-import { j as getBuiltIn, _ as _export, a as aCallable, b as anObject, d as functionCall, e as isObject } from './es.error.cause-c5e0cc86.js';
-import { g as getIteratorDirect, a as asyncIteratorClose } from './map-iterate-1f81817b.js';
-import { i as iterate } from './iterate-46fbe091.js';
+import { g as getBuiltIn, _ as _export, a as aCallable, b as anObject, f as functionCall, i as isObject } from './es.error.cause-2f8d9604.js';
+import { g as getIteratorDirect, a as asyncIteratorClose } from './map-iterate-37f9c416.js';
+import { i as iterate } from './iterate-966bdd3a.js';
 
 var Promise = getBuiltIn('Promise');
 var $TypeError = TypeError;
 
 // `AsyncIterator.prototype.reduce` method
-// https://github.com/tc39/proposal-iterator-helpers
+// https://github.com/tc39/proposal-async-iterator-helpers
 _export({ target: 'AsyncIterator', proto: true, real: true }, {
   reduce: function reduce(reducer /* , initialValue */) {
     var record = getIteratorDirect(this);

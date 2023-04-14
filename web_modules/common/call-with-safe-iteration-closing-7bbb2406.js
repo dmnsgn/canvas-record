@@ -1,5 +1,5 @@
-import { B as defineBuiltIn, w as wellKnownSymbol, g as global_1, F as sharedStore, i as isCallable, j as getBuiltIn, c as createNonEnumerableProperty, G as internalState, b as anObject, l as getMethod, d as functionCall } from './es.error.cause-c5e0cc86.js';
-import { o as objectGetPrototypeOf, c as objectCreate, b as iteratorClose, i as iteratorsCore } from './map-iterate-1f81817b.js';
+import { B as defineBuiltIn, w as wellKnownSymbol, c as global_1, F as sharedStore, d as isCallable, g as getBuiltIn, j as createNonEnumerableProperty, G as internalState, b as anObject, l as getMethod, f as functionCall } from './es.error.cause-2f8d9604.js';
+import { o as objectGetPrototypeOf, c as objectCreate, b as iteratorClose, i as iteratorsCore } from './map-iterate-37f9c416.js';
 
 var perform = function (exec) {
   try {
@@ -72,66 +72,45 @@ var createAsyncIteratorProxyPrototype = function (IS_ITERATOR) {
     } return { exit: false, value: state };
   };
 
-  var enqueue = function (state, handler) {
-    var task = function () {
-      var promise = handler();
-      if (IS_GENERATOR) {
-        state.awaiting = promise;
-        var clean = function () {
-          if (state.awaiting === promise) state.awaiting = null;
-        };
-        promise.then(clean, clean);
-      } return promise;
-    };
-
-    return state.awaiting ? state.awaiting = state.awaiting.then(task, task) : task();
-  };
-
   return defineBuiltIns(objectCreate(asyncIteratorPrototype), {
     next: function next() {
       var stateCompletion = getStateOrEarlyExit(this);
-      var exit = stateCompletion.exit;
       var state = stateCompletion.value;
-
-      return exit ? state : enqueue(state, function () {
-        var handlerCompletion = perform(function () {
-          return anObject(state.nextHandler(Promise));
-        });
-        var handlerError = handlerCompletion.error;
-        var value = handlerCompletion.value;
-        if (handlerError) state.done = true;
-        return handlerError ? Promise.reject(value) : Promise.resolve(value);
+      if (stateCompletion.exit) return state;
+      var handlerCompletion = perform(function () {
+        return anObject(state.nextHandler(Promise));
       });
+      var handlerError = handlerCompletion.error;
+      var value = handlerCompletion.value;
+      if (handlerError) state.done = true;
+      return handlerError ? Promise.reject(value) : Promise.resolve(value);
     },
     'return': function () {
       var stateCompletion = getStateOrEarlyExit(this);
-      var exit = stateCompletion.exit;
       var state = stateCompletion.value;
-
-      return exit ? state : enqueue(state, function () {
-        state.done = true;
-        var iterator = state.iterator;
-        var returnMethod, result;
-        var completion = perform(function () {
-          if (state.inner) try {
-            iteratorClose(state.inner.iterator, 'normal');
-          } catch (error) {
-            return iteratorClose(iterator, 'throw', error);
-          }
-          return getMethod(iterator, 'return');
-        });
-        returnMethod = result = completion.value;
-        if (completion.error) return Promise.reject(result);
-        if (returnMethod === undefined) return Promise.resolve(createIterResultObject(undefined, true));
-        completion = perform(function () {
-          return functionCall(returnMethod, iterator);
-        });
-        result = completion.value;
-        if (completion.error) return Promise.reject(result);
-        return IS_ITERATOR ? Promise.resolve(result) : Promise.resolve(result).then(function (resolved) {
-          anObject(resolved);
-          return createIterResultObject(undefined, true);
-        });
+      if (stateCompletion.exit) return state;
+      state.done = true;
+      var iterator = state.iterator;
+      var returnMethod, result;
+      var completion = perform(function () {
+        if (state.inner) try {
+          iteratorClose(state.inner.iterator, 'normal');
+        } catch (error) {
+          return iteratorClose(iterator, 'throw', error);
+        }
+        return getMethod(iterator, 'return');
+      });
+      returnMethod = result = completion.value;
+      if (completion.error) return Promise.reject(result);
+      if (returnMethod === undefined) return Promise.resolve(createIterResultObject(undefined, true));
+      completion = perform(function () {
+        return functionCall(returnMethod, iterator);
+      });
+      result = completion.value;
+      if (completion.error) return Promise.reject(result);
+      return IS_ITERATOR ? Promise.resolve(result) : Promise.resolve(result).then(function (resolved) {
+        anObject(resolved);
+        return createIterResultObject(undefined, true);
       });
     }
   });
@@ -152,7 +131,6 @@ var asyncIteratorCreateProxy = function (nextHandler, IS_ITERATOR) {
     state.nextHandler = nextHandler;
     state.counter = 0;
     state.done = false;
-    state.awaiting = null;
     setInternalState(this, state);
   };
 

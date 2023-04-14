@@ -84,7 +84,8 @@ Encoder comparison:
 
 | Encoder        | Extension              | Required Web API   | WASM                     | Speed    |
 | -------------- | ---------------------- | ------------------ | ------------------------ | -------- |
-| `WebCodecs`    | `mp4` / `webm` / `mkv` | WebCodecs          | ✅ (embed, only for mp4) | Fast     |
+| `WebCodecs`    | `mp4` / `webm` / `mkv` | WebCodecs          | ❌                       | Fast     |
+| `MP4Wasm`      | `mp4`                  | WebCodecs          | ✅ (embed, only for mp4) | Fast     |
 | `H264MP4`      | `mp4`                  |                    | ✅ (embed)               | Medium   |
 | `FFmpeg`       | `mp4` / `webm`         | SharedArrayBuffer  | ✅ (need binary path)    | Slow     |
 | `GIF`          | `gif`                  | WebWorkers (wip)   | ❌                       | Fast     |
@@ -95,7 +96,7 @@ Note:
 
 - WebCodecs 5-10x faster than H264MP4Encoder and 20x faster than FFmpeg (it needs to mux files after writing png to virtual FS)
 - FFmpeg (mp4 and webm) and WebCodecs (mp4) have a AVC maximum frame size of 9437184 pixels. That's fine until a bit more than 4K 16:9 @ 30fps. So if you need 4K Square or 8K exports, be patient with H264MP4Encoder (which probably also has the 4GB memory limit) or use Frame encoder and mux them manually with FFmpeg CLI.
-- WebCodecs is embedded from [mp4-wasm](https://github.com/mattdesl/mp4-wasm/) for ease of use (FFmpeg will require `encoderOptions.corePath`)
+- MP4Wasm is embedded from [mp4-wasm](https://github.com/mattdesl/mp4-wasm/) for ease of use (FFmpeg will require `encoderOptions.corePath`)
 
 Roadmap:
 

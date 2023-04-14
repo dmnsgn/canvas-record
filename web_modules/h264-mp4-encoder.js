@@ -1,20 +1,13 @@
-import './common/esnext.typed-array.with-c5aeddac.js';
-import { u as objectDefineProperty, T as makeBuiltIn_1, b as anObject, g as global_1, r as descriptors, f as fails } from './common/es.error.cause-c5e0cc86.js';
-import './common/esnext.iterator.filter-40aba89e.js';
-import './common/esnext.iterator.constructor-08a9c867.js';
-import './common/esnext.iterator.for-each-251f8490.js';
-import './common/web.dom-exception.stack-c84430c9.js';
+import { d as defineBuiltInAccessor } from './common/es.typed-array.with-f2537e55.js';
+import { b as anObject, c as global_1, r as descriptors, e as fails } from './common/es.error.cause-2f8d9604.js';
+import './common/esnext.iterator.filter-e5b60a34.js';
+import './common/iterate-966bdd3a.js';
+import './common/esnext.iterator.for-each-f0cdeeac.js';
+import './common/web.dom-exception.stack-86680529.js';
 import { p as process } from './common/process-2545f00a.js';
 import { g as getDefaultExportFromNamespaceIfNotNamed, b as getDefaultExportFromCjs, c as createCommonjsModule } from './common/_commonjsHelpers-0597c316.js';
-import './common/map-iterate-1f81817b.js';
-import './common/call-with-safe-iteration-closing-d974cb4e.js';
-import './common/iterate-46fbe091.js';
-
-var defineBuiltInAccessor = function (target, name, descriptor) {
-  if (descriptor.get) makeBuiltIn_1(descriptor.get, name, { getter: true });
-  if (descriptor.set) makeBuiltIn_1(descriptor.set, name, { setter: true });
-  return objectDefineProperty.f(target, name, descriptor);
-};
+import './common/map-iterate-37f9c416.js';
+import './common/call-with-safe-iteration-closing-7bbb2406.js';
 
 // `RegExp.prototype.flags` getter implementation
 // https://tc39.es/ecma262/#sec-get-regexp.prototype.flags
