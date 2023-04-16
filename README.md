@@ -29,6 +29,7 @@ npm install canvas-record
 ```js
 import { Recorder, RecorderStatus, Encoders } from "canvas-record";
 import createCanvasContext from "canvas-context";
+import { AVC } from "media-codecs";
 
 // Setup
 const pixelRatio = devicePixelRatio;
@@ -69,7 +70,12 @@ const tick = async () => {
   }
 };
 
-canvasRecorder = new Recorder(context, { name: "canvas-record-example" });
+canvasRecorder = new Recorder(context, {
+  name: "canvas-record-example",
+  encoderOptions: {
+    codec: AVC.getCodec({ name: "High", level: "5.2" }),
+  },
+});
 
 // Start and encode frame 0
 await canvasRecorder.start();
