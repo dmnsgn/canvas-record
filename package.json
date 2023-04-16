@@ -43,8 +43,9 @@
     "canvas-screenshot": "^4.1.0",
     "gifenc": "^1.0.3",
     "h264-mp4-encoder": "^1.0.12",
-    "mp4-muxer": "^1.0.2",
-    "webm-muxer": "^2.2.3"
+    "media-codecs": "^1.0.1",
+    "mp4-muxer": "^1.0.5",
+    "webm-muxer": "^3.0.1"
   },
   "devDependencies": {
     "canvas-context": "^3.2.0",

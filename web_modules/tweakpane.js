@@ -1,12 +1,14 @@
 import { D as functionUncurryThis, _ as _export, w as wellKnownSymbol, k as isNullOrUndefined, h as hasOwnProperty_1, m as classof, g as getBuiltIn, i as isObject, d as isCallable, U as functionUncurryThisAccessor, K as toIntegerOrInfinity, a as aCallable, b as anObject, f as functionCall, V as toString_1 } from './common/es.error.cause-2f8d9604.js';
-import './common/esnext.iterator.filter-e5b60a34.js';
-import { c as iterators, a as asyncIteratorIteration, i as iterate } from './common/iterate-966bdd3a.js';
-import './common/esnext.iterator.for-each-f0cdeeac.js';
-import './common/esnext.iterator.reduce-a320da1a.js';
-import './common/esnext.iterator.map-e7744f39.js';
-import { e as iterateSimple, f as functionBindContext, b as iteratorClose, g as getIteratorDirect, d as mapHelpers, m as mapIterate } from './common/map-iterate-37f9c416.js';
+import './common/esnext.iterator.filter-87aa2657.js';
+import { c as iterators, i as iterate } from './common/iterate-c1890e1d.js';
+import './common/esnext.iterator.for-each-ffb72b77.js';
+import './common/esnext.iterator.reduce-ea7d262f.js';
+import './common/esnext.iterator.map-c3e729be.js';
+import { i as iterateSimple, a as mapHelpers, m as mapIterate } from './common/map-iterate-95336e57.js';
+import { f as functionBindContext, b as iteratorClose } from './common/iterator-close-66357cf1.js';
+import './common/esnext.iterator.find-11f701a8.js';
 import { b as getDefaultExportFromCjs, c as createCommonjsModule, a as commonjsGlobal } from './common/_commonjsHelpers-0597c316.js';
-import './common/call-with-safe-iteration-closing-7bbb2406.js';
+import './common/call-with-safe-iteration-closing-d930339a.js';
 
 // eslint-disable-next-line es/no-set -- safe
 var SetPrototype = Set.prototype;
@@ -457,29 +459,6 @@ var setUnion = function union(other) {
 _export({ target: 'Set', proto: true, real: true, forced: true }, {
   union: function union(other) {
     return functionCall(setUnion, this, toSetLike(other));
-  }
-});
-
-var $find = asyncIteratorIteration.find;
-
-// `AsyncIterator.prototype.find` method
-// https://github.com/tc39/proposal-async-iterator-helpers
-_export({ target: 'AsyncIterator', proto: true, real: true }, {
-  find: function find(predicate) {
-    return $find(this, predicate);
-  }
-});
-
-// `Iterator.prototype.find` method
-// https://github.com/tc39/proposal-iterator-helpers
-_export({ target: 'Iterator', proto: true, real: true }, {
-  find: function find(predicate) {
-    var record = getIteratorDirect(this);
-    var counter = 0;
-    aCallable(predicate);
-    return iterate(record, function (value, stop) {
-      if (predicate(value, counter++)) return stop(value);
-    }, { IS_RECORD: true, INTERRUPTED: true }).result;
   }
 });
 

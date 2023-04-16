@@ -1,10 +1,11 @@
 import './common/es.error.cause-2f8d9604.js';
 import './common/esnext.weak-map.emplace-5108a17f.js';
-import './common/es.typed-array.with-f2537e55.js';
-import './common/esnext.iterator.map-e7744f39.js';
+import './common/es.typed-array.with-1fbee37e.js';
+import './common/esnext.iterator.map-c3e729be.js';
 import { b as getDefaultExportFromCjs, c as createCommonjsModule } from './common/_commonjsHelpers-0597c316.js';
-import './common/map-iterate-37f9c416.js';
-import './common/call-with-safe-iteration-closing-7bbb2406.js';
+import './common/iterator-close-66357cf1.js';
+import './common/map-iterate-95336e57.js';
+import './common/call-with-safe-iteration-closing-d930339a.js';
 
 var webmMuxer = createCommonjsModule(function (module) {
 
@@ -68,10 +69,13 @@ var webmMuxer = createCommonjsModule(function (module) {
       return method;
     };
 
-    // src/main.ts
-    var main_exports = {};
-    __export(main_exports, {
-      default: () => main_default
+    // src/index.ts
+    var src_exports = {};
+    __export(src_exports, {
+      ArrayBufferTarget: () => ArrayBufferTarget,
+      FileSystemWritableFileStreamTarget: () => FileSystemWritableFileStreamTarget,
+      Muxer: () => Muxer,
+      StreamTarget: () => StreamTarget
     });
 
     // src/ebml.ts
@@ -118,9 +122,52 @@ var webmMuxer = createCommonjsModule(function (module) {
       }
     };
 
-    // src/write_target.ts
+    // src/misc.ts
+    var readBits = (bytes, start, end) => {
+      let result = 0;
+      for (let i = start; i < end; i++) {
+        let byteIndex = Math.floor(i / 8);
+        let byte = bytes[byteIndex];
+        let bitIndex = 7 - (i & 7);
+        let bit = (byte & 1 << bitIndex) >> bitIndex;
+        result <<= 1;
+        result |= bit;
+      }
+      return result;
+    };
+    var writeBits = (bytes, start, end, value) => {
+      for (let i = start; i < end; i++) {
+        let byteIndex = Math.floor(i / 8);
+        let byte = bytes[byteIndex];
+        let bitIndex = 7 - (i & 7);
+        byte &= ~(1 << bitIndex);
+        byte |= (value & 1 << end - i - 1) >> end - i - 1 << bitIndex;
+        bytes[byteIndex] = byte;
+      }
+    };
+
+    // src/target.ts
+    var ArrayBufferTarget = class {
+      constructor() {
+        this.buffer = null;
+      }
+    };
+    var StreamTarget = class {
+      constructor(onData, onDone, options) {
+        this.onData = onData;
+        this.onDone = onDone;
+        this.options = options;
+      }
+    };
+    var FileSystemWritableFileStreamTarget = class {
+      constructor(stream) {
+        this.stream = stream;
+      }
+    };
+
+    // src/writer.ts
     var _helper, _helperView, _writeByte, writeByte_fn, _writeFloat32, writeFloat32_fn, _writeFloat64, writeFloat64_fn, _writeUnsignedInt, writeUnsignedInt_fn, _writeString, writeString_fn;
-    var WriteTarget = class {
+    var Writer = class {
       constructor() {
         __privateAdd(this, _writeByte);
         __privateAdd(this, _writeFloat32);
@@ -128,10 +175,10 @@ var webmMuxer = createCommonjsModule(function (module) {
         __privateAdd(this, _writeUnsignedInt);
         __privateAdd(this, _writeString);
         this.pos = 0;
-        this.offsets = /* @__PURE__ */new WeakMap();
-        this.dataOffsets = /* @__PURE__ */new WeakMap();
         __privateAdd(this, _helper, new Uint8Array(8));
         __privateAdd(this, _helperView, new DataView(__privateGet(this, _helper).buffer));
+        this.offsets = /* @__PURE__ */new WeakMap();
+        this.dataOffsets = /* @__PURE__ */new WeakMap();
       }
       seek(newPos) {
         this.pos = newPos;
@@ -270,136 +317,49 @@ var webmMuxer = createCommonjsModule(function (module) {
     writeString_fn = function (str) {
       this.write(new Uint8Array(str.split("").map(x => x.charCodeAt(0))));
     };
-    var _buffer, _bytes;
-    var ArrayBufferWriteTarget = class extends WriteTarget {
-      constructor() {
+    var _target, _buffer, _bytes, _ensureSize, ensureSize_fn;
+    var ArrayBufferTargetWriter = class extends Writer {
+      constructor(target) {
         super();
+        __privateAdd(this, _ensureSize);
+        __privateAdd(this, _target, void 0);
         __privateAdd(this, _buffer, new ArrayBuffer(__pow(2, 16)));
         __privateAdd(this, _bytes, new Uint8Array(__privateGet(this, _buffer)));
-      }
-      ensureSize(size) {
-        let newLength = __privateGet(this, _buffer).byteLength;
-        while (newLength < size) newLength *= 2;
-        if (newLength === __privateGet(this, _buffer).byteLength) return;
-        let newBuffer = new ArrayBuffer(newLength);
-        let newBytes = new Uint8Array(newBuffer);
-        newBytes.set(__privateGet(this, _bytes), 0);
-        __privateSet(this, _buffer, newBuffer);
-        __privateSet(this, _bytes, newBytes);
+        __privateSet(this, _target, target);
       }
       write(data) {
-        this.ensureSize(this.pos + data.byteLength);
+        __privateMethod(this, _ensureSize, ensureSize_fn).call(this, this.pos + data.byteLength);
         __privateGet(this, _bytes).set(data, this.pos);
         this.pos += data.byteLength;
       }
       finalize() {
-        this.ensureSize(this.pos);
-        return __privateGet(this, _buffer).slice(0, this.pos);
+        __privateMethod(this, _ensureSize, ensureSize_fn).call(this, this.pos);
+        __privateGet(this, _target).buffer = __privateGet(this, _buffer).slice(0, this.pos);
       }
     };
+    _target = new WeakMap();
     _buffer = new WeakMap();
     _bytes = new WeakMap();
-    var FILE_CHUNK_SIZE = __pow(2, 24);
-    var MAX_CHUNKS_AT_ONCE = 2;
-    var _stream, _chunks;
-    var FileSystemWritableFileStreamWriteTarget = class extends WriteTarget {
-      constructor(stream) {
-        super();
-        __privateAdd(this, _stream, void 0);
-        __privateAdd(this, _chunks, []);
-        __privateSet(this, _stream, stream);
-      }
-      write(data) {
-        this.writeDataIntoChunks(data, this.pos);
-        this.flushChunks();
-        this.pos += data.byteLength;
-      }
-      writeDataIntoChunks(data, position) {
-        let chunkIndex = __privateGet(this, _chunks).findIndex(x => x.start <= position && position < x.start + FILE_CHUNK_SIZE);
-        if (chunkIndex === -1) chunkIndex = this.createChunk(position);
-        let chunk = __privateGet(this, _chunks)[chunkIndex];
-        let relativePosition = position - chunk.start;
-        let toWrite = data.subarray(0, Math.min(FILE_CHUNK_SIZE - relativePosition, data.byteLength));
-        chunk.data.set(toWrite, relativePosition);
-        let section = {
-          start: relativePosition,
-          end: relativePosition + toWrite.byteLength
-        };
-        insertSectionIntoFileChunk(chunk, section);
-        if (chunk.written[0].start === 0 && chunk.written[0].end === FILE_CHUNK_SIZE) {
-          chunk.shouldFlush = true;
-        }
-        if (__privateGet(this, _chunks).length > MAX_CHUNKS_AT_ONCE) {
-          for (let i = 0; i < __privateGet(this, _chunks).length - 1; i++) {
-            __privateGet(this, _chunks)[i].shouldFlush = true;
-          }
-          this.flushChunks();
-        }
-        if (toWrite.byteLength < data.byteLength) {
-          this.writeDataIntoChunks(data.subarray(toWrite.byteLength), position + toWrite.byteLength);
-        }
-      }
-      createChunk(includesPosition) {
-        let start = Math.floor(includesPosition / FILE_CHUNK_SIZE) * FILE_CHUNK_SIZE;
-        let chunk = {
-          start,
-          data: new Uint8Array(FILE_CHUNK_SIZE),
-          written: [],
-          shouldFlush: false
-        };
-        __privateGet(this, _chunks).push(chunk);
-        __privateGet(this, _chunks).sort((a, b) => a.start - b.start);
-        return __privateGet(this, _chunks).indexOf(chunk);
-      }
-      flushChunks(force = false) {
-        for (let i = 0; i < __privateGet(this, _chunks).length; i++) {
-          let chunk = __privateGet(this, _chunks)[i];
-          if (!chunk.shouldFlush && !force) continue;
-          for (let section of chunk.written) {
-            __privateGet(this, _stream).write({
-              type: "write",
-              data: chunk.data.subarray(section.start, section.end),
-              position: chunk.start + section.start
-            });
-          }
-          __privateGet(this, _chunks).splice(i--, 1);
-        }
-      }
-      finalize() {
-        this.flushChunks(true);
-      }
+    _ensureSize = new WeakSet();
+    ensureSize_fn = function (size) {
+      let newLength = __privateGet(this, _buffer).byteLength;
+      while (newLength < size) newLength *= 2;
+      if (newLength === __privateGet(this, _buffer).byteLength) return;
+      let newBuffer = new ArrayBuffer(newLength);
+      let newBytes = new Uint8Array(newBuffer);
+      newBytes.set(__privateGet(this, _bytes), 0);
+      __privateSet(this, _buffer, newBuffer);
+      __privateSet(this, _bytes, newBytes);
     };
-    _stream = new WeakMap();
-    _chunks = new WeakMap();
-    var insertSectionIntoFileChunk = (chunk, section) => {
-      let low = 0;
-      let high = chunk.written.length - 1;
-      let index = -1;
-      while (low <= high) {
-        let mid = Math.floor(low + (high - low + 1) / 2);
-        if (chunk.written[mid].start <= section.start) {
-          low = mid + 1;
-          index = mid;
-        } else {
-          high = mid - 1;
-        }
-      }
-      chunk.written.splice(index + 1, 0, section);
-      if (index === -1 || chunk.written[index].end < section.start) index++;
-      while (index < chunk.written.length - 1 && chunk.written[index].end >= chunk.written[index + 1].start) {
-        chunk.written[index].end = Math.max(chunk.written[index].end, chunk.written[index + 1].end);
-        chunk.written.splice(index + 1, 1);
-      }
-    };
-    var _sections, _onFlush, _lastFlushEnd, _ensureMonotonicity;
-    var StreamingWriteTarget = class extends WriteTarget {
-      constructor(onFlush, ensureMonotonicity) {
+    var _target2, _sections, _lastFlushEnd, _ensureMonotonicity;
+    var StreamTargetWriter = class extends Writer {
+      constructor(target, ensureMonotonicity) {
         super();
+        __privateAdd(this, _target2, void 0);
         __privateAdd(this, _sections, []);
-        __privateAdd(this, _onFlush, void 0);
         __privateAdd(this, _lastFlushEnd, 0);
         __privateAdd(this, _ensureMonotonicity, void 0);
-        __privateSet(this, _onFlush, onFlush);
+        __privateSet(this, _target2, target);
         __privateSet(this, _ensureMonotonicity, ensureMonotonicity);
       }
       write(data) {
@@ -409,7 +369,7 @@ var webmMuxer = createCommonjsModule(function (module) {
         });
         this.pos += data.byteLength;
       }
-      flush(done) {
+      flush() {
         if (__privateGet(this, _sections).length === 0) return;
         let chunks = [];
         let sorted = [...__privateGet(this, _sections)].sort((a, b) => a.start - b.start);
@@ -439,19 +399,138 @@ var webmMuxer = createCommonjsModule(function (module) {
           if (__privateGet(this, _ensureMonotonicity) && chunk.start < __privateGet(this, _lastFlushEnd)) {
             throw new Error("Internal error: Monotonicity violation.");
           }
-          let isLastFlush = done && chunk === chunks[chunks.length - 1];
-          __privateGet(this, _onFlush).call(this, chunk.data, chunk.start, isLastFlush);
+          __privateGet(this, _target2).onData(chunk.data, chunk.start);
           __privateSet(this, _lastFlushEnd, chunk.start + chunk.data.byteLength);
         }
         __privateGet(this, _sections).length = 0;
       }
+      finalize() {
+        var _a, _b;
+        (_b = (_a = __privateGet(this, _target2)).onDone) == null ? void 0 : _b.call(_a);
+      }
     };
+    _target2 = new WeakMap();
     _sections = new WeakMap();
-    _onFlush = new WeakMap();
     _lastFlushEnd = new WeakMap();
     _ensureMonotonicity = new WeakMap();
+    var CHUNK_SIZE = __pow(2, 24);
+    var MAX_CHUNKS_AT_ONCE = 2;
+    var _target3, _chunks, _lastFlushEnd2, _ensureMonotonicity2, _writeDataIntoChunks, writeDataIntoChunks_fn, _insertSectionIntoChunk, insertSectionIntoChunk_fn, _createChunk, createChunk_fn, _flushChunks, flushChunks_fn;
+    var ChunkedStreamTargetWriter = class extends Writer {
+      constructor(target, ensureMonotonicity) {
+        super();
+        __privateAdd(this, _writeDataIntoChunks);
+        __privateAdd(this, _insertSectionIntoChunk);
+        __privateAdd(this, _createChunk);
+        __privateAdd(this, _flushChunks);
+        __privateAdd(this, _target3, void 0);
+        __privateAdd(this, _chunks, []);
+        __privateAdd(this, _lastFlushEnd2, 0);
+        __privateAdd(this, _ensureMonotonicity2, void 0);
+        __privateSet(this, _target3, target);
+        __privateSet(this, _ensureMonotonicity2, ensureMonotonicity);
+      }
+      write(data) {
+        __privateMethod(this, _writeDataIntoChunks, writeDataIntoChunks_fn).call(this, data, this.pos);
+        __privateMethod(this, _flushChunks, flushChunks_fn).call(this);
+        this.pos += data.byteLength;
+      }
+      finalize() {
+        var _a, _b;
+        __privateMethod(this, _flushChunks, flushChunks_fn).call(this, true);
+        (_b = (_a = __privateGet(this, _target3)).onDone) == null ? void 0 : _b.call(_a);
+      }
+    };
+    _target3 = new WeakMap();
+    _chunks = new WeakMap();
+    _lastFlushEnd2 = new WeakMap();
+    _ensureMonotonicity2 = new WeakMap();
+    _writeDataIntoChunks = new WeakSet();
+    writeDataIntoChunks_fn = function (data, position) {
+      let chunkIndex = __privateGet(this, _chunks).findIndex(x => x.start <= position && position < x.start + CHUNK_SIZE);
+      if (chunkIndex === -1) chunkIndex = __privateMethod(this, _createChunk, createChunk_fn).call(this, position);
+      let chunk = __privateGet(this, _chunks)[chunkIndex];
+      let relativePosition = position - chunk.start;
+      let toWrite = data.subarray(0, Math.min(CHUNK_SIZE - relativePosition, data.byteLength));
+      chunk.data.set(toWrite, relativePosition);
+      let section = {
+        start: relativePosition,
+        end: relativePosition + toWrite.byteLength
+      };
+      __privateMethod(this, _insertSectionIntoChunk, insertSectionIntoChunk_fn).call(this, chunk, section);
+      if (chunk.written[0].start === 0 && chunk.written[0].end === CHUNK_SIZE) {
+        chunk.shouldFlush = true;
+      }
+      if (__privateGet(this, _chunks).length > MAX_CHUNKS_AT_ONCE) {
+        for (let i = 0; i < __privateGet(this, _chunks).length - 1; i++) {
+          __privateGet(this, _chunks)[i].shouldFlush = true;
+        }
+        __privateMethod(this, _flushChunks, flushChunks_fn).call(this);
+      }
+      if (toWrite.byteLength < data.byteLength) {
+        __privateMethod(this, _writeDataIntoChunks, writeDataIntoChunks_fn).call(this, data.subarray(toWrite.byteLength), position + toWrite.byteLength);
+      }
+    };
+    _insertSectionIntoChunk = new WeakSet();
+    insertSectionIntoChunk_fn = function (chunk, section) {
+      let low = 0;
+      let high = chunk.written.length - 1;
+      let index = -1;
+      while (low <= high) {
+        let mid = Math.floor(low + (high - low + 1) / 2);
+        if (chunk.written[mid].start <= section.start) {
+          low = mid + 1;
+          index = mid;
+        } else {
+          high = mid - 1;
+        }
+      }
+      chunk.written.splice(index + 1, 0, section);
+      if (index === -1 || chunk.written[index].end < section.start) index++;
+      while (index < chunk.written.length - 1 && chunk.written[index].end >= chunk.written[index + 1].start) {
+        chunk.written[index].end = Math.max(chunk.written[index].end, chunk.written[index + 1].end);
+        chunk.written.splice(index + 1, 1);
+      }
+    };
+    _createChunk = new WeakSet();
+    createChunk_fn = function (includesPosition) {
+      let start = Math.floor(includesPosition / CHUNK_SIZE) * CHUNK_SIZE;
+      let chunk = {
+        start,
+        data: new Uint8Array(CHUNK_SIZE),
+        written: [],
+        shouldFlush: false
+      };
+      __privateGet(this, _chunks).push(chunk);
+      __privateGet(this, _chunks).sort((a, b) => a.start - b.start);
+      return __privateGet(this, _chunks).indexOf(chunk);
+    };
+    _flushChunks = new WeakSet();
+    flushChunks_fn = function (force = false) {
+      for (let i = 0; i < __privateGet(this, _chunks).length; i++) {
+        let chunk = __privateGet(this, _chunks)[i];
+        if (!chunk.shouldFlush && !force) continue;
+        for (let section of chunk.written) {
+          if (__privateGet(this, _ensureMonotonicity2) && chunk.start + section.start < __privateGet(this, _lastFlushEnd2)) {
+            throw new Error("Internal error: Monotonicity violation.");
+          }
+          __privateGet(this, _target3).onData(chunk.data.subarray(section.start, section.end), chunk.start + section.start);
+          __privateSet(this, _lastFlushEnd2, chunk.start + section.end);
+        }
+        __privateGet(this, _chunks).splice(i--, 1);
+      }
+    };
+    var FileSystemWritableFileStreamTargetWriter = class extends ChunkedStreamTargetWriter {
+      constructor(target, ensureMonotonicity) {
+        super(new StreamTarget((data, position) => target.stream.write({
+          type: "write",
+          data,
+          position
+        })), ensureMonotonicity);
+      }
+    };
 
-    // src/main.ts
+    // src/muxer.ts
     var VIDEO_TRACK_NUMBER = 1;
     var AUDIO_TRACK_NUMBER = 2;
     var VIDEO_TRACK_TYPE = 1;
@@ -462,8 +541,8 @@ var webmMuxer = createCommonjsModule(function (module) {
     var SEGMENT_SIZE_BYTES = 6;
     var CLUSTER_SIZE_BYTES = 5;
     var FIRST_TIMESTAMP_BEHAVIORS = ["strict", "offset", "permissive"];
-    var _target, _options, _segment, _segmentInfo, _seekHead, _tracksElement, _segmentDuration, _colourElement, _videoCodecPrivate, _audioCodecPrivate, _cues, _currentCluster, _currentClusterTimestamp, _duration, _videoChunkQueue, _audioChunkQueue, _firstVideoTimestamp, _firstAudioTimestamp, _lastVideoTimestamp, _lastAudioTimestamp, _colorSpace, _finalized, _validateOptions, validateOptions_fn, _createFileHeader, createFileHeader_fn, _writeEBMLHeader, writeEBMLHeader_fn, _createCodecPrivatePlaceholders, createCodecPrivatePlaceholders_fn, _createColourElement, createColourElement_fn, _createSeekHead, createSeekHead_fn, _createSegmentInfo, createSegmentInfo_fn, _createTracks, createTracks_fn, _createSegment, createSegment_fn, _createCues, createCues_fn, _maybeFlushStreamingTarget, maybeFlushStreamingTarget_fn, _segmentDataOffset, segmentDataOffset_get, _writeVideoDecoderConfig, writeVideoDecoderConfig_fn, _fixVP9ColorSpace, fixVP9ColorSpace_fn, _createInternalChunk, createInternalChunk_fn, _validateTimestamp, validateTimestamp_fn, _writeSimpleBlock, writeSimpleBlock_fn, _createCodecPrivateElement, createCodecPrivateElement_fn, _writeCodecPrivate, writeCodecPrivate_fn, _createNewCluster, createNewCluster_fn, _finalizeCurrentCluster, finalizeCurrentCluster_fn, _ensureNotFinalized, ensureNotFinalized_fn;
-    var WebMMuxer = class {
+    var _options, _writer, _segment, _segmentInfo, _seekHead, _tracksElement, _segmentDuration, _colourElement, _videoCodecPrivate, _audioCodecPrivate, _cues, _currentCluster, _currentClusterTimestamp, _duration, _videoChunkQueue, _audioChunkQueue, _firstVideoTimestamp, _firstAudioTimestamp, _lastVideoTimestamp, _lastAudioTimestamp, _colorSpace, _finalized, _validateOptions, validateOptions_fn, _createFileHeader, createFileHeader_fn, _writeEBMLHeader, writeEBMLHeader_fn, _createCodecPrivatePlaceholders, createCodecPrivatePlaceholders_fn, _createColourElement, createColourElement_fn, _createSeekHead, createSeekHead_fn, _createSegmentInfo, createSegmentInfo_fn, _createTracks, createTracks_fn, _createSegment, createSegment_fn, _createCues, createCues_fn, _maybeFlushStreamingTargetWriter, maybeFlushStreamingTargetWriter_fn, _segmentDataOffset, segmentDataOffset_get, _writeVideoDecoderConfig, writeVideoDecoderConfig_fn, _fixVP9ColorSpace, fixVP9ColorSpace_fn, _createInternalChunk, createInternalChunk_fn, _validateTimestamp, validateTimestamp_fn, _writeSimpleBlock, writeSimpleBlock_fn, _createCodecPrivateElement, createCodecPrivateElement_fn, _writeCodecPrivate, writeCodecPrivate_fn, _createNewCluster, createNewCluster_fn, _finalizeCurrentCluster, finalizeCurrentCluster_fn, _ensureNotFinalized, ensureNotFinalized_fn;
+    var Muxer = class {
       constructor(options) {
         __privateAdd(this, _validateOptions);
         __privateAdd(this, _createFileHeader);
@@ -475,7 +554,7 @@ var webmMuxer = createCommonjsModule(function (module) {
         __privateAdd(this, _createTracks);
         __privateAdd(this, _createSegment);
         __privateAdd(this, _createCues);
-        __privateAdd(this, _maybeFlushStreamingTarget);
+        __privateAdd(this, _maybeFlushStreamingTargetWriter);
         __privateAdd(this, _segmentDataOffset);
         __privateAdd(this, _writeVideoDecoderConfig);
         __privateAdd(this, _fixVP9ColorSpace);
@@ -487,8 +566,8 @@ var webmMuxer = createCommonjsModule(function (module) {
         __privateAdd(this, _createNewCluster);
         __privateAdd(this, _finalizeCurrentCluster);
         __privateAdd(this, _ensureNotFinalized);
-        __privateAdd(this, _target, void 0);
         __privateAdd(this, _options, void 0);
+        __privateAdd(this, _writer, void 0);
         __privateAdd(this, _segment, void 0);
         __privateAdd(this, _segmentInfo, void 0);
         __privateAdd(this, _seekHead, void 0);
@@ -509,17 +588,20 @@ var webmMuxer = createCommonjsModule(function (module) {
         __privateAdd(this, _lastAudioTimestamp, -1);
         __privateAdd(this, _colorSpace, void 0);
         __privateAdd(this, _finalized, false);
+        var _a;
         __privateMethod(this, _validateOptions, validateOptions_fn).call(this, options);
         __privateSet(this, _options, __spreadValues({
           type: "webm",
           firstTimestampBehavior: "strict"
         }, options));
-        if (options.target === "buffer") {
-          __privateSet(this, _target, new ArrayBufferWriteTarget());
-        } else if (options.target instanceof FileSystemWritableFileStream) {
-          __privateSet(this, _target, new FileSystemWritableFileStreamWriteTarget(options.target));
-        } else if (typeof options.target === "function") {
-          __privateSet(this, _target, new StreamingWriteTarget(options.target, !!options.streaming));
+        this.target = options.target;
+        let ensureMonotonicity = !!__privateGet(this, _options).streaming;
+        if (options.target instanceof ArrayBufferTarget) {
+          __privateSet(this, _writer, new ArrayBufferTargetWriter(options.target));
+        } else if (options.target instanceof StreamTarget) {
+          __privateSet(this, _writer, ((_a = options.target.options) == null ? void 0 : _a.chunked) ? new ChunkedStreamTargetWriter(options.target, ensureMonotonicity) : new StreamTargetWriter(options.target, ensureMonotonicity));
+        } else if (options.target instanceof FileSystemWritableFileStreamTarget) {
+          __privateSet(this, _writer, new FileSystemWritableFileStreamTargetWriter(options.target, ensureMonotonicity));
         } else {
           throw new Error(`Invalid target: ${options.target}`);
         }
@@ -547,7 +629,7 @@ var webmMuxer = createCommonjsModule(function (module) {
         } else {
           __privateGet(this, _videoChunkQueue).push(internalChunk);
         }
-        __privateMethod(this, _maybeFlushStreamingTarget, maybeFlushStreamingTarget_fn).call(this);
+        __privateMethod(this, _maybeFlushStreamingTargetWriter, maybeFlushStreamingTargetWriter_fn).call(this);
       }
       addAudioChunk(chunk, meta, timestamp) {
         let data = new Uint8Array(chunk.byteLength);
@@ -576,7 +658,7 @@ var webmMuxer = createCommonjsModule(function (module) {
         } else {
           __privateGet(this, _audioChunkQueue).push(internalChunk);
         }
-        __privateMethod(this, _maybeFlushStreamingTarget, maybeFlushStreamingTarget_fn).call(this);
+        __privateMethod(this, _maybeFlushStreamingTargetWriter, maybeFlushStreamingTargetWriter_fn).call(this);
       }
       finalize() {
         while (__privateGet(this, _videoChunkQueue).length > 0) __privateMethod(this, _writeSimpleBlock, writeSimpleBlock_fn).call(this, __privateGet(this, _videoChunkQueue).shift());
@@ -584,35 +666,29 @@ var webmMuxer = createCommonjsModule(function (module) {
         if (!__privateGet(this, _options).streaming) {
           __privateMethod(this, _finalizeCurrentCluster, finalizeCurrentCluster_fn).call(this);
         }
-        __privateGet(this, _target).writeEBML(__privateGet(this, _cues));
+        __privateGet(this, _writer).writeEBML(__privateGet(this, _cues));
         if (!__privateGet(this, _options).streaming) {
-          let endPos = __privateGet(this, _target).pos;
-          let segmentSize = __privateGet(this, _target).pos - __privateGet(this, _segmentDataOffset, segmentDataOffset_get);
-          __privateGet(this, _target).seek(__privateGet(this, _target).offsets.get(__privateGet(this, _segment)) + 4);
-          __privateGet(this, _target).writeEBMLVarInt(segmentSize, SEGMENT_SIZE_BYTES);
+          let endPos = __privateGet(this, _writer).pos;
+          let segmentSize = __privateGet(this, _writer).pos - __privateGet(this, _segmentDataOffset, segmentDataOffset_get);
+          __privateGet(this, _writer).seek(__privateGet(this, _writer).offsets.get(__privateGet(this, _segment)) + 4);
+          __privateGet(this, _writer).writeEBMLVarInt(segmentSize, SEGMENT_SIZE_BYTES);
           __privateGet(this, _segmentDuration).data = new EBMLFloat64(__privateGet(this, _duration));
-          __privateGet(this, _target).seek(__privateGet(this, _target).offsets.get(__privateGet(this, _segmentDuration)));
-          __privateGet(this, _target).writeEBML(__privateGet(this, _segmentDuration));
-          __privateGet(this, _seekHead).data[0].data[1].data = __privateGet(this, _target).offsets.get(__privateGet(this, _cues)) - __privateGet(this, _segmentDataOffset, segmentDataOffset_get);
-          __privateGet(this, _seekHead).data[1].data[1].data = __privateGet(this, _target).offsets.get(__privateGet(this, _segmentInfo)) - __privateGet(this, _segmentDataOffset, segmentDataOffset_get);
-          __privateGet(this, _seekHead).data[2].data[1].data = __privateGet(this, _target).offsets.get(__privateGet(this, _tracksElement)) - __privateGet(this, _segmentDataOffset, segmentDataOffset_get);
-          __privateGet(this, _target).seek(__privateGet(this, _target).offsets.get(__privateGet(this, _seekHead)));
-          __privateGet(this, _target).writeEBML(__privateGet(this, _seekHead));
-          __privateGet(this, _target).seek(endPos);
+          __privateGet(this, _writer).seek(__privateGet(this, _writer).offsets.get(__privateGet(this, _segmentDuration)));
+          __privateGet(this, _writer).writeEBML(__privateGet(this, _segmentDuration));
+          __privateGet(this, _seekHead).data[0].data[1].data = __privateGet(this, _writer).offsets.get(__privateGet(this, _cues)) - __privateGet(this, _segmentDataOffset, segmentDataOffset_get);
+          __privateGet(this, _seekHead).data[1].data[1].data = __privateGet(this, _writer).offsets.get(__privateGet(this, _segmentInfo)) - __privateGet(this, _segmentDataOffset, segmentDataOffset_get);
+          __privateGet(this, _seekHead).data[2].data[1].data = __privateGet(this, _writer).offsets.get(__privateGet(this, _tracksElement)) - __privateGet(this, _segmentDataOffset, segmentDataOffset_get);
+          __privateGet(this, _writer).seek(__privateGet(this, _writer).offsets.get(__privateGet(this, _seekHead)));
+          __privateGet(this, _writer).writeEBML(__privateGet(this, _seekHead));
+          __privateGet(this, _writer).seek(endPos);
         }
+        __privateMethod(this, _maybeFlushStreamingTargetWriter, maybeFlushStreamingTargetWriter_fn).call(this);
+        __privateGet(this, _writer).finalize();
         __privateSet(this, _finalized, true);
-        if (__privateGet(this, _target) instanceof ArrayBufferWriteTarget) {
-          return __privateGet(this, _target).finalize();
-        } else if (__privateGet(this, _target) instanceof FileSystemWritableFileStreamWriteTarget) {
-          __privateGet(this, _target).finalize();
-        } else if (__privateGet(this, _target) instanceof StreamingWriteTarget) {
-          __privateGet(this, _target).flush(true);
-        }
-        return null;
       }
     };
-    _target = new WeakMap();
     _options = new WeakMap();
+    _writer = new WeakMap();
     _segment = new WeakMap();
     _segmentInfo = new WeakMap();
     _seekHead = new WeakMap();
@@ -656,7 +732,7 @@ var webmMuxer = createCommonjsModule(function (module) {
         __privateMethod(this, _createSegment, createSegment_fn).call(this);
       }
       __privateMethod(this, _createCues, createCues_fn).call(this);
-      __privateMethod(this, _maybeFlushStreamingTarget, maybeFlushStreamingTarget_fn).call(this);
+      __privateMethod(this, _maybeFlushStreamingTargetWriter, maybeFlushStreamingTargetWriter_fn).call(this);
     };
     _writeEBMLHeader = new WeakSet();
     writeEBMLHeader_fn = function () {
@@ -686,7 +762,7 @@ var webmMuxer = createCommonjsModule(function (module) {
           data: 2
         }]
       };
-      __privateGet(this, _target).writeEBML(ebmlHeader);
+      __privateGet(this, _writer).writeEBML(ebmlHeader);
     };
     _createCodecPrivatePlaceholders = new WeakSet();
     createCodecPrivatePlaceholders_fn = function () {
@@ -867,7 +943,7 @@ var webmMuxer = createCommonjsModule(function (module) {
         data: [!__privateGet(this, _options).streaming ? __privateGet(this, _seekHead) : null, __privateGet(this, _segmentInfo), __privateGet(this, _tracksElement)]
       };
       __privateSet(this, _segment, segment);
-      __privateGet(this, _target).writeEBML(segment);
+      __privateGet(this, _writer).writeEBML(segment);
     };
     _createCues = new WeakSet();
     createCues_fn = function () {
@@ -876,15 +952,15 @@ var webmMuxer = createCommonjsModule(function (module) {
         data: []
       });
     };
-    _maybeFlushStreamingTarget = new WeakSet();
-    maybeFlushStreamingTarget_fn = function () {
-      if (__privateGet(this, _target) instanceof StreamingWriteTarget) {
-        __privateGet(this, _target).flush(false);
+    _maybeFlushStreamingTargetWriter = new WeakSet();
+    maybeFlushStreamingTargetWriter_fn = function () {
+      if (__privateGet(this, _writer) instanceof StreamTargetWriter) {
+        __privateGet(this, _writer).flush();
       }
     };
     _segmentDataOffset = new WeakSet();
     segmentDataOffset_get = function () {
-      return __privateGet(this, _target).dataOffsets.get(__privateGet(this, _segment));
+      return __privateGet(this, _writer).dataOffsets.get(__privateGet(this, _segment));
     };
     _writeVideoDecoderConfig = new WeakSet();
     writeVideoDecoderConfig_fn = function (meta) {
@@ -919,10 +995,10 @@ var webmMuxer = createCommonjsModule(function (module) {
           data: [1, 2][Number(colorSpace.fullRange)]
         }];
         if (!__privateGet(this, _options).streaming) {
-          let endPos = __privateGet(this, _target).pos;
-          __privateGet(this, _target).seek(__privateGet(this, _target).offsets.get(__privateGet(this, _colourElement)));
-          __privateGet(this, _target).writeEBML(__privateGet(this, _colourElement));
-          __privateGet(this, _target).seek(endPos);
+          let endPos = __privateGet(this, _writer).pos;
+          __privateGet(this, _writer).seek(__privateGet(this, _writer).offsets.get(__privateGet(this, _colourElement)));
+          __privateGet(this, _writer).writeEBML(__privateGet(this, _colourElement));
+          __privateGet(this, _writer).seek(endPos);
         }
       }
       if (meta.decoderConfig.description) {
@@ -1015,7 +1091,7 @@ If you want to allow non-zero first timestamps, set firstTimestampBehavior: 'per
         id: 163 /* SimpleBlock */,
         data: [prelude, chunk.data]
       };
-      __privateGet(this, _target).writeEBML(simpleBlock);
+      __privateGet(this, _writer).writeEBML(simpleBlock);
       __privateSet(this, _duration, Math.max(__privateGet(this, _duration), msTime));
     };
     _createCodecPrivateElement = new WeakSet();
@@ -1028,15 +1104,15 @@ If you want to allow non-zero first timestamps, set firstTimestampBehavior: 'per
     };
     _writeCodecPrivate = new WeakSet();
     writeCodecPrivate_fn = function (element, data) {
-      let endPos = __privateGet(this, _target).pos;
-      __privateGet(this, _target).seek(__privateGet(this, _target).offsets.get(element));
+      let endPos = __privateGet(this, _writer).pos;
+      __privateGet(this, _writer).seek(__privateGet(this, _writer).offsets.get(element));
       element = [__privateMethod(this, _createCodecPrivateElement, createCodecPrivateElement_fn).call(this, data), {
         id: 236 /* Void */,
         size: 4,
         data: new Uint8Array(CODEC_PRIVATE_MAX_SIZE - 2 - 4 - data.byteLength)
       }];
-      __privateGet(this, _target).writeEBML(element);
-      __privateGet(this, _target).seek(endPos);
+      __privateGet(this, _writer).writeEBML(element);
+      __privateGet(this, _writer).seek(endPos);
     };
     _createNewCluster = new WeakSet();
     createNewCluster_fn = function (timestamp) {
@@ -1051,9 +1127,9 @@ If you want to allow non-zero first timestamps, set firstTimestampBehavior: 'per
           data: timestamp
         }]
       });
-      __privateGet(this, _target).writeEBML(__privateGet(this, _currentCluster));
+      __privateGet(this, _writer).writeEBML(__privateGet(this, _currentCluster));
       __privateSet(this, _currentClusterTimestamp, timestamp);
-      let clusterOffsetFromSegment = __privateGet(this, _target).offsets.get(__privateGet(this, _currentCluster)) - __privateGet(this, _segmentDataOffset, segmentDataOffset_get);
+      let clusterOffsetFromSegment = __privateGet(this, _writer).offsets.get(__privateGet(this, _currentCluster)) - __privateGet(this, _segmentDataOffset, segmentDataOffset_get);
       __privateGet(this, _cues).data.push({
         id: 187 /* CuePoint */,
         data: [{
@@ -1082,11 +1158,11 @@ If you want to allow non-zero first timestamps, set firstTimestampBehavior: 'per
     };
     _finalizeCurrentCluster = new WeakSet();
     finalizeCurrentCluster_fn = function () {
-      let clusterSize = __privateGet(this, _target).pos - __privateGet(this, _target).dataOffsets.get(__privateGet(this, _currentCluster));
-      let endPos = __privateGet(this, _target).pos;
-      __privateGet(this, _target).seek(__privateGet(this, _target).offsets.get(__privateGet(this, _currentCluster)) + 4);
-      __privateGet(this, _target).writeEBMLVarInt(clusterSize, CLUSTER_SIZE_BYTES);
-      __privateGet(this, _target).seek(endPos);
+      let clusterSize = __privateGet(this, _writer).pos - __privateGet(this, _writer).dataOffsets.get(__privateGet(this, _currentCluster));
+      let endPos = __privateGet(this, _writer).pos;
+      __privateGet(this, _writer).seek(__privateGet(this, _writer).offsets.get(__privateGet(this, _currentCluster)) + 4);
+      __privateGet(this, _writer).writeEBMLVarInt(clusterSize, CLUSTER_SIZE_BYTES);
+      __privateGet(this, _writer).seek(endPos);
     };
     _ensureNotFinalized = new WeakSet();
     ensureNotFinalized_fn = function () {
@@ -1094,34 +1170,20 @@ If you want to allow non-zero first timestamps, set firstTimestampBehavior: 'per
         throw new Error("Cannot add new video or audio chunks after the file has been finalized.");
       }
     };
-    var main_default = WebMMuxer;
-    var readBits = (bytes, start, end) => {
-      let result = 0;
-      for (let i = start; i < end; i++) {
-        let byteIndex = Math.floor(i / 8);
-        let byte = bytes[byteIndex];
-        let bitIndex = 7 - (i & 7);
-        let bit = (byte & 1 << bitIndex) >> bitIndex;
-        result <<= 1;
-        result |= bit;
-      }
-      return result;
-    };
-    var writeBits = (bytes, start, end, value) => {
-      for (let i = start; i < end; i++) {
-        let byteIndex = Math.floor(i / 8);
-        let byte = bytes[byteIndex];
-        let bitIndex = 7 - (i & 7);
-        byte &= ~(1 << bitIndex);
-        byte |= (value & 1 << end - i - 1) >> end - i - 1 << bitIndex;
-        bytes[byteIndex] = byte;
-      }
-    };
-    return __toCommonJS(main_exports);
+    return __toCommonJS(src_exports);
   })();
-  WebMMuxer = WebMMuxer.default;
-  module.exports = WebMMuxer;
+  {
+    module.exports.Muxer = WebMMuxer.Muxer;
+    module.exports.ArrayBufferTarget = WebMMuxer.ArrayBufferTarget;
+    module.exports.StreamTarget = WebMMuxer.StreamTarget;
+    module.exports.FileSystemWritableFileStreamTarget = WebMMuxer.FileSystemWritableFileStreamTarget;
+  }
 });
-var webmMuxer$1 = /*@__PURE__*/getDefaultExportFromCjs(webmMuxer);
+var __pika_web_default_export_for_treeshaking__ = /*@__PURE__*/getDefaultExportFromCjs(webmMuxer);
 
-export default webmMuxer$1;
+var ArrayBufferTarget = webmMuxer.ArrayBufferTarget;
+var FileSystemWritableFileStreamTarget = webmMuxer.FileSystemWritableFileStreamTarget;
+var Muxer = webmMuxer.Muxer;
+var StreamTarget = webmMuxer.StreamTarget;
+export default __pika_web_default_export_for_treeshaking__;
+export { ArrayBufferTarget, FileSystemWritableFileStreamTarget, Muxer, StreamTarget, webmMuxer as __moduleExports };

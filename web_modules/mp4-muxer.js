@@ -1,12 +1,13 @@
 import { _ as _export, a as aCallable } from './common/es.error.cause-2f8d9604.js';
 import './common/esnext.weak-map.emplace-5108a17f.js';
-import './common/es.typed-array.with-f2537e55.js';
-import './common/esnext.iterator.map-e7744f39.js';
-import './common/esnext.iterator.filter-e5b60a34.js';
-import { a as asyncIteratorIteration, i as iterate } from './common/iterate-966bdd3a.js';
-import { g as getIteratorDirect } from './common/map-iterate-37f9c416.js';
+import './common/es.typed-array.with-1fbee37e.js';
+import './common/esnext.iterator.map-c3e729be.js';
+import './common/esnext.iterator.filter-87aa2657.js';
+import { a as asyncIteratorIteration, i as iterate } from './common/iterate-c1890e1d.js';
+import { g as getIteratorDirect } from './common/iterator-close-66357cf1.js';
 import { b as getDefaultExportFromCjs, c as createCommonjsModule } from './common/_commonjsHelpers-0597c316.js';
-import './common/call-with-safe-iteration-closing-7bbb2406.js';
+import './common/map-iterate-95336e57.js';
+import './common/call-with-safe-iteration-closing-d930339a.js';
 
 var $every = asyncIteratorIteration.every;
 
@@ -777,12 +778,14 @@ var mp4Muxer = createCommonjsModule(function (module) {
     var SUPPORTED_VIDEO_CODECS = ["avc", "hevc"];
     var SUPPORTED_AUDIO_CODECS = ["aac"];
     var FIRST_TIMESTAMP_BEHAVIORS = ["strict", "offset", "permissive"];
-    var _options, _writer, _mdat, _videoTrack, _audioTrack, _creationTime, _finalized, _validateOptions, validateOptions_fn, _writeHeader, writeHeader_fn, _prepareTracks, prepareTracks_fn, _addSampleToTrack, addSampleToTrack_fn, _validateTimestamp, validateTimestamp_fn, _writeCurrentChunk, writeCurrentChunk_fn, _maybeFlushStreamingTargetWriter, maybeFlushStreamingTargetWriter_fn, _ensureNotFinalized, ensureNotFinalized_fn;
+    var _options, _writer, _mdat, _videoTrack, _audioTrack, _creationTime, _finalized, _validateOptions, validateOptions_fn, _writeHeader, writeHeader_fn, _prepareTracks, prepareTracks_fn, _generateMpeg4AudioSpecificConfig, generateMpeg4AudioSpecificConfig_fn, _addSampleToTrack, addSampleToTrack_fn, _validateTimestamp, validateTimestamp_fn, _writeCurrentChunk, writeCurrentChunk_fn, _maybeFlushStreamingTargetWriter, maybeFlushStreamingTargetWriter_fn, _ensureNotFinalized, ensureNotFinalized_fn;
     var Muxer = class {
       constructor(options) {
         __privateAdd(this, _validateOptions);
         __privateAdd(this, _writeHeader);
         __privateAdd(this, _prepareTracks);
+        // https://wiki.multimedia.cx/index.php/MPEG-4_Audio
+        __privateAdd(this, _generateMpeg4AudioSpecificConfig);
         __privateAdd(this, _addSampleToTrack);
         __privateAdd(this, _validateTimestamp);
         __privateAdd(this, _writeCurrentChunk);
@@ -833,6 +836,7 @@ var mp4Muxer = createCommonjsModule(function (module) {
         if (!__privateGet(this, _options).audio) throw new Error("No audio track declared.");
         __privateMethod(this, _addSampleToTrack, addSampleToTrack_fn).call(this, __privateGet(this, _audioTrack), data, type, timestamp, duration, meta);
       }
+      /** Finalizes the file, making it ready for use. Must be called after all video and audio chunks have been added. */
       finalize() {
         if (__privateGet(this, _videoTrack)) __privateMethod(this, _writeCurrentChunk, writeCurrentChunk_fn).call(this, __privateGet(this, _videoTrack));
         if (__privateGet(this, _audioTrack)) __privateMethod(this, _writeCurrentChunk, writeCurrentChunk_fn).call(this, __privateGet(this, _audioTrack));
@@ -844,6 +848,7 @@ var mp4Muxer = createCommonjsModule(function (module) {
         __privateGet(this, _writer).writeBox(movieBox);
         __privateMethod(this, _maybeFlushStreamingTargetWriter, maybeFlushStreamingTargetWriter_fn).call(this);
         __privateGet(this, _writer).finalize();
+        __privateSet(this, _finalized, true);
       }
     };
     _options = new WeakMap();
@@ -896,6 +901,9 @@ var mp4Muxer = createCommonjsModule(function (module) {
         });
       }
       if (__privateGet(this, _options).audio) {
+        let guessedCodecPrivate = __privateMethod(this, _generateMpeg4AudioSpecificConfig, generateMpeg4AudioSpecificConfig_fn).call(this, 2,
+        // Object type for AAC-LC, since it's the most common
+        __privateGet(this, _options).audio.sampleRate, __privateGet(this, _options).audio.numberOfChannels);
         __privateSet(this, _audioTrack, {
           id: __privateGet(this, _options).video ? 2 : 1,
           info: {
@@ -905,7 +913,7 @@ var mp4Muxer = createCommonjsModule(function (module) {
             sampleRate: __privateGet(this, _options).audio.sampleRate
           },
           timescale: __privateGet(this, _options).audio.sampleRate,
-          codecPrivate: new Uint8Array(0),
+          codecPrivate: guessedCodecPrivate,
           samples: [],
           writtenChunks: [],
           currentChunk: null,
@@ -913,6 +921,24 @@ var mp4Muxer = createCommonjsModule(function (module) {
           lastTimestamp: -1
         });
       }
+    };
+    _generateMpeg4AudioSpecificConfig = new WeakSet();
+    generateMpeg4AudioSpecificConfig_fn = function (objectType, sampleRate, numberOfChannels) {
+      let frequencyIndices = [96e3, 88200, 64e3, 48e3, 44100, 32e3, 24e3, 22050, 16e3, 12e3, 11025, 8e3, 7350];
+      let frequencyIndex = frequencyIndices.indexOf(sampleRate);
+      let channelConfig = numberOfChannels;
+      let configBits = "";
+      configBits += objectType.toString(2).padStart(5, "0");
+      configBits += frequencyIndex.toString(2).padStart(4, "0");
+      if (frequencyIndex === 15) configBits += sampleRate.toString(2).padStart(24, "0");
+      configBits += channelConfig.toString(2).padStart(4, "0");
+      let paddingLength = Math.ceil(configBits.length / 8) * 8;
+      configBits = configBits.padEnd(paddingLength, "0");
+      let configBytes = new Uint8Array(configBits.length / 8);
+      for (let i = 0; i < configBits.length; i += 8) {
+        configBytes[i / 8] = parseInt(configBits.slice(i, i + 8), 2);
+      }
+      return configBytes;
     };
     _addSampleToTrack = new WeakSet();
     addSampleToTrack_fn = function (track, data, type, timestamp, duration, meta) {
