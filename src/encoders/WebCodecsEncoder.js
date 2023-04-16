@@ -1,9 +1,6 @@
-import {
-  Muxer,
-  ArrayBufferTarget,
-  FileSystemWritableFileStreamTarget,
-} from "mp4-muxer";
-import WebMMuxer from "webm-muxer";
+import * as MP4Muxer from "mp4-muxer";
+import * as WebMMuxer from "webm-muxer";
+import { AVC, VP } from "media-codecs";
 
 import Encoder from "./Encoder.js";
 
@@ -28,7 +25,6 @@ class WebCodecsEncoder extends Encoder {
   async init(options) {
     super.init(options);
 
-    let target = "buffer";
     if (this.target === "file-system") {
       const fileHandle = await this.getFileHandle(this.filename, {
         types: [
@@ -39,49 +35,45 @@ class WebCodecsEncoder extends Encoder {
         ],
       });
 
-      this.writableFileStream = target = await this.getWritableFileStream(
-        fileHandle
-      );
-      if (this.extension === "mp4") {
-        target = new FileSystemWritableFileStreamTarget(target);
-      }
+      this.writableFileStream = await this.getWritableFileStream(fileHandle);
     }
 
-    if (this.extension === "mp4") {
-      this.muxer = new Muxer({
-        target: target === "buffer" ? new ArrayBufferTarget() : target,
-        video: {
-          codec: "avc", // Supported: "avc" | "hevc"
-          width: this.width,
-          height: this.height,
-        },
-        firstTimestampBehavior: "offset", // "strict" | "offset" | "permissive"
-        ...this.muxerOptions,
-      });
-    } else {
-      this.muxer = new WebMMuxer({
-        target,
-        type: this.extension === "mkv" ? "matroska" : "webm",
-        video: {
-          codec: "V_VP9", // Supported: V_VP8, V_VP9, V_AV1, A_OPUS and A_VORBIS
-          width: this.width,
-          height: this.height,
-          frameRate: this.frameRate,
-        },
-        ...this.muxerOptions,
-      });
-    }
+    const codec =
+      this.encoderOptions.codec || this.extension === "mp4"
+        ? AVC.getCodec({ name: "High", level: "4" })
+        : VP.getCodec({ name: "VP9", profile: 0, level: "1", bitDepth: 8 });
+
+    const CCCC = codec.split(".")[0];
+
+    const muxer = this.extension === "mp4" ? MP4Muxer : WebMMuxer;
+
+    this.muxer = new muxer.Muxer({
+      target: this.writableFileStream
+        ? new muxer.FileSystemWritableFileStreamTarget(this.writableFileStream)
+        : new muxer.ArrayBufferTarget(),
+      type: this.extension === "mkv" ? "matroska" : "webm",
+      video: {
+        codec:
+          this.extension === "mp4"
+            ? // Supported: "avc" | "hevc"
+              CCCC.startsWith("hev")
+              ? "hevc"
+              : "avc"
+            : // Supported: "V_VP8" | "V_VP9" (TODO: V_AV1)
+              `V_${VP.VP_CODECS.find((codec) => codec.cccc === CCCC).name}`,
+        width: this.width,
+        height: this.height,
+      },
+      firstTimestampBehavior: "offset", // "strict" | "offset" | "permissive"
+      ...this.muxerOptions,
+    });
 
     this.encoder = new VideoEncoder({
-      output: (chunk, meta) => {
-        console.log(chunk, meta);
-        return this.muxer.addVideoChunk(chunk, meta);
-      },
+      output: (chunk, meta) => this.muxer.addVideoChunk(chunk, meta),
       error: (e) => console.error(e),
     });
 
     const config = {
-      codec: this.extension === "mp4" ? "avc1.640028" : "vp09.00.10.08",
       width: this.width,
       height: this.height,
       frameRate: this.frameRate,
@@ -91,6 +83,7 @@ class WebCodecsEncoder extends Encoder {
       // latencyMode: "quality", // "realtime" (faster encoding)
       // hardwareAcceleration: "no-preference", // "prefer-hardware" "prefer-software"
       ...this.encoderOptions,
+      codec,
     };
 
     this.encoder.configure(config);
@@ -115,18 +108,11 @@ class WebCodecsEncoder extends Encoder {
 
   async stop() {
     await this.encoder.flush();
+    this.muxer.finalize();
 
-    let buffer;
-    if (this.extension === "mp4") {
-      this.muxer.finalize();
-      buffer = this.muxer.target?.buffer;
-    } else {
-      buffer = this.muxer.finalize();
-    }
+    const buffer = this.muxer.target?.buffer;
 
-    if (this.writableFileStream) {
-      await this.writableFileStream.close();
-    }
+    if (this.writableFileStream) await this.writableFileStream.close();
 
     return buffer;
   }

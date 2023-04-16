@@ -26,7 +26,6 @@ class MP4WasmEncoder extends Encoder {
     super.init(options);
 
     mp4wasm ||= await MP4Wasm(); // { wasmBinary }
-    console.log(mp4wasm);
 
     this.encoder = mp4wasm.createWebCodecsEncoder({
       // codec: "avc1.420034", // Baseline 4.2

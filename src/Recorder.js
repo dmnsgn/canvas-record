@@ -50,7 +50,8 @@ const RecorderStatus = Object.freeze({
  * @property {boolean} [extension="mp4"] Default file extension: infers which Encoder is selected.
  * @property {string} [target="in-browser"] Default writing target: in-browser or file-system when available.
  * @property {Object} [encoder] A specific encoder. Default encoder based on options.extension: GIF > WebCodecs > H264MP4.
- * @property {Object} [encoderOptions={}] See `src/encoders` or individual packages for a list of options.
+ * @property {Object} [encoderOptions] See `src/encoders` or individual packages for a list of options.
+ * @property {Object} [muxerOptions] See "mp4-muxer" and "webm-muxer" for a list of options.
  * @property {onStatusChangeCb} [onStatusChange]
  */
 
@@ -211,6 +212,7 @@ Speedup: x${(this.time / renderTime).toFixed(3)}`,
 
     await this.encoder.init({
       encoderOptions: this.encoderOptions,
+      muxerOptions: this.muxerOptions,
       canvas: this.context.canvas,
       width: this.width,
       height: this.height,
