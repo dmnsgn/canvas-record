@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+# [4.0.0-alpha.6](https://github.com/dmnsgn/canvas-record/compare/v4.0.0-alpha.5...v4.0.0-alpha.6) (2023-04-16)
+
+
+### Bug Fixes
+
+* make isWebCodecsSupported return a boolean ([e8420b9](https://github.com/dmnsgn/canvas-record/commit/e8420b98da74d77449040d06af3380a78716339c))
+
+
+### Features
+
+* add mp4-muxer and move mp4-wasm to its own encoder ([0693ad0](https://github.com/dmnsgn/canvas-record/commit/0693ad0750303f51da23efe950bf68faa98b7d47))
+* add support for codecs in WebCodecs encoder ([3b80a80](https://github.com/dmnsgn/canvas-record/commit/3b80a8088914fd3f0020a2f1212a9099d9c896f8))
+
+
+
 # [4.0.0-alpha.5](https://github.com/dmnsgn/canvas-record/compare/v4.0.0-alpha.4...v4.0.0-alpha.5) (2023-03-02)
 
 

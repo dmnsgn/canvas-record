@@ -1,6 +1,6 @@
 {
   "name": "canvas-record",
-  "version": "4.0.0-alpha.5",
+  "version": "4.0.0-alpha.6",
   "description": "Record a video in the browser or directly on the File System from a canvas (2D/WebGL/WebGPU) as MP4, WebM, MKV, GIF, PNG/JPG Sequence using WebCodecs and wasm when available.",
   "keywords": [
     "canvas",
