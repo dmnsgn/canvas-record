@@ -40,8 +40,8 @@ class WebCodecsEncoder extends Encoder {
 
     const codec =
       this.encoderOptions.codec || this.extension === "mp4"
-        ? AVC.getCodec({ name: "High", level: "4" })
-        : VP.getCodec({ name: "VP9", profile: 0, level: "1", bitDepth: 8 });
+        ? AVC.getCodec({ profile: "High", level: "4" }) // avc1.640028
+        : VP.getCodec({ name: "VP9", profile: 0, level: "1", bitDepth: 8 }); // vp09.00.10.08
 
     const CCCC = codec.split(".")[0];
 
@@ -59,8 +59,12 @@ class WebCodecsEncoder extends Encoder {
               CCCC.startsWith("hev") || CCCC.startsWith("hvc") // https://www.w3.org/TR/webcodecs-hevc-codec-registration/#fully-qualified-codec-strings
               ? "hevc"
               : "avc"
-            : // Supported: "V_VP8" | "V_VP9" (TODO: V_AV1)
-              `V_${VP.VP_CODECS.find((codec) => codec.cccc === CCCC).name}`,
+            : // Supported: "V_VP8" | "V_VP9" | "V_AV1"
+              `V_${
+                CCCC.startsWith("av01")
+                  ? "AV1"
+                  : VP.VP_CODECS.find((codec) => codec.cccc === CCCC).name
+              }`,
         width: this.width,
         height: this.height,
       },
