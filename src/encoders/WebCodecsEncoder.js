@@ -56,7 +56,7 @@ class WebCodecsEncoder extends Encoder {
         codec:
           this.extension === "mp4"
             ? // Supported: "avc" | "hevc"
-              CCCC.startsWith("hev")
+              CCCC.startsWith("hev") || CCCC.startsWith("hvc") // https://www.w3.org/TR/webcodecs-hevc-codec-registration/#fully-qualified-codec-strings
               ? "hevc"
               : "avc"
             : // Supported: "V_VP8" | "V_VP9" (TODO: V_AV1)
