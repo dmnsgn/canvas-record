@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+# [4.0.0-alpha.7](https://github.com/dmnsgn/canvas-record/compare/v4.0.0-alpha.6...v4.0.0-alpha.7) (2023-04-19)
+
+
+### Bug Fixes
+
+* accept hvc codec identifier for hevc ([d88431d](https://github.com/dmnsgn/canvas-record/commit/d88431d7cd6ab75ac62780b19e76bac85769b338))
+
+
+
 # [4.0.0-alpha.6](https://github.com/dmnsgn/canvas-record/compare/v4.0.0-alpha.5...v4.0.0-alpha.6) (2023-04-16)
 
 
