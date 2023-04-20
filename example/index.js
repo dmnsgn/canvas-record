@@ -38,7 +38,7 @@ pane.addInput(CONFIG, "target", {
   ).map((value) => ({ text: value, value })),
 });
 pane.addInput(CONFIG, "duration", { step: 1, min: 1, max: 30 });
-pane.addInput(CONFIG, "frameRate", { step: 1, min: 1, max: 30 });
+pane.addInput(CONFIG, "frameRate", { step: 1, min: 1, max: 60 });
 pane.addInput(CONFIG, "filename");
 
 const startButton = pane.addButton({ title: "Start Recording" });

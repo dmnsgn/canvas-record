@@ -40,7 +40,7 @@ class WebCodecsEncoder extends Encoder {
 
     const codec =
       this.encoderOptions.codec || this.extension === "mp4"
-        ? AVC.getCodec({ profile: "High", level: "4" }) // avc1.640028
+        ? AVC.getCodec({ profile: "High", level: "5.2" }) // avc1.640034
         : VP.getCodec({ name: "VP9", profile: 0, level: "1", bitDepth: 8 }); // vp09.00.10.08
 
     const CCCC = codec.split(".")[0];
