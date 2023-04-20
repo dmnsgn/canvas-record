@@ -73,7 +73,7 @@ const tick = async () => {
 canvasRecorder = new Recorder(context, {
   name: "canvas-record-example",
   encoderOptions: {
-    codec: AVC.getCodec({ name: "High", level: "5.2" }),
+    codec: AVC.getCodec({ profile: "Main", level: "5.2" }),
   },
 });
 
@@ -100,6 +100,7 @@ Encoder comparison:
 
 Note:
 
+- WebCodecs encoderOptions allow different codecs to be used: VP8/VP9/AV1/HEVC. See [media-codecs](https://github.com/dmnsgn/media-codecs) to get a codec string from human readable options and check which ones are supported in your browser with [github.io/media-codecs](https://dmnsgn.github.io/media-codecs/).
 - WebCodecs 5-10x faster than H264MP4Encoder and 20x faster than FFmpeg (it needs to mux files after writing png to virtual FS)
 - FFmpeg (mp4 and webm) and WebCodecs (mp4) have a AVC maximum frame size of 9437184 pixels. That's fine until a bit more than 4K 16:9 @ 30fps. So if you need 4K Square or 8K exports, be patient with H264MP4Encoder (which probably also has the 4GB memory limit) or use Frame encoder and mux them manually with FFmpeg CLI.
 - MP4Wasm is embedded from [mp4-wasm](https://github.com/mattdesl/mp4-wasm/) for ease of use (FFmpeg will require `encoderOptions.corePath`)

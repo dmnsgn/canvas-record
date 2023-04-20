@@ -58,6 +58,7 @@ const RecorderStatus = Object.freeze({
 /**
  * @typedef {Object} RecorderStartOptions Options for recording. All optional.
  * @property {string} [filename] Overwrite the file name completely.
+ * @property {boolean} [initOnly] Only initialised the recorder and don't call the first await recorder.step().
  */
 
 /**
@@ -228,10 +229,10 @@ Speedup: x${(this.time / renderTime).toFixed(3)}`,
   }
 
   /**
-   * Start the recording by initializing and calling the initial step.
+   * Start the recording by initializing and optionally calling the initial step.
    * @param {RecorderStartOptions} startOptions
    */
-  async start(startOptions) {
+  async start(startOptions = {}) {
     await this.init(startOptions);
 
     // Ensure initializing worked
@@ -242,7 +243,7 @@ Speedup: x${(this.time / renderTime).toFixed(3)}`,
 
     this.#updateStatus(RecorderStatus.Recording);
 
-    await this.step();
+    if (!startOptions.initOnly) await this.step();
   }
 
   /**
