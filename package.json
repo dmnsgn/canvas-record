@@ -38,6 +38,11 @@
   "exports": "./index.js",
   "main": "index.js",
   "types": "types/index.d.ts",
+  "scripts": {
+    "build": "npx snowdev build",
+    "deps": "npx snowdev install",
+    "dev": "npx snowdev dev"
+  },
   "dependencies": {
     "@ffmpeg/ffmpeg": "^0.11.6",
     "canvas-screenshot": "^4.1.0",
