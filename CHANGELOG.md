@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+# [4.0.0-beta.0](https://github.com/dmnsgn/canvas-record/compare/v4.0.0-alpha.7...v4.0.0-beta.0) (2023-04-20)
+
+
+### Features
+
+* add initOnly option to startOptions ([69e0ab1](https://github.com/dmnsgn/canvas-record/commit/69e0ab1212bbf095532b7694a5fbc788a0c9f0a6))
+* default avc codec to level 5.2 to allow record of at least 4096x2048@60fps ([8f956ed](https://github.com/dmnsgn/canvas-record/commit/8f956edecda9852bea54b7c28033f88a9927283b))
+
+
+
 # [4.0.0-alpha.7](https://github.com/dmnsgn/canvas-record/compare/v4.0.0-alpha.6...v4.0.0-alpha.7) (2023-04-19)
 
 

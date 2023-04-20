@@ -186,7 +186,7 @@ Base Recorder class.
 
 ### recorder.start(startOptions)
 
-Start the recording by initializing and calling the initial step.
+Start the recording by initializing and optionally calling the initial step.
 
 **Kind**: instance method of [<code>Recorder</code>](#Recorder)
 
@@ -278,9 +278,10 @@ Options for recording. All optional.
 **Kind**: global typedef
 **Properties**
 
-| Name       | Type                | Description                         |
-| ---------- | ------------------- | ----------------------------------- |
-| [filename] | <code>string</code> | Overwrite the file name completely. |
+| Name       | Type                 | Description                                                                   |
+| ---------- | -------------------- | ----------------------------------------------------------------------------- |
+| [filename] | <code>string</code>  | Overwrite the file name completely.                                           |
+| [initOnly] | <code>boolean</code> | Only initialised the recorder and don't call the first await recorder.step(). |
 
 <!-- api-end -->
 
