@@ -1,2069 +1,139 @@
-var global = (typeof global !== "undefined" ? global :
-  typeof self !== "undefined" ? self :
-  typeof window !== "undefined" ? window : {});
-
-var lookup = [];
-var revLookup = [];
-var Arr = typeof Uint8Array !== 'undefined' ? Uint8Array : Array;
-var inited = false;
-function init () {
-  inited = true;
-  var code = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
-  for (var i = 0, len = code.length; i < len; ++i) {
-    lookup[i] = code[i];
-    revLookup[code.charCodeAt(i)] = i;
-  }
-
-  revLookup['-'.charCodeAt(0)] = 62;
-  revLookup['_'.charCodeAt(0)] = 63;
-}
-
-function toByteArray (b64) {
-  if (!inited) {
-    init();
-  }
-  var i, j, l, tmp, placeHolders, arr;
-  var len = b64.length;
-
-  if (len % 4 > 0) {
-    throw new Error('Invalid string. Length must be a multiple of 4')
-  }
-
-  // the number of equal signs (place holders)
-  // if there are two placeholders, than the two characters before it
-  // represent one byte
-  // if there is only one, then the three characters before it represent 2 bytes
-  // this is just a cheap hack to not do indexOf twice
-  placeHolders = b64[len - 2] === '=' ? 2 : b64[len - 1] === '=' ? 1 : 0;
-
-  // base64 is 4/3 + up to two characters of the original data
-  arr = new Arr(len * 3 / 4 - placeHolders);
-
-  // if there are placeholders, only get up to the last complete 4 chars
-  l = placeHolders > 0 ? len - 4 : len;
-
-  var L = 0;
-
-  for (i = 0, j = 0; i < l; i += 4, j += 3) {
-    tmp = (revLookup[b64.charCodeAt(i)] << 18) | (revLookup[b64.charCodeAt(i + 1)] << 12) | (revLookup[b64.charCodeAt(i + 2)] << 6) | revLookup[b64.charCodeAt(i + 3)];
-    arr[L++] = (tmp >> 16) & 0xFF;
-    arr[L++] = (tmp >> 8) & 0xFF;
-    arr[L++] = tmp & 0xFF;
-  }
-
-  if (placeHolders === 2) {
-    tmp = (revLookup[b64.charCodeAt(i)] << 2) | (revLookup[b64.charCodeAt(i + 1)] >> 4);
-    arr[L++] = tmp & 0xFF;
-  } else if (placeHolders === 1) {
-    tmp = (revLookup[b64.charCodeAt(i)] << 10) | (revLookup[b64.charCodeAt(i + 1)] << 4) | (revLookup[b64.charCodeAt(i + 2)] >> 2);
-    arr[L++] = (tmp >> 8) & 0xFF;
-    arr[L++] = tmp & 0xFF;
-  }
-
-  return arr
-}
-
-function tripletToBase64 (num) {
-  return lookup[num >> 18 & 0x3F] + lookup[num >> 12 & 0x3F] + lookup[num >> 6 & 0x3F] + lookup[num & 0x3F]
-}
-
-function encodeChunk (uint8, start, end) {
-  var tmp;
-  var output = [];
-  for (var i = start; i < end; i += 3) {
-    tmp = (uint8[i] << 16) + (uint8[i + 1] << 8) + (uint8[i + 2]);
-    output.push(tripletToBase64(tmp));
-  }
-  return output.join('')
-}
-
-function fromByteArray (uint8) {
-  if (!inited) {
-    init();
-  }
-  var tmp;
-  var len = uint8.length;
-  var extraBytes = len % 3; // if we have 1 byte left, pad 2 bytes
-  var output = '';
-  var parts = [];
-  var maxChunkLength = 16383; // must be multiple of 3
-
-  // go through the array every three bytes, we'll deal with trailing stuff later
-  for (var i = 0, len2 = len - extraBytes; i < len2; i += maxChunkLength) {
-    parts.push(encodeChunk(uint8, i, (i + maxChunkLength) > len2 ? len2 : (i + maxChunkLength)));
-  }
-
-  // pad the end with zeros, but make sure to not forget the extra bytes
-  if (extraBytes === 1) {
-    tmp = uint8[len - 1];
-    output += lookup[tmp >> 2];
-    output += lookup[(tmp << 4) & 0x3F];
-    output += '==';
-  } else if (extraBytes === 2) {
-    tmp = (uint8[len - 2] << 8) + (uint8[len - 1]);
-    output += lookup[tmp >> 10];
-    output += lookup[(tmp >> 4) & 0x3F];
-    output += lookup[(tmp << 2) & 0x3F];
-    output += '=';
-  }
-
-  parts.push(output);
-
-  return parts.join('')
-}
-
-function read (buffer, offset, isLE, mLen, nBytes) {
-  var e, m;
-  var eLen = nBytes * 8 - mLen - 1;
-  var eMax = (1 << eLen) - 1;
-  var eBias = eMax >> 1;
-  var nBits = -7;
-  var i = isLE ? (nBytes - 1) : 0;
-  var d = isLE ? -1 : 1;
-  var s = buffer[offset + i];
-
-  i += d;
-
-  e = s & ((1 << (-nBits)) - 1);
-  s >>= (-nBits);
-  nBits += eLen;
-  for (; nBits > 0; e = e * 256 + buffer[offset + i], i += d, nBits -= 8) {}
-
-  m = e & ((1 << (-nBits)) - 1);
-  e >>= (-nBits);
-  nBits += mLen;
-  for (; nBits > 0; m = m * 256 + buffer[offset + i], i += d, nBits -= 8) {}
-
-  if (e === 0) {
-    e = 1 - eBias;
-  } else if (e === eMax) {
-    return m ? NaN : ((s ? -1 : 1) * Infinity)
-  } else {
-    m = m + Math.pow(2, mLen);
-    e = e - eBias;
-  }
-  return (s ? -1 : 1) * m * Math.pow(2, e - mLen)
-}
-
-function write (buffer, value, offset, isLE, mLen, nBytes) {
-  var e, m, c;
-  var eLen = nBytes * 8 - mLen - 1;
-  var eMax = (1 << eLen) - 1;
-  var eBias = eMax >> 1;
-  var rt = (mLen === 23 ? Math.pow(2, -24) - Math.pow(2, -77) : 0);
-  var i = isLE ? 0 : (nBytes - 1);
-  var d = isLE ? 1 : -1;
-  var s = value < 0 || (value === 0 && 1 / value < 0) ? 1 : 0;
-
-  value = Math.abs(value);
-
-  if (isNaN(value) || value === Infinity) {
-    m = isNaN(value) ? 1 : 0;
-    e = eMax;
-  } else {
-    e = Math.floor(Math.log(value) / Math.LN2);
-    if (value * (c = Math.pow(2, -e)) < 1) {
-      e--;
-      c *= 2;
-    }
-    if (e + eBias >= 1) {
-      value += rt / c;
-    } else {
-      value += rt * Math.pow(2, 1 - eBias);
-    }
-    if (value * c >= 2) {
-      e++;
-      c /= 2;
-    }
-
-    if (e + eBias >= eMax) {
-      m = 0;
-      e = eMax;
-    } else if (e + eBias >= 1) {
-      m = (value * c - 1) * Math.pow(2, mLen);
-      e = e + eBias;
-    } else {
-      m = value * Math.pow(2, eBias - 1) * Math.pow(2, mLen);
-      e = 0;
-    }
-  }
-
-  for (; mLen >= 8; buffer[offset + i] = m & 0xff, i += d, m /= 256, mLen -= 8) {}
-
-  e = (e << mLen) | m;
-  eLen += mLen;
-  for (; eLen > 0; buffer[offset + i] = e & 0xff, i += d, e /= 256, eLen -= 8) {}
-
-  buffer[offset + i - d] |= s * 128;
-}
-
-var toString = {}.toString;
-
-var isArray = Array.isArray || function (arr) {
-  return toString.call(arr) == '[object Array]';
-};
-
-/*!
- * The buffer module from node.js, for the browser.
- *
- * @author   Feross Aboukhadijeh <feross@feross.org> <http://feross.org>
- * @license  MIT
- */
-
-var INSPECT_MAX_BYTES = 50;
-
-/**
- * If `Buffer.TYPED_ARRAY_SUPPORT`:
- *   === true    Use Uint8Array implementation (fastest)
- *   === false   Use Object implementation (most compatible, even IE6)
- *
- * Browsers that support typed arrays are IE 10+, Firefox 4+, Chrome 7+, Safari 5.1+,
- * Opera 11.6+, iOS 4.2+.
- *
- * Due to various browser bugs, sometimes the Object implementation will be used even
- * when the browser supports typed arrays.
- *
- * Note:
- *
- *   - Firefox 4-29 lacks support for adding new properties to `Uint8Array` instances,
- *     See: https://bugzilla.mozilla.org/show_bug.cgi?id=695438.
- *
- *   - Chrome 9-10 is missing the `TypedArray.prototype.subarray` function.
- *
- *   - IE10 has a broken `TypedArray.prototype.subarray` function which returns arrays of
- *     incorrect length in some situations.
-
- * We detect these buggy browsers and set `Buffer.TYPED_ARRAY_SUPPORT` to `false` so they
- * get the Object implementation, which is slower but behaves correctly.
- */
-Buffer.TYPED_ARRAY_SUPPORT = global.TYPED_ARRAY_SUPPORT !== undefined
-  ? global.TYPED_ARRAY_SUPPORT
-  : true;
-
-function kMaxLength () {
-  return Buffer.TYPED_ARRAY_SUPPORT
-    ? 0x7fffffff
-    : 0x3fffffff
-}
-
-function createBuffer (that, length) {
-  if (kMaxLength() < length) {
-    throw new RangeError('Invalid typed array length')
-  }
-  if (Buffer.TYPED_ARRAY_SUPPORT) {
-    // Return an augmented `Uint8Array` instance, for best performance
-    that = new Uint8Array(length);
-    that.__proto__ = Buffer.prototype;
-  } else {
-    // Fallback: Return an object instance of the Buffer class
-    if (that === null) {
-      that = new Buffer(length);
-    }
-    that.length = length;
-  }
-
-  return that
-}
-
-/**
- * The Buffer constructor returns instances of `Uint8Array` that have their
- * prototype changed to `Buffer.prototype`. Furthermore, `Buffer` is a subclass of
- * `Uint8Array`, so the returned instances will have all the node `Buffer` methods
- * and the `Uint8Array` methods. Square bracket notation works as expected -- it
- * returns a single octet.
- *
- * The `Uint8Array` prototype remains unmodified.
- */
-
-function Buffer (arg, encodingOrOffset, length) {
-  if (!Buffer.TYPED_ARRAY_SUPPORT && !(this instanceof Buffer)) {
-    return new Buffer(arg, encodingOrOffset, length)
-  }
-
-  // Common case.
-  if (typeof arg === 'number') {
-    if (typeof encodingOrOffset === 'string') {
-      throw new Error(
-        'If encoding is specified then the first argument must be a string'
-      )
-    }
-    return allocUnsafe(this, arg)
-  }
-  return from(this, arg, encodingOrOffset, length)
-}
-
-Buffer.poolSize = 8192; // not used by this implementation
-
-// TODO: Legacy, not needed anymore. Remove in next major version.
-Buffer._augment = function (arr) {
-  arr.__proto__ = Buffer.prototype;
-  return arr
-};
-
-function from (that, value, encodingOrOffset, length) {
-  if (typeof value === 'number') {
-    throw new TypeError('"value" argument must not be a number')
-  }
-
-  if (typeof ArrayBuffer !== 'undefined' && value instanceof ArrayBuffer) {
-    return fromArrayBuffer(that, value, encodingOrOffset, length)
-  }
-
-  if (typeof value === 'string') {
-    return fromString(that, value, encodingOrOffset)
-  }
-
-  return fromObject(that, value)
-}
-
-/**
- * Functionally equivalent to Buffer(arg, encoding) but throws a TypeError
- * if value is a number.
- * Buffer.from(str[, encoding])
- * Buffer.from(array)
- * Buffer.from(buffer)
- * Buffer.from(arrayBuffer[, byteOffset[, length]])
- **/
-Buffer.from = function (value, encodingOrOffset, length) {
-  return from(null, value, encodingOrOffset, length)
-};
-
-if (Buffer.TYPED_ARRAY_SUPPORT) {
-  Buffer.prototype.__proto__ = Uint8Array.prototype;
-  Buffer.__proto__ = Uint8Array;
-}
-
-function assertSize (size) {
-  if (typeof size !== 'number') {
-    throw new TypeError('"size" argument must be a number')
-  } else if (size < 0) {
-    throw new RangeError('"size" argument must not be negative')
-  }
-}
-
-function alloc (that, size, fill, encoding) {
-  assertSize(size);
-  if (size <= 0) {
-    return createBuffer(that, size)
-  }
-  if (fill !== undefined) {
-    // Only pay attention to encoding if it's a string. This
-    // prevents accidentally sending in a number that would
-    // be interpretted as a start offset.
-    return typeof encoding === 'string'
-      ? createBuffer(that, size).fill(fill, encoding)
-      : createBuffer(that, size).fill(fill)
-  }
-  return createBuffer(that, size)
-}
-
-/**
- * Creates a new filled Buffer instance.
- * alloc(size[, fill[, encoding]])
- **/
-Buffer.alloc = function (size, fill, encoding) {
-  return alloc(null, size, fill, encoding)
-};
-
-function allocUnsafe (that, size) {
-  assertSize(size);
-  that = createBuffer(that, size < 0 ? 0 : checked(size) | 0);
-  if (!Buffer.TYPED_ARRAY_SUPPORT) {
-    for (var i = 0; i < size; ++i) {
-      that[i] = 0;
-    }
-  }
-  return that
-}
-
-/**
- * Equivalent to Buffer(num), by default creates a non-zero-filled Buffer instance.
- * */
-Buffer.allocUnsafe = function (size) {
-  return allocUnsafe(null, size)
-};
-/**
- * Equivalent to SlowBuffer(num), by default creates a non-zero-filled Buffer instance.
- */
-Buffer.allocUnsafeSlow = function (size) {
-  return allocUnsafe(null, size)
-};
-
-function fromString (that, string, encoding) {
-  if (typeof encoding !== 'string' || encoding === '') {
-    encoding = 'utf8';
-  }
-
-  if (!Buffer.isEncoding(encoding)) {
-    throw new TypeError('"encoding" must be a valid string encoding')
-  }
-
-  var length = byteLength(string, encoding) | 0;
-  that = createBuffer(that, length);
-
-  var actual = that.write(string, encoding);
-
-  if (actual !== length) {
-    // Writing a hex string, for example, that contains invalid characters will
-    // cause everything after the first invalid character to be ignored. (e.g.
-    // 'abxxcd' will be treated as 'ab')
-    that = that.slice(0, actual);
-  }
-
-  return that
-}
-
-function fromArrayLike (that, array) {
-  var length = array.length < 0 ? 0 : checked(array.length) | 0;
-  that = createBuffer(that, length);
-  for (var i = 0; i < length; i += 1) {
-    that[i] = array[i] & 255;
-  }
-  return that
-}
-
-function fromArrayBuffer (that, array, byteOffset, length) {
-  array.byteLength; // this throws if `array` is not a valid ArrayBuffer
-
-  if (byteOffset < 0 || array.byteLength < byteOffset) {
-    throw new RangeError('\'offset\' is out of bounds')
-  }
-
-  if (array.byteLength < byteOffset + (length || 0)) {
-    throw new RangeError('\'length\' is out of bounds')
-  }
-
-  if (byteOffset === undefined && length === undefined) {
-    array = new Uint8Array(array);
-  } else if (length === undefined) {
-    array = new Uint8Array(array, byteOffset);
-  } else {
-    array = new Uint8Array(array, byteOffset, length);
-  }
-
-  if (Buffer.TYPED_ARRAY_SUPPORT) {
-    // Return an augmented `Uint8Array` instance, for best performance
-    that = array;
-    that.__proto__ = Buffer.prototype;
-  } else {
-    // Fallback: Return an object instance of the Buffer class
-    that = fromArrayLike(that, array);
-  }
-  return that
-}
-
-function fromObject (that, obj) {
-  if (internalIsBuffer(obj)) {
-    var len = checked(obj.length) | 0;
-    that = createBuffer(that, len);
-
-    if (that.length === 0) {
-      return that
-    }
-
-    obj.copy(that, 0, 0, len);
-    return that
-  }
-
-  if (obj) {
-    if ((typeof ArrayBuffer !== 'undefined' &&
-        obj.buffer instanceof ArrayBuffer) || 'length' in obj) {
-      if (typeof obj.length !== 'number' || isnan(obj.length)) {
-        return createBuffer(that, 0)
-      }
-      return fromArrayLike(that, obj)
-    }
-
-    if (obj.type === 'Buffer' && isArray(obj.data)) {
-      return fromArrayLike(that, obj.data)
-    }
-  }
-
-  throw new TypeError('First argument must be a string, Buffer, ArrayBuffer, Array, or array-like object.')
-}
-
-function checked (length) {
-  // Note: cannot use `length < kMaxLength()` here because that fails when
-  // length is NaN (which is otherwise coerced to zero.)
-  if (length >= kMaxLength()) {
-    throw new RangeError('Attempt to allocate Buffer larger than maximum ' +
-                         'size: 0x' + kMaxLength().toString(16) + ' bytes')
-  }
-  return length | 0
-}
-Buffer.isBuffer = isBuffer;
-function internalIsBuffer (b) {
-  return !!(b != null && b._isBuffer)
-}
-
-Buffer.compare = function compare (a, b) {
-  if (!internalIsBuffer(a) || !internalIsBuffer(b)) {
-    throw new TypeError('Arguments must be Buffers')
-  }
-
-  if (a === b) return 0
-
-  var x = a.length;
-  var y = b.length;
-
-  for (var i = 0, len = Math.min(x, y); i < len; ++i) {
-    if (a[i] !== b[i]) {
-      x = a[i];
-      y = b[i];
-      break
-    }
-  }
-
-  if (x < y) return -1
-  if (y < x) return 1
-  return 0
-};
-
-Buffer.isEncoding = function isEncoding (encoding) {
-  switch (String(encoding).toLowerCase()) {
-    case 'hex':
-    case 'utf8':
-    case 'utf-8':
-    case 'ascii':
-    case 'latin1':
-    case 'binary':
-    case 'base64':
-    case 'ucs2':
-    case 'ucs-2':
-    case 'utf16le':
-    case 'utf-16le':
-      return true
-    default:
-      return false
-  }
-};
-
-Buffer.concat = function concat (list, length) {
-  if (!isArray(list)) {
-    throw new TypeError('"list" argument must be an Array of Buffers')
-  }
-
-  if (list.length === 0) {
-    return Buffer.alloc(0)
-  }
-
-  var i;
-  if (length === undefined) {
-    length = 0;
-    for (i = 0; i < list.length; ++i) {
-      length += list[i].length;
-    }
-  }
-
-  var buffer = Buffer.allocUnsafe(length);
-  var pos = 0;
-  for (i = 0; i < list.length; ++i) {
-    var buf = list[i];
-    if (!internalIsBuffer(buf)) {
-      throw new TypeError('"list" argument must be an Array of Buffers')
-    }
-    buf.copy(buffer, pos);
-    pos += buf.length;
-  }
-  return buffer
-};
-
-function byteLength (string, encoding) {
-  if (internalIsBuffer(string)) {
-    return string.length
-  }
-  if (typeof ArrayBuffer !== 'undefined' && typeof ArrayBuffer.isView === 'function' &&
-      (ArrayBuffer.isView(string) || string instanceof ArrayBuffer)) {
-    return string.byteLength
-  }
-  if (typeof string !== 'string') {
-    string = '' + string;
-  }
-
-  var len = string.length;
-  if (len === 0) return 0
-
-  // Use a for loop to avoid recursion
-  var loweredCase = false;
-  for (;;) {
-    switch (encoding) {
-      case 'ascii':
-      case 'latin1':
-      case 'binary':
-        return len
-      case 'utf8':
-      case 'utf-8':
-      case undefined:
-        return utf8ToBytes(string).length
-      case 'ucs2':
-      case 'ucs-2':
-      case 'utf16le':
-      case 'utf-16le':
-        return len * 2
-      case 'hex':
-        return len >>> 1
-      case 'base64':
-        return base64ToBytes(string).length
-      default:
-        if (loweredCase) return utf8ToBytes(string).length // assume utf8
-        encoding = ('' + encoding).toLowerCase();
-        loweredCase = true;
-    }
-  }
-}
-Buffer.byteLength = byteLength;
-
-function slowToString (encoding, start, end) {
-  var loweredCase = false;
-
-  // No need to verify that "this.length <= MAX_UINT32" since it's a read-only
-  // property of a typed array.
-
-  // This behaves neither like String nor Uint8Array in that we set start/end
-  // to their upper/lower bounds if the value passed is out of range.
-  // undefined is handled specially as per ECMA-262 6th Edition,
-  // Section 13.3.3.7 Runtime Semantics: KeyedBindingInitialization.
-  if (start === undefined || start < 0) {
-    start = 0;
-  }
-  // Return early if start > this.length. Done here to prevent potential uint32
-  // coercion fail below.
-  if (start > this.length) {
-    return ''
-  }
-
-  if (end === undefined || end > this.length) {
-    end = this.length;
-  }
-
-  if (end <= 0) {
-    return ''
-  }
-
-  // Force coersion to uint32. This will also coerce falsey/NaN values to 0.
-  end >>>= 0;
-  start >>>= 0;
-
-  if (end <= start) {
-    return ''
-  }
-
-  if (!encoding) encoding = 'utf8';
-
-  while (true) {
-    switch (encoding) {
-      case 'hex':
-        return hexSlice(this, start, end)
-
-      case 'utf8':
-      case 'utf-8':
-        return utf8Slice(this, start, end)
-
-      case 'ascii':
-        return asciiSlice(this, start, end)
-
-      case 'latin1':
-      case 'binary':
-        return latin1Slice(this, start, end)
-
-      case 'base64':
-        return base64Slice(this, start, end)
-
-      case 'ucs2':
-      case 'ucs-2':
-      case 'utf16le':
-      case 'utf-16le':
-        return utf16leSlice(this, start, end)
-
-      default:
-        if (loweredCase) throw new TypeError('Unknown encoding: ' + encoding)
-        encoding = (encoding + '').toLowerCase();
-        loweredCase = true;
-    }
-  }
-}
-
-// The property is used by `Buffer.isBuffer` and `is-buffer` (in Safari 5-7) to detect
-// Buffer instances.
-Buffer.prototype._isBuffer = true;
-
-function swap (b, n, m) {
-  var i = b[n];
-  b[n] = b[m];
-  b[m] = i;
-}
-
-Buffer.prototype.swap16 = function swap16 () {
-  var len = this.length;
-  if (len % 2 !== 0) {
-    throw new RangeError('Buffer size must be a multiple of 16-bits')
-  }
-  for (var i = 0; i < len; i += 2) {
-    swap(this, i, i + 1);
-  }
-  return this
-};
-
-Buffer.prototype.swap32 = function swap32 () {
-  var len = this.length;
-  if (len % 4 !== 0) {
-    throw new RangeError('Buffer size must be a multiple of 32-bits')
-  }
-  for (var i = 0; i < len; i += 4) {
-    swap(this, i, i + 3);
-    swap(this, i + 1, i + 2);
-  }
-  return this
-};
-
-Buffer.prototype.swap64 = function swap64 () {
-  var len = this.length;
-  if (len % 8 !== 0) {
-    throw new RangeError('Buffer size must be a multiple of 64-bits')
-  }
-  for (var i = 0; i < len; i += 8) {
-    swap(this, i, i + 7);
-    swap(this, i + 1, i + 6);
-    swap(this, i + 2, i + 5);
-    swap(this, i + 3, i + 4);
-  }
-  return this
-};
-
-Buffer.prototype.toString = function toString () {
-  var length = this.length | 0;
-  if (length === 0) return ''
-  if (arguments.length === 0) return utf8Slice(this, 0, length)
-  return slowToString.apply(this, arguments)
-};
-
-Buffer.prototype.equals = function equals (b) {
-  if (!internalIsBuffer(b)) throw new TypeError('Argument must be a Buffer')
-  if (this === b) return true
-  return Buffer.compare(this, b) === 0
-};
-
-Buffer.prototype.inspect = function inspect () {
-  var str = '';
-  var max = INSPECT_MAX_BYTES;
-  if (this.length > 0) {
-    str = this.toString('hex', 0, max).match(/.{2}/g).join(' ');
-    if (this.length > max) str += ' ... ';
-  }
-  return '<Buffer ' + str + '>'
-};
-
-Buffer.prototype.compare = function compare (target, start, end, thisStart, thisEnd) {
-  if (!internalIsBuffer(target)) {
-    throw new TypeError('Argument must be a Buffer')
-  }
-
-  if (start === undefined) {
-    start = 0;
-  }
-  if (end === undefined) {
-    end = target ? target.length : 0;
-  }
-  if (thisStart === undefined) {
-    thisStart = 0;
-  }
-  if (thisEnd === undefined) {
-    thisEnd = this.length;
-  }
-
-  if (start < 0 || end > target.length || thisStart < 0 || thisEnd > this.length) {
-    throw new RangeError('out of range index')
-  }
-
-  if (thisStart >= thisEnd && start >= end) {
-    return 0
-  }
-  if (thisStart >= thisEnd) {
-    return -1
-  }
-  if (start >= end) {
-    return 1
-  }
-
-  start >>>= 0;
-  end >>>= 0;
-  thisStart >>>= 0;
-  thisEnd >>>= 0;
-
-  if (this === target) return 0
-
-  var x = thisEnd - thisStart;
-  var y = end - start;
-  var len = Math.min(x, y);
-
-  var thisCopy = this.slice(thisStart, thisEnd);
-  var targetCopy = target.slice(start, end);
-
-  for (var i = 0; i < len; ++i) {
-    if (thisCopy[i] !== targetCopy[i]) {
-      x = thisCopy[i];
-      y = targetCopy[i];
-      break
-    }
-  }
-
-  if (x < y) return -1
-  if (y < x) return 1
-  return 0
-};
-
-// Finds either the first index of `val` in `buffer` at offset >= `byteOffset`,
-// OR the last index of `val` in `buffer` at offset <= `byteOffset`.
-//
-// Arguments:
-// - buffer - a Buffer to search
-// - val - a string, Buffer, or number
-// - byteOffset - an index into `buffer`; will be clamped to an int32
-// - encoding - an optional encoding, relevant is val is a string
-// - dir - true for indexOf, false for lastIndexOf
-function bidirectionalIndexOf (buffer, val, byteOffset, encoding, dir) {
-  // Empty buffer means no match
-  if (buffer.length === 0) return -1
-
-  // Normalize byteOffset
-  if (typeof byteOffset === 'string') {
-    encoding = byteOffset;
-    byteOffset = 0;
-  } else if (byteOffset > 0x7fffffff) {
-    byteOffset = 0x7fffffff;
-  } else if (byteOffset < -0x80000000) {
-    byteOffset = -0x80000000;
-  }
-  byteOffset = +byteOffset;  // Coerce to Number.
-  if (isNaN(byteOffset)) {
-    // byteOffset: it it's undefined, null, NaN, "foo", etc, search whole buffer
-    byteOffset = dir ? 0 : (buffer.length - 1);
-  }
-
-  // Normalize byteOffset: negative offsets start from the end of the buffer
-  if (byteOffset < 0) byteOffset = buffer.length + byteOffset;
-  if (byteOffset >= buffer.length) {
-    if (dir) return -1
-    else byteOffset = buffer.length - 1;
-  } else if (byteOffset < 0) {
-    if (dir) byteOffset = 0;
-    else return -1
-  }
-
-  // Normalize val
-  if (typeof val === 'string') {
-    val = Buffer.from(val, encoding);
-  }
-
-  // Finally, search either indexOf (if dir is true) or lastIndexOf
-  if (internalIsBuffer(val)) {
-    // Special case: looking for empty string/buffer always fails
-    if (val.length === 0) {
-      return -1
-    }
-    return arrayIndexOf(buffer, val, byteOffset, encoding, dir)
-  } else if (typeof val === 'number') {
-    val = val & 0xFF; // Search for a byte value [0-255]
-    if (Buffer.TYPED_ARRAY_SUPPORT &&
-        typeof Uint8Array.prototype.indexOf === 'function') {
-      if (dir) {
-        return Uint8Array.prototype.indexOf.call(buffer, val, byteOffset)
-      } else {
-        return Uint8Array.prototype.lastIndexOf.call(buffer, val, byteOffset)
-      }
-    }
-    return arrayIndexOf(buffer, [ val ], byteOffset, encoding, dir)
-  }
-
-  throw new TypeError('val must be string, number or Buffer')
-}
-
-function arrayIndexOf (arr, val, byteOffset, encoding, dir) {
-  var indexSize = 1;
-  var arrLength = arr.length;
-  var valLength = val.length;
-
-  if (encoding !== undefined) {
-    encoding = String(encoding).toLowerCase();
-    if (encoding === 'ucs2' || encoding === 'ucs-2' ||
-        encoding === 'utf16le' || encoding === 'utf-16le') {
-      if (arr.length < 2 || val.length < 2) {
-        return -1
-      }
-      indexSize = 2;
-      arrLength /= 2;
-      valLength /= 2;
-      byteOffset /= 2;
-    }
-  }
-
-  function read (buf, i) {
-    if (indexSize === 1) {
-      return buf[i]
-    } else {
-      return buf.readUInt16BE(i * indexSize)
-    }
-  }
-
-  var i;
-  if (dir) {
-    var foundIndex = -1;
-    for (i = byteOffset; i < arrLength; i++) {
-      if (read(arr, i) === read(val, foundIndex === -1 ? 0 : i - foundIndex)) {
-        if (foundIndex === -1) foundIndex = i;
-        if (i - foundIndex + 1 === valLength) return foundIndex * indexSize
-      } else {
-        if (foundIndex !== -1) i -= i - foundIndex;
-        foundIndex = -1;
-      }
-    }
-  } else {
-    if (byteOffset + valLength > arrLength) byteOffset = arrLength - valLength;
-    for (i = byteOffset; i >= 0; i--) {
-      var found = true;
-      for (var j = 0; j < valLength; j++) {
-        if (read(arr, i + j) !== read(val, j)) {
-          found = false;
-          break
-        }
-      }
-      if (found) return i
-    }
-  }
-
-  return -1
-}
-
-Buffer.prototype.includes = function includes (val, byteOffset, encoding) {
-  return this.indexOf(val, byteOffset, encoding) !== -1
-};
-
-Buffer.prototype.indexOf = function indexOf (val, byteOffset, encoding) {
-  return bidirectionalIndexOf(this, val, byteOffset, encoding, true)
-};
-
-Buffer.prototype.lastIndexOf = function lastIndexOf (val, byteOffset, encoding) {
-  return bidirectionalIndexOf(this, val, byteOffset, encoding, false)
-};
-
-function hexWrite (buf, string, offset, length) {
-  offset = Number(offset) || 0;
-  var remaining = buf.length - offset;
-  if (!length) {
-    length = remaining;
-  } else {
-    length = Number(length);
-    if (length > remaining) {
-      length = remaining;
-    }
-  }
-
-  // must be an even number of digits
-  var strLen = string.length;
-  if (strLen % 2 !== 0) throw new TypeError('Invalid hex string')
-
-  if (length > strLen / 2) {
-    length = strLen / 2;
-  }
-  for (var i = 0; i < length; ++i) {
-    var parsed = parseInt(string.substr(i * 2, 2), 16);
-    if (isNaN(parsed)) return i
-    buf[offset + i] = parsed;
-  }
-  return i
-}
-
-function utf8Write (buf, string, offset, length) {
-  return blitBuffer(utf8ToBytes(string, buf.length - offset), buf, offset, length)
-}
-
-function asciiWrite (buf, string, offset, length) {
-  return blitBuffer(asciiToBytes(string), buf, offset, length)
-}
-
-function latin1Write (buf, string, offset, length) {
-  return asciiWrite(buf, string, offset, length)
-}
-
-function base64Write (buf, string, offset, length) {
-  return blitBuffer(base64ToBytes(string), buf, offset, length)
-}
-
-function ucs2Write (buf, string, offset, length) {
-  return blitBuffer(utf16leToBytes(string, buf.length - offset), buf, offset, length)
-}
-
-Buffer.prototype.write = function write (string, offset, length, encoding) {
-  // Buffer#write(string)
-  if (offset === undefined) {
-    encoding = 'utf8';
-    length = this.length;
-    offset = 0;
-  // Buffer#write(string, encoding)
-  } else if (length === undefined && typeof offset === 'string') {
-    encoding = offset;
-    length = this.length;
-    offset = 0;
-  // Buffer#write(string, offset[, length][, encoding])
-  } else if (isFinite(offset)) {
-    offset = offset | 0;
-    if (isFinite(length)) {
-      length = length | 0;
-      if (encoding === undefined) encoding = 'utf8';
-    } else {
-      encoding = length;
-      length = undefined;
-    }
-  // legacy write(string, encoding, offset, length) - remove in v0.13
-  } else {
-    throw new Error(
-      'Buffer.write(string, encoding, offset[, length]) is no longer supported'
-    )
-  }
-
-  var remaining = this.length - offset;
-  if (length === undefined || length > remaining) length = remaining;
-
-  if ((string.length > 0 && (length < 0 || offset < 0)) || offset > this.length) {
-    throw new RangeError('Attempt to write outside buffer bounds')
-  }
-
-  if (!encoding) encoding = 'utf8';
-
-  var loweredCase = false;
-  for (;;) {
-    switch (encoding) {
-      case 'hex':
-        return hexWrite(this, string, offset, length)
-
-      case 'utf8':
-      case 'utf-8':
-        return utf8Write(this, string, offset, length)
-
-      case 'ascii':
-        return asciiWrite(this, string, offset, length)
-
-      case 'latin1':
-      case 'binary':
-        return latin1Write(this, string, offset, length)
-
-      case 'base64':
-        // Warning: maxLength not taken into account in base64Write
-        return base64Write(this, string, offset, length)
-
-      case 'ucs2':
-      case 'ucs-2':
-      case 'utf16le':
-      case 'utf-16le':
-        return ucs2Write(this, string, offset, length)
-
-      default:
-        if (loweredCase) throw new TypeError('Unknown encoding: ' + encoding)
-        encoding = ('' + encoding).toLowerCase();
-        loweredCase = true;
-    }
-  }
-};
-
-Buffer.prototype.toJSON = function toJSON () {
-  return {
-    type: 'Buffer',
-    data: Array.prototype.slice.call(this._arr || this, 0)
-  }
-};
-
-function base64Slice (buf, start, end) {
-  if (start === 0 && end === buf.length) {
-    return fromByteArray(buf)
-  } else {
-    return fromByteArray(buf.slice(start, end))
-  }
-}
-
-function utf8Slice (buf, start, end) {
-  end = Math.min(buf.length, end);
-  var res = [];
-
-  var i = start;
-  while (i < end) {
-    var firstByte = buf[i];
-    var codePoint = null;
-    var bytesPerSequence = (firstByte > 0xEF) ? 4
-      : (firstByte > 0xDF) ? 3
-      : (firstByte > 0xBF) ? 2
-      : 1;
-
-    if (i + bytesPerSequence <= end) {
-      var secondByte, thirdByte, fourthByte, tempCodePoint;
-
-      switch (bytesPerSequence) {
-        case 1:
-          if (firstByte < 0x80) {
-            codePoint = firstByte;
-          }
-          break
-        case 2:
-          secondByte = buf[i + 1];
-          if ((secondByte & 0xC0) === 0x80) {
-            tempCodePoint = (firstByte & 0x1F) << 0x6 | (secondByte & 0x3F);
-            if (tempCodePoint > 0x7F) {
-              codePoint = tempCodePoint;
-            }
-          }
-          break
-        case 3:
-          secondByte = buf[i + 1];
-          thirdByte = buf[i + 2];
-          if ((secondByte & 0xC0) === 0x80 && (thirdByte & 0xC0) === 0x80) {
-            tempCodePoint = (firstByte & 0xF) << 0xC | (secondByte & 0x3F) << 0x6 | (thirdByte & 0x3F);
-            if (tempCodePoint > 0x7FF && (tempCodePoint < 0xD800 || tempCodePoint > 0xDFFF)) {
-              codePoint = tempCodePoint;
-            }
-          }
-          break
-        case 4:
-          secondByte = buf[i + 1];
-          thirdByte = buf[i + 2];
-          fourthByte = buf[i + 3];
-          if ((secondByte & 0xC0) === 0x80 && (thirdByte & 0xC0) === 0x80 && (fourthByte & 0xC0) === 0x80) {
-            tempCodePoint = (firstByte & 0xF) << 0x12 | (secondByte & 0x3F) << 0xC | (thirdByte & 0x3F) << 0x6 | (fourthByte & 0x3F);
-            if (tempCodePoint > 0xFFFF && tempCodePoint < 0x110000) {
-              codePoint = tempCodePoint;
-            }
-          }
-      }
-    }
-
-    if (codePoint === null) {
-      // we did not generate a valid codePoint so insert a
-      // replacement char (U+FFFD) and advance only 1 byte
-      codePoint = 0xFFFD;
-      bytesPerSequence = 1;
-    } else if (codePoint > 0xFFFF) {
-      // encode to utf16 (surrogate pair dance)
-      codePoint -= 0x10000;
-      res.push(codePoint >>> 10 & 0x3FF | 0xD800);
-      codePoint = 0xDC00 | codePoint & 0x3FF;
-    }
-
-    res.push(codePoint);
-    i += bytesPerSequence;
-  }
-
-  return decodeCodePointsArray(res)
-}
-
-// Based on http://stackoverflow.com/a/22747272/680742, the browser with
-// the lowest limit is Chrome, with 0x10000 args.
-// We go 1 magnitude less, for safety
-var MAX_ARGUMENTS_LENGTH = 0x1000;
-
-function decodeCodePointsArray (codePoints) {
-  var len = codePoints.length;
-  if (len <= MAX_ARGUMENTS_LENGTH) {
-    return String.fromCharCode.apply(String, codePoints) // avoid extra slice()
-  }
-
-  // Decode in chunks to avoid "call stack size exceeded".
-  var res = '';
-  var i = 0;
-  while (i < len) {
-    res += String.fromCharCode.apply(
-      String,
-      codePoints.slice(i, i += MAX_ARGUMENTS_LENGTH)
-    );
-  }
-  return res
-}
-
-function asciiSlice (buf, start, end) {
-  var ret = '';
-  end = Math.min(buf.length, end);
-
-  for (var i = start; i < end; ++i) {
-    ret += String.fromCharCode(buf[i] & 0x7F);
-  }
-  return ret
-}
-
-function latin1Slice (buf, start, end) {
-  var ret = '';
-  end = Math.min(buf.length, end);
-
-  for (var i = start; i < end; ++i) {
-    ret += String.fromCharCode(buf[i]);
-  }
-  return ret
-}
-
-function hexSlice (buf, start, end) {
-  var len = buf.length;
-
-  if (!start || start < 0) start = 0;
-  if (!end || end < 0 || end > len) end = len;
-
-  var out = '';
-  for (var i = start; i < end; ++i) {
-    out += toHex(buf[i]);
-  }
-  return out
-}
-
-function utf16leSlice (buf, start, end) {
-  var bytes = buf.slice(start, end);
-  var res = '';
-  for (var i = 0; i < bytes.length; i += 2) {
-    res += String.fromCharCode(bytes[i] + bytes[i + 1] * 256);
-  }
-  return res
-}
-
-Buffer.prototype.slice = function slice (start, end) {
-  var len = this.length;
-  start = ~~start;
-  end = end === undefined ? len : ~~end;
-
-  if (start < 0) {
-    start += len;
-    if (start < 0) start = 0;
-  } else if (start > len) {
-    start = len;
-  }
-
-  if (end < 0) {
-    end += len;
-    if (end < 0) end = 0;
-  } else if (end > len) {
-    end = len;
-  }
-
-  if (end < start) end = start;
-
-  var newBuf;
-  if (Buffer.TYPED_ARRAY_SUPPORT) {
-    newBuf = this.subarray(start, end);
-    newBuf.__proto__ = Buffer.prototype;
-  } else {
-    var sliceLen = end - start;
-    newBuf = new Buffer(sliceLen, undefined);
-    for (var i = 0; i < sliceLen; ++i) {
-      newBuf[i] = this[i + start];
-    }
-  }
-
-  return newBuf
-};
-
-/*
- * Need to make sure that buffer isn't trying to write out of bounds.
- */
-function checkOffset (offset, ext, length) {
-  if ((offset % 1) !== 0 || offset < 0) throw new RangeError('offset is not uint')
-  if (offset + ext > length) throw new RangeError('Trying to access beyond buffer length')
-}
-
-Buffer.prototype.readUIntLE = function readUIntLE (offset, byteLength, noAssert) {
-  offset = offset | 0;
-  byteLength = byteLength | 0;
-  if (!noAssert) checkOffset(offset, byteLength, this.length);
-
-  var val = this[offset];
-  var mul = 1;
-  var i = 0;
-  while (++i < byteLength && (mul *= 0x100)) {
-    val += this[offset + i] * mul;
-  }
-
-  return val
-};
-
-Buffer.prototype.readUIntBE = function readUIntBE (offset, byteLength, noAssert) {
-  offset = offset | 0;
-  byteLength = byteLength | 0;
-  if (!noAssert) {
-    checkOffset(offset, byteLength, this.length);
-  }
-
-  var val = this[offset + --byteLength];
-  var mul = 1;
-  while (byteLength > 0 && (mul *= 0x100)) {
-    val += this[offset + --byteLength] * mul;
-  }
-
-  return val
-};
-
-Buffer.prototype.readUInt8 = function readUInt8 (offset, noAssert) {
-  if (!noAssert) checkOffset(offset, 1, this.length);
-  return this[offset]
-};
-
-Buffer.prototype.readUInt16LE = function readUInt16LE (offset, noAssert) {
-  if (!noAssert) checkOffset(offset, 2, this.length);
-  return this[offset] | (this[offset + 1] << 8)
-};
-
-Buffer.prototype.readUInt16BE = function readUInt16BE (offset, noAssert) {
-  if (!noAssert) checkOffset(offset, 2, this.length);
-  return (this[offset] << 8) | this[offset + 1]
-};
-
-Buffer.prototype.readUInt32LE = function readUInt32LE (offset, noAssert) {
-  if (!noAssert) checkOffset(offset, 4, this.length);
-
-  return ((this[offset]) |
-      (this[offset + 1] << 8) |
-      (this[offset + 2] << 16)) +
-      (this[offset + 3] * 0x1000000)
-};
-
-Buffer.prototype.readUInt32BE = function readUInt32BE (offset, noAssert) {
-  if (!noAssert) checkOffset(offset, 4, this.length);
-
-  return (this[offset] * 0x1000000) +
-    ((this[offset + 1] << 16) |
-    (this[offset + 2] << 8) |
-    this[offset + 3])
-};
-
-Buffer.prototype.readIntLE = function readIntLE (offset, byteLength, noAssert) {
-  offset = offset | 0;
-  byteLength = byteLength | 0;
-  if (!noAssert) checkOffset(offset, byteLength, this.length);
-
-  var val = this[offset];
-  var mul = 1;
-  var i = 0;
-  while (++i < byteLength && (mul *= 0x100)) {
-    val += this[offset + i] * mul;
-  }
-  mul *= 0x80;
-
-  if (val >= mul) val -= Math.pow(2, 8 * byteLength);
-
-  return val
-};
-
-Buffer.prototype.readIntBE = function readIntBE (offset, byteLength, noAssert) {
-  offset = offset | 0;
-  byteLength = byteLength | 0;
-  if (!noAssert) checkOffset(offset, byteLength, this.length);
-
-  var i = byteLength;
-  var mul = 1;
-  var val = this[offset + --i];
-  while (i > 0 && (mul *= 0x100)) {
-    val += this[offset + --i] * mul;
-  }
-  mul *= 0x80;
-
-  if (val >= mul) val -= Math.pow(2, 8 * byteLength);
-
-  return val
-};
-
-Buffer.prototype.readInt8 = function readInt8 (offset, noAssert) {
-  if (!noAssert) checkOffset(offset, 1, this.length);
-  if (!(this[offset] & 0x80)) return (this[offset])
-  return ((0xff - this[offset] + 1) * -1)
-};
-
-Buffer.prototype.readInt16LE = function readInt16LE (offset, noAssert) {
-  if (!noAssert) checkOffset(offset, 2, this.length);
-  var val = this[offset] | (this[offset + 1] << 8);
-  return (val & 0x8000) ? val | 0xFFFF0000 : val
-};
-
-Buffer.prototype.readInt16BE = function readInt16BE (offset, noAssert) {
-  if (!noAssert) checkOffset(offset, 2, this.length);
-  var val = this[offset + 1] | (this[offset] << 8);
-  return (val & 0x8000) ? val | 0xFFFF0000 : val
-};
-
-Buffer.prototype.readInt32LE = function readInt32LE (offset, noAssert) {
-  if (!noAssert) checkOffset(offset, 4, this.length);
-
-  return (this[offset]) |
-    (this[offset + 1] << 8) |
-    (this[offset + 2] << 16) |
-    (this[offset + 3] << 24)
-};
-
-Buffer.prototype.readInt32BE = function readInt32BE (offset, noAssert) {
-  if (!noAssert) checkOffset(offset, 4, this.length);
-
-  return (this[offset] << 24) |
-    (this[offset + 1] << 16) |
-    (this[offset + 2] << 8) |
-    (this[offset + 3])
-};
-
-Buffer.prototype.readFloatLE = function readFloatLE (offset, noAssert) {
-  if (!noAssert) checkOffset(offset, 4, this.length);
-  return read(this, offset, true, 23, 4)
-};
-
-Buffer.prototype.readFloatBE = function readFloatBE (offset, noAssert) {
-  if (!noAssert) checkOffset(offset, 4, this.length);
-  return read(this, offset, false, 23, 4)
-};
-
-Buffer.prototype.readDoubleLE = function readDoubleLE (offset, noAssert) {
-  if (!noAssert) checkOffset(offset, 8, this.length);
-  return read(this, offset, true, 52, 8)
-};
-
-Buffer.prototype.readDoubleBE = function readDoubleBE (offset, noAssert) {
-  if (!noAssert) checkOffset(offset, 8, this.length);
-  return read(this, offset, false, 52, 8)
-};
-
-function checkInt (buf, value, offset, ext, max, min) {
-  if (!internalIsBuffer(buf)) throw new TypeError('"buffer" argument must be a Buffer instance')
-  if (value > max || value < min) throw new RangeError('"value" argument is out of bounds')
-  if (offset + ext > buf.length) throw new RangeError('Index out of range')
-}
-
-Buffer.prototype.writeUIntLE = function writeUIntLE (value, offset, byteLength, noAssert) {
-  value = +value;
-  offset = offset | 0;
-  byteLength = byteLength | 0;
-  if (!noAssert) {
-    var maxBytes = Math.pow(2, 8 * byteLength) - 1;
-    checkInt(this, value, offset, byteLength, maxBytes, 0);
-  }
-
-  var mul = 1;
-  var i = 0;
-  this[offset] = value & 0xFF;
-  while (++i < byteLength && (mul *= 0x100)) {
-    this[offset + i] = (value / mul) & 0xFF;
-  }
-
-  return offset + byteLength
-};
-
-Buffer.prototype.writeUIntBE = function writeUIntBE (value, offset, byteLength, noAssert) {
-  value = +value;
-  offset = offset | 0;
-  byteLength = byteLength | 0;
-  if (!noAssert) {
-    var maxBytes = Math.pow(2, 8 * byteLength) - 1;
-    checkInt(this, value, offset, byteLength, maxBytes, 0);
-  }
-
-  var i = byteLength - 1;
-  var mul = 1;
-  this[offset + i] = value & 0xFF;
-  while (--i >= 0 && (mul *= 0x100)) {
-    this[offset + i] = (value / mul) & 0xFF;
-  }
-
-  return offset + byteLength
-};
-
-Buffer.prototype.writeUInt8 = function writeUInt8 (value, offset, noAssert) {
-  value = +value;
-  offset = offset | 0;
-  if (!noAssert) checkInt(this, value, offset, 1, 0xff, 0);
-  if (!Buffer.TYPED_ARRAY_SUPPORT) value = Math.floor(value);
-  this[offset] = (value & 0xff);
-  return offset + 1
-};
-
-function objectWriteUInt16 (buf, value, offset, littleEndian) {
-  if (value < 0) value = 0xffff + value + 1;
-  for (var i = 0, j = Math.min(buf.length - offset, 2); i < j; ++i) {
-    buf[offset + i] = (value & (0xff << (8 * (littleEndian ? i : 1 - i)))) >>>
-      (littleEndian ? i : 1 - i) * 8;
-  }
-}
-
-Buffer.prototype.writeUInt16LE = function writeUInt16LE (value, offset, noAssert) {
-  value = +value;
-  offset = offset | 0;
-  if (!noAssert) checkInt(this, value, offset, 2, 0xffff, 0);
-  if (Buffer.TYPED_ARRAY_SUPPORT) {
-    this[offset] = (value & 0xff);
-    this[offset + 1] = (value >>> 8);
-  } else {
-    objectWriteUInt16(this, value, offset, true);
-  }
-  return offset + 2
-};
-
-Buffer.prototype.writeUInt16BE = function writeUInt16BE (value, offset, noAssert) {
-  value = +value;
-  offset = offset | 0;
-  if (!noAssert) checkInt(this, value, offset, 2, 0xffff, 0);
-  if (Buffer.TYPED_ARRAY_SUPPORT) {
-    this[offset] = (value >>> 8);
-    this[offset + 1] = (value & 0xff);
-  } else {
-    objectWriteUInt16(this, value, offset, false);
-  }
-  return offset + 2
-};
-
-function objectWriteUInt32 (buf, value, offset, littleEndian) {
-  if (value < 0) value = 0xffffffff + value + 1;
-  for (var i = 0, j = Math.min(buf.length - offset, 4); i < j; ++i) {
-    buf[offset + i] = (value >>> (littleEndian ? i : 3 - i) * 8) & 0xff;
-  }
-}
-
-Buffer.prototype.writeUInt32LE = function writeUInt32LE (value, offset, noAssert) {
-  value = +value;
-  offset = offset | 0;
-  if (!noAssert) checkInt(this, value, offset, 4, 0xffffffff, 0);
-  if (Buffer.TYPED_ARRAY_SUPPORT) {
-    this[offset + 3] = (value >>> 24);
-    this[offset + 2] = (value >>> 16);
-    this[offset + 1] = (value >>> 8);
-    this[offset] = (value & 0xff);
-  } else {
-    objectWriteUInt32(this, value, offset, true);
-  }
-  return offset + 4
-};
-
-Buffer.prototype.writeUInt32BE = function writeUInt32BE (value, offset, noAssert) {
-  value = +value;
-  offset = offset | 0;
-  if (!noAssert) checkInt(this, value, offset, 4, 0xffffffff, 0);
-  if (Buffer.TYPED_ARRAY_SUPPORT) {
-    this[offset] = (value >>> 24);
-    this[offset + 1] = (value >>> 16);
-    this[offset + 2] = (value >>> 8);
-    this[offset + 3] = (value & 0xff);
-  } else {
-    objectWriteUInt32(this, value, offset, false);
-  }
-  return offset + 4
-};
-
-Buffer.prototype.writeIntLE = function writeIntLE (value, offset, byteLength, noAssert) {
-  value = +value;
-  offset = offset | 0;
-  if (!noAssert) {
-    var limit = Math.pow(2, 8 * byteLength - 1);
-
-    checkInt(this, value, offset, byteLength, limit - 1, -limit);
-  }
-
-  var i = 0;
-  var mul = 1;
-  var sub = 0;
-  this[offset] = value & 0xFF;
-  while (++i < byteLength && (mul *= 0x100)) {
-    if (value < 0 && sub === 0 && this[offset + i - 1] !== 0) {
-      sub = 1;
-    }
-    this[offset + i] = ((value / mul) >> 0) - sub & 0xFF;
-  }
-
-  return offset + byteLength
-};
-
-Buffer.prototype.writeIntBE = function writeIntBE (value, offset, byteLength, noAssert) {
-  value = +value;
-  offset = offset | 0;
-  if (!noAssert) {
-    var limit = Math.pow(2, 8 * byteLength - 1);
-
-    checkInt(this, value, offset, byteLength, limit - 1, -limit);
-  }
-
-  var i = byteLength - 1;
-  var mul = 1;
-  var sub = 0;
-  this[offset + i] = value & 0xFF;
-  while (--i >= 0 && (mul *= 0x100)) {
-    if (value < 0 && sub === 0 && this[offset + i + 1] !== 0) {
-      sub = 1;
-    }
-    this[offset + i] = ((value / mul) >> 0) - sub & 0xFF;
-  }
-
-  return offset + byteLength
-};
-
-Buffer.prototype.writeInt8 = function writeInt8 (value, offset, noAssert) {
-  value = +value;
-  offset = offset | 0;
-  if (!noAssert) checkInt(this, value, offset, 1, 0x7f, -0x80);
-  if (!Buffer.TYPED_ARRAY_SUPPORT) value = Math.floor(value);
-  if (value < 0) value = 0xff + value + 1;
-  this[offset] = (value & 0xff);
-  return offset + 1
-};
-
-Buffer.prototype.writeInt16LE = function writeInt16LE (value, offset, noAssert) {
-  value = +value;
-  offset = offset | 0;
-  if (!noAssert) checkInt(this, value, offset, 2, 0x7fff, -0x8000);
-  if (Buffer.TYPED_ARRAY_SUPPORT) {
-    this[offset] = (value & 0xff);
-    this[offset + 1] = (value >>> 8);
-  } else {
-    objectWriteUInt16(this, value, offset, true);
-  }
-  return offset + 2
-};
-
-Buffer.prototype.writeInt16BE = function writeInt16BE (value, offset, noAssert) {
-  value = +value;
-  offset = offset | 0;
-  if (!noAssert) checkInt(this, value, offset, 2, 0x7fff, -0x8000);
-  if (Buffer.TYPED_ARRAY_SUPPORT) {
-    this[offset] = (value >>> 8);
-    this[offset + 1] = (value & 0xff);
-  } else {
-    objectWriteUInt16(this, value, offset, false);
-  }
-  return offset + 2
-};
-
-Buffer.prototype.writeInt32LE = function writeInt32LE (value, offset, noAssert) {
-  value = +value;
-  offset = offset | 0;
-  if (!noAssert) checkInt(this, value, offset, 4, 0x7fffffff, -0x80000000);
-  if (Buffer.TYPED_ARRAY_SUPPORT) {
-    this[offset] = (value & 0xff);
-    this[offset + 1] = (value >>> 8);
-    this[offset + 2] = (value >>> 16);
-    this[offset + 3] = (value >>> 24);
-  } else {
-    objectWriteUInt32(this, value, offset, true);
-  }
-  return offset + 4
-};
-
-Buffer.prototype.writeInt32BE = function writeInt32BE (value, offset, noAssert) {
-  value = +value;
-  offset = offset | 0;
-  if (!noAssert) checkInt(this, value, offset, 4, 0x7fffffff, -0x80000000);
-  if (value < 0) value = 0xffffffff + value + 1;
-  if (Buffer.TYPED_ARRAY_SUPPORT) {
-    this[offset] = (value >>> 24);
-    this[offset + 1] = (value >>> 16);
-    this[offset + 2] = (value >>> 8);
-    this[offset + 3] = (value & 0xff);
-  } else {
-    objectWriteUInt32(this, value, offset, false);
-  }
-  return offset + 4
-};
-
-function checkIEEE754 (buf, value, offset, ext, max, min) {
-  if (offset + ext > buf.length) throw new RangeError('Index out of range')
-  if (offset < 0) throw new RangeError('Index out of range')
-}
-
-function writeFloat (buf, value, offset, littleEndian, noAssert) {
-  if (!noAssert) {
-    checkIEEE754(buf, value, offset, 4);
-  }
-  write(buf, value, offset, littleEndian, 23, 4);
-  return offset + 4
-}
-
-Buffer.prototype.writeFloatLE = function writeFloatLE (value, offset, noAssert) {
-  return writeFloat(this, value, offset, true, noAssert)
-};
-
-Buffer.prototype.writeFloatBE = function writeFloatBE (value, offset, noAssert) {
-  return writeFloat(this, value, offset, false, noAssert)
-};
-
-function writeDouble (buf, value, offset, littleEndian, noAssert) {
-  if (!noAssert) {
-    checkIEEE754(buf, value, offset, 8);
-  }
-  write(buf, value, offset, littleEndian, 52, 8);
-  return offset + 8
-}
-
-Buffer.prototype.writeDoubleLE = function writeDoubleLE (value, offset, noAssert) {
-  return writeDouble(this, value, offset, true, noAssert)
-};
-
-Buffer.prototype.writeDoubleBE = function writeDoubleBE (value, offset, noAssert) {
-  return writeDouble(this, value, offset, false, noAssert)
-};
-
-// copy(targetBuffer, targetStart=0, sourceStart=0, sourceEnd=buffer.length)
-Buffer.prototype.copy = function copy (target, targetStart, start, end) {
-  if (!start) start = 0;
-  if (!end && end !== 0) end = this.length;
-  if (targetStart >= target.length) targetStart = target.length;
-  if (!targetStart) targetStart = 0;
-  if (end > 0 && end < start) end = start;
-
-  // Copy 0 bytes; we're done
-  if (end === start) return 0
-  if (target.length === 0 || this.length === 0) return 0
-
-  // Fatal error conditions
-  if (targetStart < 0) {
-    throw new RangeError('targetStart out of bounds')
-  }
-  if (start < 0 || start >= this.length) throw new RangeError('sourceStart out of bounds')
-  if (end < 0) throw new RangeError('sourceEnd out of bounds')
-
-  // Are we oob?
-  if (end > this.length) end = this.length;
-  if (target.length - targetStart < end - start) {
-    end = target.length - targetStart + start;
-  }
-
-  var len = end - start;
-  var i;
-
-  if (this === target && start < targetStart && targetStart < end) {
-    // descending copy from end
-    for (i = len - 1; i >= 0; --i) {
-      target[i + targetStart] = this[i + start];
-    }
-  } else if (len < 1000 || !Buffer.TYPED_ARRAY_SUPPORT) {
-    // ascending copy from start
-    for (i = 0; i < len; ++i) {
-      target[i + targetStart] = this[i + start];
-    }
-  } else {
-    Uint8Array.prototype.set.call(
-      target,
-      this.subarray(start, start + len),
-      targetStart
-    );
-  }
-
-  return len
-};
-
-// Usage:
-//    buffer.fill(number[, offset[, end]])
-//    buffer.fill(buffer[, offset[, end]])
-//    buffer.fill(string[, offset[, end]][, encoding])
-Buffer.prototype.fill = function fill (val, start, end, encoding) {
-  // Handle string cases:
-  if (typeof val === 'string') {
-    if (typeof start === 'string') {
-      encoding = start;
-      start = 0;
-      end = this.length;
-    } else if (typeof end === 'string') {
-      encoding = end;
-      end = this.length;
-    }
-    if (val.length === 1) {
-      var code = val.charCodeAt(0);
-      if (code < 256) {
-        val = code;
-      }
-    }
-    if (encoding !== undefined && typeof encoding !== 'string') {
-      throw new TypeError('encoding must be a string')
-    }
-    if (typeof encoding === 'string' && !Buffer.isEncoding(encoding)) {
-      throw new TypeError('Unknown encoding: ' + encoding)
-    }
-  } else if (typeof val === 'number') {
-    val = val & 255;
-  }
-
-  // Invalid ranges are not set to a default, so can range check early.
-  if (start < 0 || this.length < start || this.length < end) {
-    throw new RangeError('Out of range index')
-  }
-
-  if (end <= start) {
-    return this
-  }
-
-  start = start >>> 0;
-  end = end === undefined ? this.length : end >>> 0;
-
-  if (!val) val = 0;
-
-  var i;
-  if (typeof val === 'number') {
-    for (i = start; i < end; ++i) {
-      this[i] = val;
-    }
-  } else {
-    var bytes = internalIsBuffer(val)
-      ? val
-      : utf8ToBytes(new Buffer(val, encoding).toString());
-    var len = bytes.length;
-    for (i = 0; i < end - start; ++i) {
-      this[i + start] = bytes[i % len];
-    }
-  }
-
-  return this
-};
-
-// HELPER FUNCTIONS
-// ================
-
-var INVALID_BASE64_RE = /[^+\/0-9A-Za-z-_]/g;
-
-function base64clean (str) {
-  // Node strips out invalid characters like \n and \t from the string, base64-js does not
-  str = stringtrim(str).replace(INVALID_BASE64_RE, '');
-  // Node converts strings with length < 2 to ''
-  if (str.length < 2) return ''
-  // Node allows for non-padded base64 strings (missing trailing ===), base64-js does not
-  while (str.length % 4 !== 0) {
-    str = str + '=';
-  }
-  return str
-}
-
-function stringtrim (str) {
-  if (str.trim) return str.trim()
-  return str.replace(/^\s+|\s+$/g, '')
-}
-
-function toHex (n) {
-  if (n < 16) return '0' + n.toString(16)
-  return n.toString(16)
-}
-
-function utf8ToBytes (string, units) {
-  units = units || Infinity;
-  var codePoint;
-  var length = string.length;
-  var leadSurrogate = null;
-  var bytes = [];
-
-  for (var i = 0; i < length; ++i) {
-    codePoint = string.charCodeAt(i);
-
-    // is surrogate component
-    if (codePoint > 0xD7FF && codePoint < 0xE000) {
-      // last char was a lead
-      if (!leadSurrogate) {
-        // no lead yet
-        if (codePoint > 0xDBFF) {
-          // unexpected trail
-          if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD);
-          continue
-        } else if (i + 1 === length) {
-          // unpaired lead
-          if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD);
-          continue
-        }
-
-        // valid lead
-        leadSurrogate = codePoint;
-
-        continue
-      }
-
-      // 2 leads in a row
-      if (codePoint < 0xDC00) {
-        if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD);
-        leadSurrogate = codePoint;
-        continue
-      }
-
-      // valid surrogate pair
-      codePoint = (leadSurrogate - 0xD800 << 10 | codePoint - 0xDC00) + 0x10000;
-    } else if (leadSurrogate) {
-      // valid bmp char, but last char was a lead
-      if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD);
-    }
-
-    leadSurrogate = null;
-
-    // encode utf8
-    if (codePoint < 0x80) {
-      if ((units -= 1) < 0) break
-      bytes.push(codePoint);
-    } else if (codePoint < 0x800) {
-      if ((units -= 2) < 0) break
-      bytes.push(
-        codePoint >> 0x6 | 0xC0,
-        codePoint & 0x3F | 0x80
-      );
-    } else if (codePoint < 0x10000) {
-      if ((units -= 3) < 0) break
-      bytes.push(
-        codePoint >> 0xC | 0xE0,
-        codePoint >> 0x6 & 0x3F | 0x80,
-        codePoint & 0x3F | 0x80
-      );
-    } else if (codePoint < 0x110000) {
-      if ((units -= 4) < 0) break
-      bytes.push(
-        codePoint >> 0x12 | 0xF0,
-        codePoint >> 0xC & 0x3F | 0x80,
-        codePoint >> 0x6 & 0x3F | 0x80,
-        codePoint & 0x3F | 0x80
-      );
-    } else {
-      throw new Error('Invalid code point')
-    }
-  }
-
-  return bytes
-}
-
-function asciiToBytes (str) {
-  var byteArray = [];
-  for (var i = 0; i < str.length; ++i) {
-    // Node's code seems to be doing this and not & 0x7F..
-    byteArray.push(str.charCodeAt(i) & 0xFF);
-  }
-  return byteArray
-}
-
-function utf16leToBytes (str, units) {
-  var c, hi, lo;
-  var byteArray = [];
-  for (var i = 0; i < str.length; ++i) {
-    if ((units -= 2) < 0) break
-
-    c = str.charCodeAt(i);
-    hi = c >> 8;
-    lo = c % 256;
-    byteArray.push(lo);
-    byteArray.push(hi);
-  }
-
-  return byteArray
-}
-
-
-function base64ToBytes (str) {
-  return toByteArray(base64clean(str))
-}
-
-function blitBuffer (src, dst, offset, length) {
-  for (var i = 0; i < length; ++i) {
-    if ((i + offset >= dst.length) || (i >= src.length)) break
-    dst[i + offset] = src[i];
-  }
-  return i
-}
-
-function isnan (val) {
-  return val !== val // eslint-disable-line no-self-compare
-}
-
-
-// the following is from is-buffer, also by Feross Aboukhadijeh and with same lisence
-// The _isBuffer check is for Safari 5-7 support, because it's missing
-// Object.prototype.constructor. Remove this eventually
-function isBuffer(obj) {
-  return obj != null && (!!obj._isBuffer || isFastBuffer(obj) || isSlowBuffer(obj))
-}
-
-function isFastBuffer (obj) {
-  return !!obj.constructor && typeof obj.constructor.isBuffer === 'function' && obj.constructor.isBuffer(obj)
-}
-
-// For Node v0.10 support. Remove this eventually.
-function isSlowBuffer (obj) {
-  return typeof obj.readFloatLE === 'function' && typeof obj.slice === 'function' && isFastBuffer(obj.slice(0, 0))
-}
-
-/* ES Module Shims 0.10.4 */
+import './common/esnext.iterator.map-e03af736.js';
+import { _ as _export, a as aCallable } from './common/es.error.cause-21133fd0.js';
+import { a as asyncIteratorIteration, i as iterate } from './common/iterate-ea425a93.js';
+import { g as getIteratorDirect } from './common/iterator-close-902907c1.js';
+import './common/es.typed-array.with-7e00cead.js';
+import './common/esnext.iterator.filter-faed8b2f.js';
+import { a as commonjsGlobal } from './common/_commonjsHelpers-0597c316.js';
+import './common/call-with-safe-iteration-closing-68ae000a.js';
+import './common/map-iterate-2c3110bb.js';
+
+var $some = asyncIteratorIteration.some;
+
+// `AsyncIterator.prototype.some` method
+// https://github.com/tc39/proposal-async-iterator-helpers
+_export({ target: 'AsyncIterator', proto: true, real: true }, {
+  some: function some(predicate) {
+    return $some(this, predicate);
+  }
+});
+
+// `Iterator.prototype.some` method
+// https://github.com/tc39/proposal-iterator-helpers
+_export({ target: 'Iterator', proto: true, real: true }, {
+  some: function some(predicate) {
+    var record = getIteratorDirect(this);
+    var counter = 0;
+    aCallable(predicate);
+    return iterate(record, function (value, stop) {
+      if (predicate(value, counter++)) return stop();
+    }, { IS_RECORD: true, INTERRUPTED: true }).stopped;
+  }
+});
+
+/* ES Module Shims 1.7.1 */
 (function () {
-
-  const resolvedPromise = Promise.resolve();
-
-  let baseUrl;
-
-  function createBlob (source, type = 'text/javascript') {
-    return URL.createObjectURL(new Blob([source], { type }));
-  }
-
+  const hasWindow = typeof window !== 'undefined';
   const hasDocument = typeof document !== 'undefined';
-
-  // support browsers without dynamic import support (eg Firefox 6x)
-  let supportsDynamicImport = false;
-  let dynamicImport;
-  try {
-    dynamicImport = (0, eval)('u=>import(u)');
-    supportsDynamicImport = true;
+  const noop = () => {};
+  const optionsScript = hasDocument ? document.querySelector('script[type=esms-options]') : undefined;
+  const esmsInitOptions = optionsScript ? JSON.parse(optionsScript.innerHTML) : {};
+  Object.assign(esmsInitOptions, self.esmsInitOptions || {});
+  let shimMode = hasDocument ? !!esmsInitOptions.shimMode : true;
+  const importHook = globalHook(shimMode && esmsInitOptions.onimport);
+  const resolveHook = globalHook(shimMode && esmsInitOptions.resolve);
+  let fetchHook = esmsInitOptions.fetch ? globalHook(esmsInitOptions.fetch) : fetch;
+  const metaHook = esmsInitOptions.meta ? globalHook(shimMode && esmsInitOptions.meta) : noop;
+  const mapOverrides = esmsInitOptions.mapOverrides;
+  let nonce = esmsInitOptions.nonce;
+  if (!nonce && hasDocument) {
+    const nonceElement = document.querySelector('script[nonce]');
+    if (nonceElement) nonce = nonceElement.nonce || nonceElement.getAttribute('nonce');
   }
-  catch (e) {
-    if (hasDocument) {
-      let err;
-      self.addEventListener('error', e => err = e.error);
-      dynamicImport = blobUrl => {
-        const topLevelBlobUrl = createBlob(
-          `import*as m from'${blobUrl}';self._esmsm=m`
-        );
-        const s = document.createElement('script');
-        s.type = 'module';
-        s.src = topLevelBlobUrl;
-        document.head.appendChild(s);
-        return new Promise((resolve, reject) => {
-          s.addEventListener('load', () => {
-            document.head.removeChild(s);
-            if ('_esmsm' in self) {
-              resolve(self._esmsm, baseUrl);
-              delete self._esmsm;
-            }
-            else {
-              reject(err);
-            }
-          });
-        });
-      };
+  const onerror = globalHook(esmsInitOptions.onerror || noop);
+  const onpolyfill = esmsInitOptions.onpolyfill ? globalHook(esmsInitOptions.onpolyfill) : () => {
+    console.log('%c^^ Module TypeError above is polyfilled and can be ignored ^^', 'font-weight:900;color:#391');
+  };
+  const {
+    revokeBlobURLs,
+    noLoadEventRetriggers,
+    enforceIntegrity
+  } = esmsInitOptions;
+  function globalHook(name) {
+    return typeof name === 'string' ? self[name] : name;
+  }
+  const enable = Array.isArray(esmsInitOptions.polyfillEnable) ? esmsInitOptions.polyfillEnable : [];
+  const cssModulesEnabled = enable.includes('css-modules');
+  const jsonModulesEnabled = enable.includes('json-modules');
+  const edge = !navigator.userAgentData && !!navigator.userAgent.match(/Edge\/\d+\.\d+/);
+  const baseUrl = hasDocument ? document.baseURI : `${location.protocol}//${location.host}${location.pathname.includes('/') ? location.pathname.slice(0, location.pathname.lastIndexOf('/') + 1) : location.pathname}`;
+  const createBlob = (source, type = 'text/javascript') => URL.createObjectURL(new Blob([source], {
+    type
+  }));
+  let {
+    skip
+  } = esmsInitOptions;
+  if (Array.isArray(skip)) {
+    const l = skip.map(s => new URL(s, baseUrl).href);
+    skip = s => l.some(i => i[i.length - 1] === '/' && s.startsWith(i) || s === i);
+  } else if (typeof skip === 'string') {
+    const r = new RegExp(skip);
+    skip = s => r.test(s);
+  }
+  const eoop = err => setTimeout(() => {
+    throw err;
+  });
+  const throwError = err => {
+    (self.reportError || hasWindow && window.safari && console.error || eoop)(err), void onerror(err);
+  };
+  function fromParent(parent) {
+    return parent ? ` imported from ${parent}` : '';
+  }
+  let importMapSrcOrLazy = false;
+  function setImportMapSrcOrLazy() {
+    importMapSrcOrLazy = true;
+  }
+
+  // shim mode is determined on initialization, no late shim mode
+  if (!shimMode) {
+    if (document.querySelectorAll('script[type=module-shim],script[type=importmap-shim],link[rel=modulepreload-shim]').length) {
+      shimMode = true;
+    } else {
+      let seenScript = false;
+      for (const script of document.querySelectorAll('script[type=module],script[type=importmap]')) {
+        if (!seenScript) {
+          if (script.type === 'module' && !script.ep) seenScript = true;
+        } else if (script.type === 'importmap' && seenScript) {
+          importMapSrcOrLazy = true;
+          break;
+        }
+      }
     }
   }
-
-  let supportsImportMeta = false;
-  let supportsImportMaps = false;
-
-  const featureDetectionPromise = Promise.all([
-    dynamicImport(createBlob('import.meta')).then(() => supportsImportMeta = true),
-    supportsDynamicImport && hasDocument && new Promise(resolve => {
-      self._$s = v => {
-        document.body.removeChild(iframe);
-        if (v) supportsImportMaps = true;
-        delete self._$s;
-        resolve();
-      };
-      const iframe = document.createElement('iframe');
-      iframe.style.display = 'none';
-      iframe.src = createBlob(`<script type=importmap>{"imports":{"x":"data:text/javascript,"}}<${''}/script><script>import('x').then(()=>1,()=>0).then(v=>parent._$s(v))<${''}/script>`, 'text/html');
-      document.body.appendChild(iframe);
-    })
-  ]);
-
-  if (hasDocument) {
-    const baseEl = document.querySelector('base[href]');
-    if (baseEl)
-      baseUrl = baseEl.href;
-  }
-
-  if (!baseUrl && typeof location !== 'undefined') {
-    baseUrl = location.href.split('#')[0].split('?')[0];
-    const lastSepIndex = baseUrl.lastIndexOf('/');
-    if (lastSepIndex !== -1)
-      baseUrl = baseUrl.slice(0, lastSepIndex + 1);
-  }
-
   const backslashRegEx = /\\/g;
-  function resolveIfNotPlainOrUrl (relUrl, parentUrl) {
-    // strip off any trailing query params or hashes
-    parentUrl = parentUrl && parentUrl.split('#')[0].split('?')[0];
-    if (relUrl.indexOf('\\') !== -1)
-      relUrl = relUrl.replace(backslashRegEx, '/');
+  function isURL(url) {
+    if (url.indexOf(':') === -1) return false;
+    try {
+      new URL(url);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+  function resolveUrl(relUrl, parentUrl) {
+    return resolveIfNotPlainOrUrl(relUrl, parentUrl) || (isURL(relUrl) ? relUrl : resolveIfNotPlainOrUrl('./' + relUrl, parentUrl));
+  }
+  function resolveIfNotPlainOrUrl(relUrl, parentUrl) {
+    const hIdx = parentUrl.indexOf('#'),
+      qIdx = parentUrl.indexOf('?');
+    if (hIdx + qIdx > -2) parentUrl = parentUrl.slice(0, hIdx === -1 ? qIdx : qIdx === -1 || qIdx > hIdx ? hIdx : qIdx);
+    if (relUrl.indexOf('\\') !== -1) relUrl = relUrl.replace(backslashRegEx, '/');
     // protocol-relative
     if (relUrl[0] === '/' && relUrl[1] === '/') {
       return parentUrl.slice(0, parentUrl.indexOf(':') + 1) + relUrl;
     }
     // relative-url
-    else if (relUrl[0] === '.' && (relUrl[1] === '/' || relUrl[1] === '.' && (relUrl[2] === '/' || relUrl.length === 2 && (relUrl += '/')) ||
-        relUrl.length === 1  && (relUrl += '/')) ||
-        relUrl[0] === '/') {
+    else if (relUrl[0] === '.' && (relUrl[1] === '/' || relUrl[1] === '.' && (relUrl[2] === '/' || relUrl.length === 2 && (relUrl += '/')) || relUrl.length === 1 && (relUrl += '/')) || relUrl[0] === '/') {
       const parentProtocol = parentUrl.slice(0, parentUrl.indexOf(':') + 1);
       // Disabled, but these cases will give inconsistent results for deep backtracking
       //if (parentUrl[parentProtocol.length] !== '/')
@@ -2076,24 +146,19 @@ function isSlowBuffer (obj) {
         if (parentProtocol !== 'file:') {
           pathname = parentUrl.slice(parentProtocol.length + 2);
           pathname = pathname.slice(pathname.indexOf('/') + 1);
-        }
-        else {
+        } else {
           pathname = parentUrl.slice(8);
         }
-      }
-      else {
+      } else {
         // resolving to :/ so pathname is the /... part
         pathname = parentUrl.slice(parentProtocol.length + (parentUrl[parentProtocol.length] === '/'));
       }
-
-      if (relUrl[0] === '/')
-        return parentUrl.slice(0, parentUrl.length - pathname.length - 1) + relUrl;
+      if (relUrl[0] === '/') return parentUrl.slice(0, parentUrl.length - pathname.length - 1) + relUrl;
 
       // join together and split for removal of .. and . segments
       // looping the string instead of anything fancy for perf reasons
       // '../../../../../z' resolved to 'x/y' is just 'z'
       const segmented = pathname.slice(0, pathname.lastIndexOf('/') + 1) + relUrl;
-
       const output = [];
       let segmentIndex = -1;
       for (let i = 0; i < segmented.length; i++) {
@@ -2103,284 +168,2488 @@ function isSlowBuffer (obj) {
             output.push(segmented.slice(segmentIndex, i + 1));
             segmentIndex = -1;
           }
+          continue;
         }
-
         // new segment - check if it is relative
         else if (segmented[i] === '.') {
           // ../ segment
           if (segmented[i + 1] === '.' && (segmented[i + 2] === '/' || i + 2 === segmented.length)) {
             output.pop();
             i += 2;
+            continue;
           }
           // ./ segment
           else if (segmented[i + 1] === '/' || i + 1 === segmented.length) {
             i += 1;
-          }
-          else {
-            // the start of a new segment as below
-            segmentIndex = i;
+            continue;
           }
         }
         // it is the start of a new segment
-        else {
-          segmentIndex = i;
-        }
+        while (segmented[i] === '/') i++;
+        segmentIndex = i;
       }
       // finish reading out the last segment
-      if (segmentIndex !== -1)
-        output.push(segmented.slice(segmentIndex));
+      if (segmentIndex !== -1) output.push(segmented.slice(segmentIndex));
       return parentUrl.slice(0, parentUrl.length - pathname.length) + output.join('');
     }
   }
-
-  /*
-   * Import maps implementation
-   *
-   * To make lookups fast we pre-resolve the entire import map
-   * and then match based on backtracked hash lookups
-   *
-   */
-  function resolveUrl (relUrl, parentUrl) {
-    return resolveIfNotPlainOrUrl(relUrl, parentUrl) || (relUrl.indexOf(':') !== -1 ? relUrl : resolveIfNotPlainOrUrl('./' + relUrl, parentUrl));
+  function resolveAndComposeImportMap(json, baseUrl, parentMap) {
+    const outMap = {
+      imports: Object.assign({}, parentMap.imports),
+      scopes: Object.assign({}, parentMap.scopes)
+    };
+    if (json.imports) resolveAndComposePackages(json.imports, outMap.imports, baseUrl, parentMap);
+    if (json.scopes) for (let s in json.scopes) {
+      const resolvedScope = resolveUrl(s, baseUrl);
+      resolveAndComposePackages(json.scopes[s], outMap.scopes[resolvedScope] || (outMap.scopes[resolvedScope] = {}), baseUrl, parentMap);
+    }
+    return outMap;
   }
-
-  function resolveAndComposePackages (packages, outPackages, baseUrl, parentMap) {
+  function getMatch(path, matchObj) {
+    if (matchObj[path]) return path;
+    let sepIndex = path.length;
+    do {
+      const segment = path.slice(0, sepIndex + 1);
+      if (segment in matchObj) return segment;
+    } while ((sepIndex = path.lastIndexOf('/', sepIndex - 1)) !== -1);
+  }
+  function applyPackages(id, packages) {
+    const pkgName = getMatch(id, packages);
+    if (pkgName) {
+      const pkg = packages[pkgName];
+      if (pkg === null) return;
+      return pkg + id.slice(pkgName.length);
+    }
+  }
+  function resolveImportMap(importMap, resolvedOrPlain, parentUrl) {
+    let scopeUrl = parentUrl && getMatch(parentUrl, importMap.scopes);
+    while (scopeUrl) {
+      const packageResolution = applyPackages(resolvedOrPlain, importMap.scopes[scopeUrl]);
+      if (packageResolution) return packageResolution;
+      scopeUrl = getMatch(scopeUrl.slice(0, scopeUrl.lastIndexOf('/')), importMap.scopes);
+    }
+    return applyPackages(resolvedOrPlain, importMap.imports) || resolvedOrPlain.indexOf(':') !== -1 && resolvedOrPlain;
+  }
+  function resolveAndComposePackages(packages, outPackages, baseUrl, parentMap) {
     for (let p in packages) {
       const resolvedLhs = resolveIfNotPlainOrUrl(p, baseUrl) || p;
+      if ((!shimMode || !mapOverrides) && outPackages[resolvedLhs] && outPackages[resolvedLhs] !== packages[resolvedLhs]) {
+        throw Error(`Rejected map override "${resolvedLhs}" from ${outPackages[resolvedLhs]} to ${packages[resolvedLhs]}.`);
+      }
       let target = packages[p];
-      if (typeof target !== 'string') 
-        continue;
+      if (typeof target !== 'string') continue;
       const mapped = resolveImportMap(parentMap, resolveIfNotPlainOrUrl(target, baseUrl) || target, baseUrl);
       if (mapped) {
         outPackages[resolvedLhs] = mapped;
         continue;
       }
-      targetWarning(p, packages[p], 'bare specifier did not resolve');
+      console.warn(`Mapping "${p}" -> "${packages[p]}" does not resolve`);
     }
   }
-
-  function resolveAndComposeImportMap (json, baseUrl, parentMap) {
-    const outMap = { imports: Object.assign({}, parentMap.imports), scopes: Object.assign({}, parentMap.scopes) };
-
-    if (json.imports)
-      resolveAndComposePackages(json.imports, outMap.imports, baseUrl, parentMap);
-
-    if (json.scopes)
-      for (let s in json.scopes) {
-        const resolvedScope = resolveUrl(s, baseUrl);
-        resolveAndComposePackages(json.scopes[s], outMap.scopes[resolvedScope] || (outMap.scopes[resolvedScope] = {}), baseUrl, parentMap);
+  let dynamicImport = !hasDocument && (0, eval)('u=>import(u)');
+  let supportsDynamicImport;
+  const dynamicImportCheck = hasDocument && new Promise(resolve => {
+    const s = Object.assign(document.createElement('script'), {
+      src: createBlob('self._d=u=>import(u)'),
+      ep: true
+    });
+    s.setAttribute('nonce', nonce);
+    s.addEventListener('load', () => {
+      if (!(supportsDynamicImport = !!(dynamicImport = self._d))) {
+        let err;
+        window.addEventListener('error', _err => err = _err);
+        dynamicImport = (url, opts) => new Promise((resolve, reject) => {
+          const s = Object.assign(document.createElement('script'), {
+            type: 'module',
+            src: createBlob(`import*as m from'${url}';self._esmsi=m`)
+          });
+          err = undefined;
+          s.ep = true;
+          if (nonce) s.setAttribute('nonce', nonce);
+          // Safari is unique in supporting module script error events
+          s.addEventListener('error', cb);
+          s.addEventListener('load', cb);
+          function cb(_err) {
+            document.head.removeChild(s);
+            if (self._esmsi) {
+              resolve(self._esmsi, baseUrl);
+              self._esmsi = undefined;
+            } else {
+              reject(!(_err instanceof Event) && _err || err && err.error || new Error(`Error loading ${opts && opts.errUrl || url} (${s.src}).`));
+              err = undefined;
+            }
+          }
+          document.head.appendChild(s);
+        });
       }
+      document.head.removeChild(s);
+      delete self._d;
+      resolve();
+    });
+    document.head.appendChild(s);
+  });
 
-    return outMap;
+  // support browsers without dynamic import support (eg Firefox 6x)
+  let supportsJsonAssertions = false;
+  let supportsCssAssertions = false;
+  const supports = hasDocument && HTMLScriptElement.supports;
+  let supportsImportMaps = supports && supports.name === 'supports' && supports('importmap');
+  let supportsImportMeta = supportsDynamicImport;
+  const importMetaCheck = 'import.meta';
+  const cssModulesCheck = `import"x"assert{type:"css"}`;
+  const jsonModulesCheck = `import"x"assert{type:"json"}`;
+  let featureDetectionPromise = Promise.resolve(dynamicImportCheck).then(() => {
+    if (!supportsDynamicImport) return;
+    if (!hasDocument) return Promise.all([supportsImportMaps || dynamicImport(createBlob(importMetaCheck)).then(() => supportsImportMeta = true, noop), cssModulesEnabled && dynamicImport(createBlob(cssModulesCheck.replace('x', createBlob('', 'text/css')))).then(() => supportsCssAssertions = true, noop), jsonModulesEnabled && dynamicImport(createBlob(jsonModulescheck.replace('x', createBlob('{}', 'text/json')))).then(() => supportsJsonAssertions = true, noop)]);
+    return new Promise(resolve => {
+      const iframe = document.createElement('iframe');
+      iframe.style.display = 'none';
+      iframe.setAttribute('nonce', nonce);
+      function cb({
+        data
+      }) {
+        // failed feature detection (security policy) -> revert to default assumptions
+        if (Array.isArray(data)) {
+          supportsImportMaps = data[0];
+          supportsImportMeta = data[1];
+          supportsCssAssertions = data[2];
+          supportsJsonAssertions = data[3];
+        }
+        resolve();
+        document.head.removeChild(iframe);
+        window.removeEventListener('message', cb, false);
+      }
+      window.addEventListener('message', cb, false);
+      const importMapTest = `<script nonce=${nonce || ''}>b=(s,type='text/javascript')=>URL.createObjectURL(new Blob([s],{type}));document.head.appendChild(Object.assign(document.createElement('script'),{type:'importmap',nonce:"${nonce}",innerText:\`{"imports":{"x":"\${b('')}"}}\`}));Promise.all([${supportsImportMaps ? 'true,true' : `'x',b('${importMetaCheck}')`}, ${cssModulesEnabled ? `b('${cssModulesCheck}'.replace('x',b('','text/css')))` : 'false'}, ${jsonModulesEnabled ? `b('${jsonModulesCheck}'.replace('x',b('{}','text/json')))` : 'false'}].map(x =>typeof x==='string'?import(x).then(x =>!!x,()=>false):x)).then(a=>parent.postMessage(a,'*'))<${''}/script>`;
+
+      // Safari will call onload eagerly on head injection, but we don't want the Wechat
+      // path to trigger before setting srcdoc, therefore we track the timing
+      let readyForOnload = false,
+        onloadCalledWhileNotReady = false;
+      function doOnload() {
+        if (!readyForOnload) {
+          onloadCalledWhileNotReady = true;
+          return;
+        }
+        // WeChat browser doesn't support setting srcdoc scripts
+        // But iframe sandboxes don't support contentDocument so we do this as a fallback
+        const doc = iframe.contentDocument;
+        if (doc && doc.head.childNodes.length === 0) {
+          const s = doc.createElement('script');
+          if (nonce) s.setAttribute('nonce', nonce);
+          s.innerHTML = importMapTest.slice(15 + (nonce ? nonce.length : 0), -9);
+          doc.head.appendChild(s);
+        }
+      }
+      iframe.onload = doOnload;
+      // WeChat browser requires append before setting srcdoc
+      document.head.appendChild(iframe);
+
+      // setting srcdoc is not supported in React native webviews on iOS
+      // setting src to a blob URL results in a navigation event in webviews
+      // document.write gives usability warnings
+      readyForOnload = true;
+      if ('srcdoc' in iframe) iframe.srcdoc = importMapTest;else iframe.contentDocument.write(importMapTest);
+      // retrigger onload for Safari only if necessary
+      if (onloadCalledWhileNotReady) doOnload();
+    });
+  });
+
+  /* es-module-lexer 1.2.1 */
+  let e,
+    a,
+    r,
+    i = 2 << 19;
+  const s = 1 === new Uint8Array(new Uint16Array([1]).buffer)[0] ? function (e, a) {
+      const r = e.length;
+      let i = 0;
+      for (; i < r;) a[i] = e.charCodeAt(i++);
+    } : function (e, a) {
+      const r = e.length;
+      let i = 0;
+      for (; i < r;) {
+        const r = e.charCodeAt(i);
+        a[i++] = (255 & r) << 8 | r >>> 8;
+      }
+    },
+    t = "xportmportlassetaromsyncunctionssertvoyiedelecontininstantybreareturdebuggeawaithrwhileforifcatcfinallels";
+  let c$1, f, n;
+  function parse(l, k = "@") {
+    c$1 = l, f = k;
+    const u = 2 * c$1.length + (2 << 18);
+    if (u > i || !e) {
+      for (; u > i;) i *= 2;
+      a = new ArrayBuffer(i), s(t, new Uint16Array(a, 16, 105)), e = function (e, a, r) {
+        "use asm";
+
+        var i = new e.Int8Array(r),
+          s = new e.Int16Array(r),
+          t = new e.Int32Array(r),
+          c = new e.Uint8Array(r),
+          f = new e.Uint16Array(r),
+          n = 1024;
+        function b() {
+          var e = 0,
+            a = 0,
+            r = 0,
+            c = 0,
+            b = 0,
+            u = 0,
+            w = 0;
+          w = n;
+          n = n + 10240 | 0;
+          i[795] = 1;
+          s[395] = 0;
+          s[396] = 0;
+          t[67] = t[2];
+          i[796] = 0;
+          t[66] = 0;
+          i[794] = 0;
+          t[68] = w + 2048;
+          t[69] = w;
+          i[797] = 0;
+          e = (t[3] | 0) + -2 | 0;
+          t[70] = e;
+          a = e + (t[64] << 1) | 0;
+          t[71] = a;
+          e: while (1) {
+            r = e + 2 | 0;
+            t[70] = r;
+            if (e >>> 0 >= a >>> 0) {
+              b = 18;
+              break;
+            }
+            a: do {
+              switch (s[r >> 1] | 0) {
+                case 9:
+                case 10:
+                case 11:
+                case 12:
+                case 13:
+                case 32:
+                  break;
+                case 101:
+                  {
+                    if ((((s[396] | 0) == 0 ? H(r) | 0 : 0) ? (m(e + 4 | 0, 16, 10) | 0) == 0 : 0) ? (l(), (i[795] | 0) == 0) : 0) {
+                      b = 9;
+                      break e;
+                    } else b = 17;
+                    break;
+                  }
+                case 105:
+                  {
+                    if (H(r) | 0 ? (m(e + 4 | 0, 26, 10) | 0) == 0 : 0) {
+                      k();
+                      b = 17;
+                    } else b = 17;
+                    break;
+                  }
+                case 59:
+                  {
+                    b = 17;
+                    break;
+                  }
+                case 47:
+                  switch (s[e + 4 >> 1] | 0) {
+                    case 47:
+                      {
+                        P();
+                        break a;
+                      }
+                    case 42:
+                      {
+                        y(1);
+                        break a;
+                      }
+                    default:
+                      {
+                        b = 16;
+                        break e;
+                      }
+                  }
+                default:
+                  {
+                    b = 16;
+                    break e;
+                  }
+              }
+            } while (0);
+            if ((b | 0) == 17) {
+              b = 0;
+              t[67] = t[70];
+            }
+            e = t[70] | 0;
+            a = t[71] | 0;
+          }
+          if ((b | 0) == 9) {
+            e = t[70] | 0;
+            t[67] = e;
+            b = 19;
+          } else if ((b | 0) == 16) {
+            i[795] = 0;
+            t[70] = e;
+            b = 19;
+          } else if ((b | 0) == 18) if (!(i[794] | 0)) {
+            e = r;
+            b = 19;
+          } else e = 0;
+          do {
+            if ((b | 0) == 19) {
+              e: while (1) {
+                a = e + 2 | 0;
+                t[70] = a;
+                c = a;
+                if (e >>> 0 >= (t[71] | 0) >>> 0) {
+                  b = 82;
+                  break;
+                }
+                a: do {
+                  switch (s[a >> 1] | 0) {
+                    case 9:
+                    case 10:
+                    case 11:
+                    case 12:
+                    case 13:
+                    case 32:
+                      break;
+                    case 101:
+                      {
+                        if (((s[396] | 0) == 0 ? H(a) | 0 : 0) ? (m(e + 4 | 0, 16, 10) | 0) == 0 : 0) {
+                          l();
+                          b = 81;
+                        } else b = 81;
+                        break;
+                      }
+                    case 105:
+                      {
+                        if (H(a) | 0 ? (m(e + 4 | 0, 26, 10) | 0) == 0 : 0) {
+                          k();
+                          b = 81;
+                        } else b = 81;
+                        break;
+                      }
+                    case 99:
+                      {
+                        if ((H(a) | 0 ? (m(e + 4 | 0, 36, 8) | 0) == 0 : 0) ? V(s[e + 12 >> 1] | 0) | 0 : 0) {
+                          i[797] = 1;
+                          b = 81;
+                        } else b = 81;
+                        break;
+                      }
+                    case 40:
+                      {
+                        c = t[68] | 0;
+                        a = s[396] | 0;
+                        b = a & 65535;
+                        t[c + (b << 3) >> 2] = 1;
+                        r = t[67] | 0;
+                        s[396] = a + 1 << 16 >> 16;
+                        t[c + (b << 3) + 4 >> 2] = r;
+                        b = 81;
+                        break;
+                      }
+                    case 41:
+                      {
+                        a = s[396] | 0;
+                        if (!(a << 16 >> 16)) {
+                          b = 36;
+                          break e;
+                        }
+                        a = a + -1 << 16 >> 16;
+                        s[396] = a;
+                        r = s[395] | 0;
+                        if (r << 16 >> 16 != 0 ? (u = t[(t[69] | 0) + ((r & 65535) + -1 << 2) >> 2] | 0, (t[u + 20 >> 2] | 0) == (t[(t[68] | 0) + ((a & 65535) << 3) + 4 >> 2] | 0)) : 0) {
+                          a = u + 4 | 0;
+                          if (!(t[a >> 2] | 0)) t[a >> 2] = c;
+                          t[u + 12 >> 2] = e + 4;
+                          s[395] = r + -1 << 16 >> 16;
+                          b = 81;
+                        } else b = 81;
+                        break;
+                      }
+                    case 123:
+                      {
+                        b = t[67] | 0;
+                        c = t[61] | 0;
+                        e = b;
+                        do {
+                          if ((s[b >> 1] | 0) == 41 & (c | 0) != 0 ? (t[c + 4 >> 2] | 0) == (b | 0) : 0) {
+                            a = t[62] | 0;
+                            t[61] = a;
+                            if (!a) {
+                              t[57] = 0;
+                              break;
+                            } else {
+                              t[a + 28 >> 2] = 0;
+                              break;
+                            }
+                          }
+                        } while (0);
+                        c = t[68] | 0;
+                        r = s[396] | 0;
+                        b = r & 65535;
+                        t[c + (b << 3) >> 2] = (i[797] | 0) == 0 ? 2 : 6;
+                        s[396] = r + 1 << 16 >> 16;
+                        t[c + (b << 3) + 4 >> 2] = e;
+                        i[797] = 0;
+                        b = 81;
+                        break;
+                      }
+                    case 125:
+                      {
+                        e = s[396] | 0;
+                        if (!(e << 16 >> 16)) {
+                          b = 49;
+                          break e;
+                        }
+                        c = t[68] | 0;
+                        b = e + -1 << 16 >> 16;
+                        s[396] = b;
+                        if ((t[c + ((b & 65535) << 3) >> 2] | 0) == 4) {
+                          h();
+                          b = 81;
+                        } else b = 81;
+                        break;
+                      }
+                    case 39:
+                      {
+                        d(39);
+                        b = 81;
+                        break;
+                      }
+                    case 34:
+                      {
+                        d(34);
+                        b = 81;
+                        break;
+                      }
+                    case 47:
+                      switch (s[e + 4 >> 1] | 0) {
+                        case 47:
+                          {
+                            P();
+                            break a;
+                          }
+                        case 42:
+                          {
+                            y(1);
+                            break a;
+                          }
+                        default:
+                          {
+                            e = t[67] | 0;
+                            c = s[e >> 1] | 0;
+                            r: do {
+                              if (!(U(c) | 0)) {
+                                switch (c << 16 >> 16) {
+                                  case 41:
+                                    if (D(t[(t[68] | 0) + (f[396] << 3) + 4 >> 2] | 0) | 0) {
+                                      b = 69;
+                                      break r;
+                                    } else {
+                                      b = 66;
+                                      break r;
+                                    }
+                                  case 125:
+                                    break;
+                                  default:
+                                    {
+                                      b = 66;
+                                      break r;
+                                    }
+                                }
+                                a = t[68] | 0;
+                                r = f[396] | 0;
+                                if (!(p(t[a + (r << 3) + 4 >> 2] | 0) | 0) ? (t[a + (r << 3) >> 2] | 0) != 6 : 0) b = 66;else b = 69;
+                              } else switch (c << 16 >> 16) {
+                                case 46:
+                                  if (((s[e + -2 >> 1] | 0) + -48 & 65535) < 10) {
+                                    b = 66;
+                                    break r;
+                                  } else {
+                                    b = 69;
+                                    break r;
+                                  }
+                                case 43:
+                                  if ((s[e + -2 >> 1] | 0) == 43) {
+                                    b = 66;
+                                    break r;
+                                  } else {
+                                    b = 69;
+                                    break r;
+                                  }
+                                case 45:
+                                  if ((s[e + -2 >> 1] | 0) == 45) {
+                                    b = 66;
+                                    break r;
+                                  } else {
+                                    b = 69;
+                                    break r;
+                                  }
+                                default:
+                                  {
+                                    b = 69;
+                                    break r;
+                                  }
+                              }
+                            } while (0);
+                            r: do {
+                              if ((b | 0) == 66) {
+                                b = 0;
+                                if (!(o(e) | 0)) {
+                                  switch (c << 16 >> 16) {
+                                    case 0:
+                                      {
+                                        b = 69;
+                                        break r;
+                                      }
+                                    case 47:
+                                      {
+                                        if (i[796] | 0) {
+                                          b = 69;
+                                          break r;
+                                        }
+                                        break;
+                                      }
+                                    default:
+                                      {}
+                                  }
+                                  r = t[3] | 0;
+                                  a = c;
+                                  do {
+                                    if (e >>> 0 <= r >>> 0) break;
+                                    e = e + -2 | 0;
+                                    t[67] = e;
+                                    a = s[e >> 1] | 0;
+                                  } while (!(E(a) | 0));
+                                  if (F(a) | 0) {
+                                    do {
+                                      if (e >>> 0 <= r >>> 0) break;
+                                      e = e + -2 | 0;
+                                      t[67] = e;
+                                    } while (F(s[e >> 1] | 0) | 0);
+                                    if (j(e) | 0) {
+                                      g();
+                                      i[796] = 0;
+                                      b = 81;
+                                      break a;
+                                    } else e = 1;
+                                  } else e = 1;
+                                } else b = 69;
+                              }
+                            } while (0);
+                            if ((b | 0) == 69) {
+                              g();
+                              e = 0;
+                            }
+                            i[796] = e;
+                            b = 81;
+                            break a;
+                          }
+                      }
+                    case 96:
+                      {
+                        c = t[68] | 0;
+                        r = s[396] | 0;
+                        b = r & 65535;
+                        t[c + (b << 3) + 4 >> 2] = t[67];
+                        s[396] = r + 1 << 16 >> 16;
+                        t[c + (b << 3) >> 2] = 3;
+                        h();
+                        b = 81;
+                        break;
+                      }
+                    default:
+                      b = 81;
+                  }
+                } while (0);
+                if ((b | 0) == 81) {
+                  b = 0;
+                  t[67] = t[70];
+                }
+                e = t[70] | 0;
+              }
+              if ((b | 0) == 36) {
+                T();
+                e = 0;
+                break;
+              } else if ((b | 0) == 49) {
+                T();
+                e = 0;
+                break;
+              } else if ((b | 0) == 82) {
+                e = (i[794] | 0) == 0 ? (s[395] | s[396]) << 16 >> 16 == 0 : 0;
+                break;
+              }
+            }
+          } while (0);
+          n = w;
+          return e | 0;
+        }
+        function l() {
+          var e = 0,
+            a = 0,
+            r = 0,
+            c = 0,
+            f = 0,
+            n = 0,
+            b = 0,
+            l = 0,
+            k = 0,
+            o = 0,
+            h = 0,
+            A = 0,
+            C = 0,
+            g = 0;
+          l = t[70] | 0;
+          k = t[63] | 0;
+          g = l + 12 | 0;
+          t[70] = g;
+          r = w(1) | 0;
+          e = t[70] | 0;
+          if (!((e | 0) == (g | 0) ? !(I(r) | 0) : 0)) C = 3;
+          e: do {
+            if ((C | 0) == 3) {
+              a: do {
+                switch (r << 16 >> 16) {
+                  case 123:
+                    {
+                      t[70] = e + 2;
+                      e = w(1) | 0;
+                      r = t[70] | 0;
+                      while (1) {
+                        if (W(e) | 0) {
+                          d(e);
+                          e = (t[70] | 0) + 2 | 0;
+                          t[70] = e;
+                        } else {
+                          q(e) | 0;
+                          e = t[70] | 0;
+                        }
+                        w(1) | 0;
+                        e = v(r, e) | 0;
+                        if (e << 16 >> 16 == 44) {
+                          t[70] = (t[70] | 0) + 2;
+                          e = w(1) | 0;
+                        }
+                        a = r;
+                        r = t[70] | 0;
+                        if (e << 16 >> 16 == 125) {
+                          C = 15;
+                          break;
+                        }
+                        if ((r | 0) == (a | 0)) {
+                          C = 12;
+                          break;
+                        }
+                        if (r >>> 0 > (t[71] | 0) >>> 0) {
+                          C = 14;
+                          break;
+                        }
+                      }
+                      if ((C | 0) == 12) {
+                        T();
+                        break e;
+                      } else if ((C | 0) == 14) {
+                        T();
+                        break e;
+                      } else if ((C | 0) == 15) {
+                        t[70] = r + 2;
+                        break a;
+                      }
+                      break;
+                    }
+                  case 42:
+                    {
+                      t[70] = e + 2;
+                      w(1) | 0;
+                      g = t[70] | 0;
+                      v(g, g) | 0;
+                      break;
+                    }
+                  default:
+                    {
+                      i[795] = 0;
+                      switch (r << 16 >> 16) {
+                        case 100:
+                          {
+                            l = e + 14 | 0;
+                            t[70] = l;
+                            switch ((w(1) | 0) << 16 >> 16) {
+                              case 97:
+                                {
+                                  a = t[70] | 0;
+                                  if ((m(a + 2 | 0, 56, 8) | 0) == 0 ? (f = a + 10 | 0, F(s[f >> 1] | 0) | 0) : 0) {
+                                    t[70] = f;
+                                    w(0) | 0;
+                                    C = 22;
+                                  }
+                                  break;
+                                }
+                              case 102:
+                                {
+                                  C = 22;
+                                  break;
+                                }
+                              case 99:
+                                {
+                                  a = t[70] | 0;
+                                  if (((m(a + 2 | 0, 36, 8) | 0) == 0 ? (c = a + 10 | 0, g = s[c >> 1] | 0, V(g) | 0 | g << 16 >> 16 == 123) : 0) ? (t[70] = c, n = w(1) | 0, n << 16 >> 16 != 123) : 0) {
+                                    A = n;
+                                    C = 31;
+                                  }
+                                  break;
+                                }
+                              default:
+                                {}
+                            }
+                            r: do {
+                              if ((C | 0) == 22 ? (b = t[70] | 0, (m(b + 2 | 0, 64, 14) | 0) == 0) : 0) {
+                                r = b + 16 | 0;
+                                a = s[r >> 1] | 0;
+                                if (!(V(a) | 0)) switch (a << 16 >> 16) {
+                                  case 40:
+                                  case 42:
+                                    break;
+                                  default:
+                                    break r;
+                                }
+                                t[70] = r;
+                                a = w(1) | 0;
+                                if (a << 16 >> 16 == 42) {
+                                  t[70] = (t[70] | 0) + 2;
+                                  a = w(1) | 0;
+                                }
+                                if (a << 16 >> 16 != 40) {
+                                  A = a;
+                                  C = 31;
+                                }
+                              }
+                            } while (0);
+                            if ((C | 0) == 31 ? (o = t[70] | 0, q(A) | 0, h = t[70] | 0, h >>> 0 > o >>> 0) : 0) {
+                              $(e, l, o, h);
+                              t[70] = (t[70] | 0) + -2;
+                              break e;
+                            }
+                            $(e, l, 0, 0);
+                            t[70] = e + 12;
+                            break e;
+                          }
+                        case 97:
+                          {
+                            t[70] = e + 10;
+                            w(0) | 0;
+                            e = t[70] | 0;
+                            C = 35;
+                            break;
+                          }
+                        case 102:
+                          {
+                            C = 35;
+                            break;
+                          }
+                        case 99:
+                          {
+                            if ((m(e + 2 | 0, 36, 8) | 0) == 0 ? (a = e + 10 | 0, E(s[a >> 1] | 0) | 0) : 0) {
+                              t[70] = a;
+                              g = w(1) | 0;
+                              C = t[70] | 0;
+                              q(g) | 0;
+                              g = t[70] | 0;
+                              $(C, g, C, g);
+                              t[70] = (t[70] | 0) + -2;
+                              break e;
+                            }
+                            e = e + 4 | 0;
+                            t[70] = e;
+                            break;
+                          }
+                        case 108:
+                        case 118:
+                          break;
+                        default:
+                          break e;
+                      }
+                      if ((C | 0) == 35) {
+                        t[70] = e + 16;
+                        e = w(1) | 0;
+                        if (e << 16 >> 16 == 42) {
+                          t[70] = (t[70] | 0) + 2;
+                          e = w(1) | 0;
+                        }
+                        C = t[70] | 0;
+                        q(e) | 0;
+                        g = t[70] | 0;
+                        $(C, g, C, g);
+                        t[70] = (t[70] | 0) + -2;
+                        break e;
+                      }
+                      e = e + 4 | 0;
+                      t[70] = e;
+                      i[795] = 0;
+                      r: while (1) {
+                        t[70] = e + 2;
+                        g = w(1) | 0;
+                        e = t[70] | 0;
+                        switch ((q(g) | 0) << 16 >> 16) {
+                          case 91:
+                          case 123:
+                            break r;
+                          default:
+                            {}
+                        }
+                        a = t[70] | 0;
+                        if ((a | 0) == (e | 0)) break e;
+                        $(e, a, e, a);
+                        if ((w(1) | 0) << 16 >> 16 != 44) break;
+                        e = t[70] | 0;
+                      }
+                      t[70] = (t[70] | 0) + -2;
+                      break e;
+                    }
+                }
+              } while (0);
+              g = (w(1) | 0) << 16 >> 16 == 102;
+              e = t[70] | 0;
+              if (g ? (m(e + 2 | 0, 50, 6) | 0) == 0 : 0) {
+                t[70] = e + 8;
+                u(l, w(1) | 0);
+                e = (k | 0) == 0 ? 232 : k + 16 | 0;
+                while (1) {
+                  e = t[e >> 2] | 0;
+                  if (!e) break e;
+                  t[e + 12 >> 2] = 0;
+                  t[e + 8 >> 2] = 0;
+                  e = e + 16 | 0;
+                }
+              }
+              t[70] = e + -2;
+            }
+          } while (0);
+          return;
+        }
+        function k() {
+          var e = 0,
+            a = 0,
+            r = 0,
+            c = 0,
+            f = 0,
+            n = 0;
+          f = t[70] | 0;
+          e = f + 12 | 0;
+          t[70] = e;
+          e: do {
+            switch ((w(1) | 0) << 16 >> 16) {
+              case 40:
+                {
+                  a = t[68] | 0;
+                  n = s[396] | 0;
+                  r = n & 65535;
+                  t[a + (r << 3) >> 2] = 5;
+                  e = t[70] | 0;
+                  s[396] = n + 1 << 16 >> 16;
+                  t[a + (r << 3) + 4 >> 2] = e;
+                  if ((s[t[67] >> 1] | 0) != 46) {
+                    t[70] = e + 2;
+                    n = w(1) | 0;
+                    A(f, t[70] | 0, 0, e);
+                    a = t[61] | 0;
+                    r = t[69] | 0;
+                    f = s[395] | 0;
+                    s[395] = f + 1 << 16 >> 16;
+                    t[r + ((f & 65535) << 2) >> 2] = a;
+                    switch (n << 16 >> 16) {
+                      case 39:
+                        {
+                          d(39);
+                          break;
+                        }
+                      case 34:
+                        {
+                          d(34);
+                          break;
+                        }
+                      default:
+                        {
+                          t[70] = (t[70] | 0) + -2;
+                          break e;
+                        }
+                    }
+                    e = (t[70] | 0) + 2 | 0;
+                    t[70] = e;
+                    switch ((w(1) | 0) << 16 >> 16) {
+                      case 44:
+                        {
+                          t[70] = (t[70] | 0) + 2;
+                          w(1) | 0;
+                          f = t[61] | 0;
+                          t[f + 4 >> 2] = e;
+                          n = t[70] | 0;
+                          t[f + 16 >> 2] = n;
+                          i[f + 24 >> 0] = 1;
+                          t[70] = n + -2;
+                          break e;
+                        }
+                      case 41:
+                        {
+                          s[396] = (s[396] | 0) + -1 << 16 >> 16;
+                          n = t[61] | 0;
+                          t[n + 4 >> 2] = e;
+                          t[n + 12 >> 2] = (t[70] | 0) + 2;
+                          i[n + 24 >> 0] = 1;
+                          s[395] = (s[395] | 0) + -1 << 16 >> 16;
+                          break e;
+                        }
+                      default:
+                        {
+                          t[70] = (t[70] | 0) + -2;
+                          break e;
+                        }
+                    }
+                  }
+                  break;
+                }
+              case 46:
+                {
+                  t[70] = (t[70] | 0) + 2;
+                  if ((w(1) | 0) << 16 >> 16 == 109 ? (a = t[70] | 0, (m(a + 2 | 0, 44, 6) | 0) == 0) : 0) {
+                    e = t[67] | 0;
+                    if (!(G(e) | 0) ? (s[e >> 1] | 0) == 46 : 0) break e;
+                    A(f, f, a + 8 | 0, 2);
+                  }
+                  break;
+                }
+              case 42:
+              case 39:
+              case 34:
+                {
+                  c = 18;
+                  break;
+                }
+              case 123:
+                {
+                  e = t[70] | 0;
+                  if (s[396] | 0) {
+                    t[70] = e + -2;
+                    break e;
+                  }
+                  while (1) {
+                    if (e >>> 0 >= (t[71] | 0) >>> 0) break;
+                    e = w(1) | 0;
+                    if (!(W(e) | 0)) {
+                      if (e << 16 >> 16 == 125) {
+                        c = 33;
+                        break;
+                      }
+                    } else d(e);
+                    e = (t[70] | 0) + 2 | 0;
+                    t[70] = e;
+                  }
+                  if ((c | 0) == 33) t[70] = (t[70] | 0) + 2;
+                  n = (w(1) | 0) << 16 >> 16 == 102;
+                  e = t[70] | 0;
+                  if (n ? m(e + 2 | 0, 50, 6) | 0 : 0) {
+                    T();
+                    break e;
+                  }
+                  t[70] = e + 8;
+                  e = w(1) | 0;
+                  if (W(e) | 0) {
+                    u(f, e);
+                    break e;
+                  } else {
+                    T();
+                    break e;
+                  }
+                }
+              default:
+                if ((t[70] | 0) == (e | 0)) t[70] = f + 10;else c = 18;
+            }
+          } while (0);
+          do {
+            if ((c | 0) == 18) {
+              if (s[396] | 0) {
+                t[70] = (t[70] | 0) + -2;
+                break;
+              }
+              e = t[71] | 0;
+              a = t[70] | 0;
+              while (1) {
+                if (a >>> 0 >= e >>> 0) {
+                  c = 25;
+                  break;
+                }
+                r = s[a >> 1] | 0;
+                if (W(r) | 0) {
+                  c = 23;
+                  break;
+                }
+                n = a + 2 | 0;
+                t[70] = n;
+                a = n;
+              }
+              if ((c | 0) == 23) {
+                u(f, r);
+                break;
+              } else if ((c | 0) == 25) {
+                T();
+                break;
+              }
+            }
+          } while (0);
+          return;
+        }
+        function u(e, a) {
+          e = e | 0;
+          a = a | 0;
+          var r = 0,
+            i = 0;
+          r = (t[70] | 0) + 2 | 0;
+          switch (a << 16 >> 16) {
+            case 39:
+              {
+                d(39);
+                i = 5;
+                break;
+              }
+            case 34:
+              {
+                d(34);
+                i = 5;
+                break;
+              }
+            default:
+              T();
+          }
+          do {
+            if ((i | 0) == 5) {
+              A(e, r, t[70] | 0, 1);
+              t[70] = (t[70] | 0) + 2;
+              a = w(0) | 0;
+              e = a << 16 >> 16 == 97;
+              if (e) {
+                r = t[70] | 0;
+                if (m(r + 2 | 0, 78, 10) | 0) i = 11;
+              } else {
+                r = t[70] | 0;
+                if (!(((a << 16 >> 16 == 119 ? (s[r + 2 >> 1] | 0) == 105 : 0) ? (s[r + 4 >> 1] | 0) == 116 : 0) ? (s[r + 6 >> 1] | 0) == 104 : 0)) i = 11;
+              }
+              if ((i | 0) == 11) {
+                t[70] = r + -2;
+                break;
+              }
+              t[70] = r + ((e ? 6 : 4) << 1);
+              if ((w(1) | 0) << 16 >> 16 != 123) {
+                t[70] = r;
+                break;
+              }
+              e = t[70] | 0;
+              a = e;
+              e: while (1) {
+                t[70] = a + 2;
+                a = w(1) | 0;
+                switch (a << 16 >> 16) {
+                  case 39:
+                    {
+                      d(39);
+                      t[70] = (t[70] | 0) + 2;
+                      a = w(1) | 0;
+                      break;
+                    }
+                  case 34:
+                    {
+                      d(34);
+                      t[70] = (t[70] | 0) + 2;
+                      a = w(1) | 0;
+                      break;
+                    }
+                  default:
+                    a = q(a) | 0;
+                }
+                if (a << 16 >> 16 != 58) {
+                  i = 20;
+                  break;
+                }
+                t[70] = (t[70] | 0) + 2;
+                switch ((w(1) | 0) << 16 >> 16) {
+                  case 39:
+                    {
+                      d(39);
+                      break;
+                    }
+                  case 34:
+                    {
+                      d(34);
+                      break;
+                    }
+                  default:
+                    {
+                      i = 24;
+                      break e;
+                    }
+                }
+                t[70] = (t[70] | 0) + 2;
+                switch ((w(1) | 0) << 16 >> 16) {
+                  case 125:
+                    {
+                      i = 29;
+                      break e;
+                    }
+                  case 44:
+                    break;
+                  default:
+                    {
+                      i = 28;
+                      break e;
+                    }
+                }
+                t[70] = (t[70] | 0) + 2;
+                if ((w(1) | 0) << 16 >> 16 == 125) {
+                  i = 29;
+                  break;
+                }
+                a = t[70] | 0;
+              }
+              if ((i | 0) == 20) {
+                t[70] = r;
+                break;
+              } else if ((i | 0) == 24) {
+                t[70] = r;
+                break;
+              } else if ((i | 0) == 28) {
+                t[70] = r;
+                break;
+              } else if ((i | 0) == 29) {
+                i = t[61] | 0;
+                t[i + 16 >> 2] = e;
+                t[i + 12 >> 2] = (t[70] | 0) + 2;
+                break;
+              }
+            }
+          } while (0);
+          return;
+        }
+        function o(e) {
+          e = e | 0;
+          e: do {
+            switch (s[e >> 1] | 0) {
+              case 100:
+                switch (s[e + -2 >> 1] | 0) {
+                  case 105:
+                    {
+                      e = O(e + -4 | 0, 88, 2) | 0;
+                      break e;
+                    }
+                  case 108:
+                    {
+                      e = O(e + -4 | 0, 92, 3) | 0;
+                      break e;
+                    }
+                  default:
+                    {
+                      e = 0;
+                      break e;
+                    }
+                }
+              case 101:
+                switch (s[e + -2 >> 1] | 0) {
+                  case 115:
+                    switch (s[e + -4 >> 1] | 0) {
+                      case 108:
+                        {
+                          e = B(e + -6 | 0, 101) | 0;
+                          break e;
+                        }
+                      case 97:
+                        {
+                          e = B(e + -6 | 0, 99) | 0;
+                          break e;
+                        }
+                      default:
+                        {
+                          e = 0;
+                          break e;
+                        }
+                    }
+                  case 116:
+                    {
+                      e = O(e + -4 | 0, 98, 4) | 0;
+                      break e;
+                    }
+                  case 117:
+                    {
+                      e = O(e + -4 | 0, 106, 6) | 0;
+                      break e;
+                    }
+                  default:
+                    {
+                      e = 0;
+                      break e;
+                    }
+                }
+              case 102:
+                {
+                  if ((s[e + -2 >> 1] | 0) == 111 ? (s[e + -4 >> 1] | 0) == 101 : 0) switch (s[e + -6 >> 1] | 0) {
+                    case 99:
+                      {
+                        e = O(e + -8 | 0, 118, 6) | 0;
+                        break e;
+                      }
+                    case 112:
+                      {
+                        e = O(e + -8 | 0, 130, 2) | 0;
+                        break e;
+                      }
+                    default:
+                      {
+                        e = 0;
+                        break e;
+                      }
+                  } else e = 0;
+                  break;
+                }
+              case 107:
+                {
+                  e = O(e + -2 | 0, 134, 4) | 0;
+                  break;
+                }
+              case 110:
+                {
+                  e = e + -2 | 0;
+                  if (B(e, 105) | 0) e = 1;else e = O(e, 142, 5) | 0;
+                  break;
+                }
+              case 111:
+                {
+                  e = B(e + -2 | 0, 100) | 0;
+                  break;
+                }
+              case 114:
+                {
+                  e = O(e + -2 | 0, 152, 7) | 0;
+                  break;
+                }
+              case 116:
+                {
+                  e = O(e + -2 | 0, 166, 4) | 0;
+                  break;
+                }
+              case 119:
+                switch (s[e + -2 >> 1] | 0) {
+                  case 101:
+                    {
+                      e = B(e + -4 | 0, 110) | 0;
+                      break e;
+                    }
+                  case 111:
+                    {
+                      e = O(e + -4 | 0, 174, 3) | 0;
+                      break e;
+                    }
+                  default:
+                    {
+                      e = 0;
+                      break e;
+                    }
+                }
+              default:
+                e = 0;
+            }
+          } while (0);
+          return e | 0;
+        }
+        function h() {
+          var e = 0,
+            a = 0,
+            r = 0,
+            i = 0;
+          a = t[71] | 0;
+          r = t[70] | 0;
+          e: while (1) {
+            e = r + 2 | 0;
+            if (r >>> 0 >= a >>> 0) {
+              a = 10;
+              break;
+            }
+            switch (s[e >> 1] | 0) {
+              case 96:
+                {
+                  a = 7;
+                  break e;
+                }
+              case 36:
+                {
+                  if ((s[r + 4 >> 1] | 0) == 123) {
+                    a = 6;
+                    break e;
+                  }
+                  break;
+                }
+              case 92:
+                {
+                  e = r + 4 | 0;
+                  break;
+                }
+              default:
+                {}
+            }
+            r = e;
+          }
+          if ((a | 0) == 6) {
+            e = r + 4 | 0;
+            t[70] = e;
+            a = t[68] | 0;
+            i = s[396] | 0;
+            r = i & 65535;
+            t[a + (r << 3) >> 2] = 4;
+            s[396] = i + 1 << 16 >> 16;
+            t[a + (r << 3) + 4 >> 2] = e;
+          } else if ((a | 0) == 7) {
+            t[70] = e;
+            r = t[68] | 0;
+            i = (s[396] | 0) + -1 << 16 >> 16;
+            s[396] = i;
+            if ((t[r + ((i & 65535) << 3) >> 2] | 0) != 3) T();
+          } else if ((a | 0) == 10) {
+            t[70] = e;
+            T();
+          }
+          return;
+        }
+        function w(e) {
+          e = e | 0;
+          var a = 0,
+            r = 0,
+            i = 0;
+          r = t[70] | 0;
+          e: do {
+            a = s[r >> 1] | 0;
+            a: do {
+              if (a << 16 >> 16 != 47) {
+                if (e) {
+                  if (V(a) | 0) break;else break e;
+                } else if (F(a) | 0) break;else break e;
+              } else switch (s[r + 2 >> 1] | 0) {
+                case 47:
+                  {
+                    P();
+                    break a;
+                  }
+                case 42:
+                  {
+                    y(e);
+                    break a;
+                  }
+                default:
+                  {
+                    a = 47;
+                    break e;
+                  }
+              }
+            } while (0);
+            i = t[70] | 0;
+            r = i + 2 | 0;
+            t[70] = r;
+          } while (i >>> 0 < (t[71] | 0) >>> 0);
+          return a | 0;
+        }
+        function d(e) {
+          e = e | 0;
+          var a = 0,
+            r = 0,
+            i = 0,
+            c = 0;
+          c = t[71] | 0;
+          a = t[70] | 0;
+          while (1) {
+            i = a + 2 | 0;
+            if (a >>> 0 >= c >>> 0) {
+              a = 9;
+              break;
+            }
+            r = s[i >> 1] | 0;
+            if (r << 16 >> 16 == e << 16 >> 16) {
+              a = 10;
+              break;
+            }
+            if (r << 16 >> 16 == 92) {
+              r = a + 4 | 0;
+              if ((s[r >> 1] | 0) == 13) {
+                a = a + 6 | 0;
+                a = (s[a >> 1] | 0) == 10 ? a : r;
+              } else a = r;
+            } else if (Z(r) | 0) {
+              a = 9;
+              break;
+            } else a = i;
+          }
+          if ((a | 0) == 9) {
+            t[70] = i;
+            T();
+          } else if ((a | 0) == 10) t[70] = i;
+          return;
+        }
+        function v(e, a) {
+          e = e | 0;
+          a = a | 0;
+          var r = 0,
+            i = 0,
+            c = 0,
+            f = 0;
+          r = t[70] | 0;
+          i = s[r >> 1] | 0;
+          f = (e | 0) == (a | 0);
+          c = f ? 0 : e;
+          f = f ? 0 : a;
+          if (i << 16 >> 16 == 97) {
+            t[70] = r + 4;
+            r = w(1) | 0;
+            e = t[70] | 0;
+            if (W(r) | 0) {
+              d(r);
+              a = (t[70] | 0) + 2 | 0;
+              t[70] = a;
+            } else {
+              q(r) | 0;
+              a = t[70] | 0;
+            }
+            i = w(1) | 0;
+            r = t[70] | 0;
+          }
+          if ((r | 0) != (e | 0)) $(e, a, c, f);
+          return i | 0;
+        }
+        function A(e, a, r, s) {
+          e = e | 0;
+          a = a | 0;
+          r = r | 0;
+          s = s | 0;
+          var c = 0,
+            f = 0;
+          c = t[65] | 0;
+          t[65] = c + 32;
+          f = t[61] | 0;
+          t[((f | 0) == 0 ? 228 : f + 28 | 0) >> 2] = c;
+          t[62] = f;
+          t[61] = c;
+          t[c + 8 >> 2] = e;
+          if (2 == (s | 0)) e = r;else e = 1 == (s | 0) ? r + 2 | 0 : 0;
+          t[c + 12 >> 2] = e;
+          t[c >> 2] = a;
+          t[c + 4 >> 2] = r;
+          t[c + 16 >> 2] = 0;
+          t[c + 20 >> 2] = s;
+          i[c + 24 >> 0] = 1 == (s | 0) & 1;
+          t[c + 28 >> 2] = 0;
+          return;
+        }
+        function C() {
+          var e = 0,
+            a = 0,
+            r = 0;
+          r = t[71] | 0;
+          a = t[70] | 0;
+          e: while (1) {
+            e = a + 2 | 0;
+            if (a >>> 0 >= r >>> 0) {
+              a = 6;
+              break;
+            }
+            switch (s[e >> 1] | 0) {
+              case 13:
+              case 10:
+                {
+                  a = 6;
+                  break e;
+                }
+              case 93:
+                {
+                  a = 7;
+                  break e;
+                }
+              case 92:
+                {
+                  e = a + 4 | 0;
+                  break;
+                }
+              default:
+                {}
+            }
+            a = e;
+          }
+          if ((a | 0) == 6) {
+            t[70] = e;
+            T();
+            e = 0;
+          } else if ((a | 0) == 7) {
+            t[70] = e;
+            e = 93;
+          }
+          return e | 0;
+        }
+        function g() {
+          var e = 0,
+            a = 0,
+            r = 0;
+          e: while (1) {
+            e = t[70] | 0;
+            a = e + 2 | 0;
+            t[70] = a;
+            if (e >>> 0 >= (t[71] | 0) >>> 0) {
+              r = 7;
+              break;
+            }
+            switch (s[a >> 1] | 0) {
+              case 13:
+              case 10:
+                {
+                  r = 7;
+                  break e;
+                }
+              case 47:
+                break e;
+              case 91:
+                {
+                  C() | 0;
+                  break;
+                }
+              case 92:
+                {
+                  t[70] = e + 4;
+                  break;
+                }
+              default:
+                {}
+            }
+          }
+          if ((r | 0) == 7) T();
+          return;
+        }
+        function p(e) {
+          e = e | 0;
+          switch (s[e >> 1] | 0) {
+            case 62:
+              {
+                e = (s[e + -2 >> 1] | 0) == 61;
+                break;
+              }
+            case 41:
+            case 59:
+              {
+                e = 1;
+                break;
+              }
+            case 104:
+              {
+                e = O(e + -2 | 0, 200, 4) | 0;
+                break;
+              }
+            case 121:
+              {
+                e = O(e + -2 | 0, 208, 6) | 0;
+                break;
+              }
+            case 101:
+              {
+                e = O(e + -2 | 0, 220, 3) | 0;
+                break;
+              }
+            default:
+              e = 0;
+          }
+          return e | 0;
+        }
+        function y(e) {
+          e = e | 0;
+          var a = 0,
+            r = 0,
+            i = 0,
+            c = 0,
+            f = 0;
+          c = (t[70] | 0) + 2 | 0;
+          t[70] = c;
+          r = t[71] | 0;
+          while (1) {
+            a = c + 2 | 0;
+            if (c >>> 0 >= r >>> 0) break;
+            i = s[a >> 1] | 0;
+            if (!e ? Z(i) | 0 : 0) break;
+            if (i << 16 >> 16 == 42 ? (s[c + 4 >> 1] | 0) == 47 : 0) {
+              f = 8;
+              break;
+            }
+            c = a;
+          }
+          if ((f | 0) == 8) {
+            t[70] = a;
+            a = c + 4 | 0;
+          }
+          t[70] = a;
+          return;
+        }
+        function m(e, a, r) {
+          e = e | 0;
+          a = a | 0;
+          r = r | 0;
+          var s = 0,
+            t = 0;
+          e: do {
+            if (!r) e = 0;else {
+              while (1) {
+                s = i[e >> 0] | 0;
+                t = i[a >> 0] | 0;
+                if (s << 24 >> 24 != t << 24 >> 24) break;
+                r = r + -1 | 0;
+                if (!r) {
+                  e = 0;
+                  break e;
+                } else {
+                  e = e + 1 | 0;
+                  a = a + 1 | 0;
+                }
+              }
+              e = (s & 255) - (t & 255) | 0;
+            }
+          } while (0);
+          return e | 0;
+        }
+        function I(e) {
+          e = e | 0;
+          e: do {
+            switch (e << 16 >> 16) {
+              case 38:
+              case 37:
+              case 33:
+                {
+                  e = 1;
+                  break;
+                }
+              default:
+                if ((e & -8) << 16 >> 16 == 40 | (e + -58 & 65535) < 6) e = 1;else {
+                  switch (e << 16 >> 16) {
+                    case 91:
+                    case 93:
+                    case 94:
+                      {
+                        e = 1;
+                        break e;
+                      }
+                    default:
+                      {}
+                  }
+                  e = (e + -123 & 65535) < 4;
+                }
+            }
+          } while (0);
+          return e | 0;
+        }
+        function U(e) {
+          e = e | 0;
+          e: do {
+            switch (e << 16 >> 16) {
+              case 38:
+              case 37:
+              case 33:
+                break;
+              default:
+                if (!((e + -58 & 65535) < 6 | (e + -40 & 65535) < 7 & e << 16 >> 16 != 41)) {
+                  switch (e << 16 >> 16) {
+                    case 91:
+                    case 94:
+                      break e;
+                    default:
+                      {}
+                  }
+                  return e << 16 >> 16 != 125 & (e + -123 & 65535) < 4 | 0;
+                }
+            }
+          } while (0);
+          return 1;
+        }
+        function x(e) {
+          e = e | 0;
+          var a = 0;
+          a = s[e >> 1] | 0;
+          e: do {
+            if ((a + -9 & 65535) >= 5) {
+              switch (a << 16 >> 16) {
+                case 160:
+                case 32:
+                  {
+                    a = 1;
+                    break e;
+                  }
+                default:
+                  {}
+              }
+              if (I(a) | 0) return a << 16 >> 16 != 46 | (G(e) | 0) | 0;else a = 0;
+            } else a = 1;
+          } while (0);
+          return a | 0;
+        }
+        function S(e) {
+          e = e | 0;
+          var a = 0,
+            r = 0,
+            i = 0,
+            c = 0;
+          r = n;
+          n = n + 16 | 0;
+          i = r;
+          t[i >> 2] = 0;
+          t[64] = e;
+          a = t[3] | 0;
+          c = a + (e << 1) | 0;
+          e = c + 2 | 0;
+          s[c >> 1] = 0;
+          t[i >> 2] = e;
+          t[65] = e;
+          t[57] = 0;
+          t[61] = 0;
+          t[59] = 0;
+          t[58] = 0;
+          t[63] = 0;
+          t[60] = 0;
+          n = r;
+          return a | 0;
+        }
+        function O(e, a, r) {
+          e = e | 0;
+          a = a | 0;
+          r = r | 0;
+          var i = 0,
+            s = 0;
+          i = e + (0 - r << 1) | 0;
+          s = i + 2 | 0;
+          e = t[3] | 0;
+          if (s >>> 0 >= e >>> 0 ? (m(s, a, r << 1) | 0) == 0 : 0) {
+            if ((s | 0) == (e | 0)) e = 1;else e = x(i) | 0;
+          } else e = 0;
+          return e | 0;
+        }
+        function $(e, a, r, i) {
+          e = e | 0;
+          a = a | 0;
+          r = r | 0;
+          i = i | 0;
+          var s = 0,
+            c = 0;
+          s = t[65] | 0;
+          t[65] = s + 20;
+          c = t[63] | 0;
+          t[((c | 0) == 0 ? 232 : c + 16 | 0) >> 2] = s;
+          t[63] = s;
+          t[s >> 2] = e;
+          t[s + 4 >> 2] = a;
+          t[s + 8 >> 2] = r;
+          t[s + 12 >> 2] = i;
+          t[s + 16 >> 2] = 0;
+          return;
+        }
+        function j(e) {
+          e = e | 0;
+          switch (s[e >> 1] | 0) {
+            case 107:
+              {
+                e = O(e + -2 | 0, 134, 4) | 0;
+                break;
+              }
+            case 101:
+              {
+                if ((s[e + -2 >> 1] | 0) == 117) e = O(e + -4 | 0, 106, 6) | 0;else e = 0;
+                break;
+              }
+            default:
+              e = 0;
+          }
+          return e | 0;
+        }
+        function B(e, a) {
+          e = e | 0;
+          a = a | 0;
+          var r = 0;
+          r = t[3] | 0;
+          if (r >>> 0 <= e >>> 0 ? (s[e >> 1] | 0) == a << 16 >> 16 : 0) {
+            if ((r | 0) == (e | 0)) r = 1;else r = E(s[e + -2 >> 1] | 0) | 0;
+          } else r = 0;
+          return r | 0;
+        }
+        function E(e) {
+          e = e | 0;
+          e: do {
+            if ((e + -9 & 65535) < 5) e = 1;else {
+              switch (e << 16 >> 16) {
+                case 32:
+                case 160:
+                  {
+                    e = 1;
+                    break e;
+                  }
+                default:
+                  {}
+              }
+              e = e << 16 >> 16 != 46 & (I(e) | 0);
+            }
+          } while (0);
+          return e | 0;
+        }
+        function P() {
+          var e = 0,
+            a = 0,
+            r = 0;
+          e = t[71] | 0;
+          r = t[70] | 0;
+          e: while (1) {
+            a = r + 2 | 0;
+            if (r >>> 0 >= e >>> 0) break;
+            switch (s[a >> 1] | 0) {
+              case 13:
+              case 10:
+                break e;
+              default:
+                r = a;
+            }
+          }
+          t[70] = a;
+          return;
+        }
+        function q(e) {
+          e = e | 0;
+          while (1) {
+            if (V(e) | 0) break;
+            if (I(e) | 0) break;
+            e = (t[70] | 0) + 2 | 0;
+            t[70] = e;
+            e = s[e >> 1] | 0;
+            if (!(e << 16 >> 16)) {
+              e = 0;
+              break;
+            }
+          }
+          return e | 0;
+        }
+        function z() {
+          var e = 0;
+          e = t[(t[59] | 0) + 20 >> 2] | 0;
+          switch (e | 0) {
+            case 1:
+              {
+                e = -1;
+                break;
+              }
+            case 2:
+              {
+                e = -2;
+                break;
+              }
+            default:
+              e = e - (t[3] | 0) >> 1;
+          }
+          return e | 0;
+        }
+        function D(e) {
+          e = e | 0;
+          if (!(O(e, 180, 5) | 0) ? !(O(e, 190, 3) | 0) : 0) e = O(e, 196, 2) | 0;else e = 1;
+          return e | 0;
+        }
+        function F(e) {
+          e = e | 0;
+          switch (e << 16 >> 16) {
+            case 160:
+            case 32:
+            case 12:
+            case 11:
+            case 9:
+              {
+                e = 1;
+                break;
+              }
+            default:
+              e = 0;
+          }
+          return e | 0;
+        }
+        function G(e) {
+          e = e | 0;
+          if ((s[e >> 1] | 0) == 46 ? (s[e + -2 >> 1] | 0) == 46 : 0) e = (s[e + -4 >> 1] | 0) == 46;else e = 0;
+          return e | 0;
+        }
+        function H(e) {
+          e = e | 0;
+          if ((t[3] | 0) == (e | 0)) e = 1;else e = x(e + -2 | 0) | 0;
+          return e | 0;
+        }
+        function J() {
+          var e = 0;
+          e = t[(t[60] | 0) + 12 >> 2] | 0;
+          if (!e) e = -1;else e = e - (t[3] | 0) >> 1;
+          return e | 0;
+        }
+        function K() {
+          var e = 0;
+          e = t[(t[59] | 0) + 12 >> 2] | 0;
+          if (!e) e = -1;else e = e - (t[3] | 0) >> 1;
+          return e | 0;
+        }
+        function L() {
+          var e = 0;
+          e = t[(t[60] | 0) + 8 >> 2] | 0;
+          if (!e) e = -1;else e = e - (t[3] | 0) >> 1;
+          return e | 0;
+        }
+        function M() {
+          var e = 0;
+          e = t[(t[59] | 0) + 16 >> 2] | 0;
+          if (!e) e = -1;else e = e - (t[3] | 0) >> 1;
+          return e | 0;
+        }
+        function N() {
+          var e = 0;
+          e = t[(t[59] | 0) + 4 >> 2] | 0;
+          if (!e) e = -1;else e = e - (t[3] | 0) >> 1;
+          return e | 0;
+        }
+        function Q() {
+          var e = 0;
+          e = t[59] | 0;
+          e = t[((e | 0) == 0 ? 228 : e + 28 | 0) >> 2] | 0;
+          t[59] = e;
+          return (e | 0) != 0 | 0;
+        }
+        function R() {
+          var e = 0;
+          e = t[60] | 0;
+          e = t[((e | 0) == 0 ? 232 : e + 16 | 0) >> 2] | 0;
+          t[60] = e;
+          return (e | 0) != 0 | 0;
+        }
+        function T() {
+          i[794] = 1;
+          t[66] = (t[70] | 0) - (t[3] | 0) >> 1;
+          t[70] = (t[71] | 0) + 2;
+          return;
+        }
+        function V(e) {
+          e = e | 0;
+          return (e | 128) << 16 >> 16 == 160 | (e + -9 & 65535) < 5 | 0;
+        }
+        function W(e) {
+          e = e | 0;
+          return e << 16 >> 16 == 39 | e << 16 >> 16 == 34 | 0;
+        }
+        function X() {
+          return (t[(t[59] | 0) + 8 >> 2] | 0) - (t[3] | 0) >> 1 | 0;
+        }
+        function Y() {
+          return (t[(t[60] | 0) + 4 >> 2] | 0) - (t[3] | 0) >> 1 | 0;
+        }
+        function Z(e) {
+          e = e | 0;
+          return e << 16 >> 16 == 13 | e << 16 >> 16 == 10 | 0;
+        }
+        function _() {
+          return (t[t[59] >> 2] | 0) - (t[3] | 0) >> 1 | 0;
+        }
+        function ee() {
+          return (t[t[60] >> 2] | 0) - (t[3] | 0) >> 1 | 0;
+        }
+        function ae() {
+          return c[(t[59] | 0) + 24 >> 0] | 0 | 0;
+        }
+        function re(e) {
+          e = e | 0;
+          t[3] = e;
+          return;
+        }
+        function ie() {
+          return (i[795] | 0) != 0 | 0;
+        }
+        function se() {
+          return t[66] | 0;
+        }
+        function te(e) {
+          e = e | 0;
+          n = e + 992 + 15 & -16;
+          return 992;
+        }
+        return {
+          su: te,
+          ai: M,
+          e: se,
+          ee: Y,
+          ele: J,
+          els: L,
+          es: ee,
+          f: ie,
+          id: z,
+          ie: N,
+          ip: ae,
+          is: _,
+          p: b,
+          re: R,
+          ri: Q,
+          sa: S,
+          se: K,
+          ses: re,
+          ss: X
+        };
+      }("undefined" != typeof self ? self : commonjsGlobal, {}, a), r = e.su(i - (2 << 17));
+    }
+    const h = c$1.length + 1;
+    e.ses(r), e.sa(h - 1), s(c$1, new Uint16Array(a, r, h)), e.p() || (n = e.e(), o());
+    const w = [],
+      d = [];
+    for (; e.ri();) {
+      const a = e.is(),
+        r = e.ie(),
+        i = e.ai(),
+        s = e.id(),
+        t = e.ss(),
+        f = e.se();
+      let n;
+      e.ip() && (n = b(-1 === s ? a : a + 1, c$1.charCodeAt(-1 === s ? a - 1 : a))), w.push({
+        n: n,
+        s: a,
+        e: r,
+        ss: t,
+        se: f,
+        d: s,
+        a: i
+      });
+    }
+    for (; e.re();) {
+      const a = e.es(),
+        r = e.ee(),
+        i = e.els(),
+        s = e.ele(),
+        t = c$1.charCodeAt(a),
+        f = i >= 0 ? c$1.charCodeAt(i) : -1;
+      d.push({
+        s: a,
+        e: r,
+        ls: i,
+        le: s,
+        n: 34 === t || 39 === t ? b(a + 1, t) : c$1.slice(a, r),
+        ln: i < 0 ? void 0 : 34 === f || 39 === f ? b(i + 1, f) : c$1.slice(i, s)
+      });
+    }
+    return [w, d, !!e.f()];
   }
-
-  function getMatch (path, matchObj) {
-    if (matchObj[path])
-      return path;
-    let sepIndex = path.length;
-    do {
-      const segment = path.slice(0, sepIndex + 1);
-      if (segment in matchObj)
-        return segment;
-    } while ((sepIndex = path.lastIndexOf('/', sepIndex - 1)) !== -1)
+  function b(e, a) {
+    n = e;
+    let r = "",
+      i = n;
+    for (;;) {
+      n >= c$1.length && o();
+      const e = c$1.charCodeAt(n);
+      if (e === a) break;
+      92 === e ? (r += c$1.slice(i, n), r += l(), i = n) : (8232 === e || 8233 === e || u(e) && o(), ++n);
+    }
+    return r += c$1.slice(i, n++), r;
   }
-
-  function applyPackages (id, packages) {
-    const pkgName = getMatch(id, packages);
-    if (pkgName) {
-      const pkg = packages[pkgName];
-      if (pkg === null) return;
-      if (id.length > pkgName.length && pkg[pkg.length - 1] !== '/')
-        targetWarning(pkgName, pkg, "should have a trailing '/'");
-      else
-        return pkg + id.slice(pkgName.length);
+  function l() {
+    let e = c$1.charCodeAt(++n);
+    switch (++n, e) {
+      case 110:
+        return "\n";
+      case 114:
+        return "\r";
+      case 120:
+        return String.fromCharCode(k(2));
+      case 117:
+        return function () {
+          const e = c$1.charCodeAt(n);
+          let a;
+          123 === e ? (++n, a = k(c$1.indexOf("}", n) - n), ++n, a > 1114111 && o()) : a = k(4);
+          return a <= 65535 ? String.fromCharCode(a) : (a -= 65536, String.fromCharCode(55296 + (a >> 10), 56320 + (1023 & a)));
+        }();
+      case 116:
+        return "\t";
+      case 98:
+        return "\b";
+      case 118:
+        return "\v";
+      case 102:
+        return "\f";
+      case 13:
+        10 === c$1.charCodeAt(n) && ++n;
+      case 10:
+        return "";
+      case 56:
+      case 57:
+        o();
+      default:
+        if (e >= 48 && e <= 55) {
+          let a = c$1.substr(n - 1, 3).match(/^[0-7]+/)[0],
+            r = parseInt(a, 8);
+          return r > 255 && (a = a.slice(0, -1), r = parseInt(a, 8)), n += a.length - 1, e = c$1.charCodeAt(n), "0" === a && 56 !== e && 57 !== e || o(), String.fromCharCode(r);
+        }
+        return u(e) ? "" : String.fromCharCode(e);
     }
   }
-
-  function targetWarning (match, target, msg) {
-    console.warn("Package target " + msg + ", resolving target '" + target + "' for " + match);
-  }
-
-  function resolveImportMap (importMap, resolvedOrPlain, parentUrl) {
-    let scopeUrl = parentUrl && getMatch(parentUrl, importMap.scopes);
-    while (scopeUrl) {
-      const packageResolution = applyPackages(resolvedOrPlain, importMap.scopes[scopeUrl]);
-      if (packageResolution)
-        return packageResolution;
-      scopeUrl = getMatch(scopeUrl.slice(0, scopeUrl.lastIndexOf('/')), importMap.scopes);
+  function k(e) {
+    const a = n;
+    let r = 0,
+      i = 0;
+    for (let a = 0; a < e; ++a, ++n) {
+      let e,
+        s = c$1.charCodeAt(n);
+      if (95 !== s) {
+        if (s >= 97) e = s - 97 + 10;else if (s >= 65) e = s - 65 + 10;else {
+          if (!(s >= 48 && s <= 57)) break;
+          e = s - 48;
+        }
+        if (e >= 16) break;
+        i = s, r = 16 * r + e;
+      } else 95 !== i && 0 !== a || o(), i = s;
     }
-    return applyPackages(resolvedOrPlain, importMap.imports) || resolvedOrPlain.indexOf(':') !== -1 && resolvedOrPlain;
+    return 95 !== i && n - a === e || o(), r;
   }
-
-  /* es-module-lexer 0.4.0 */
-  const A=1===new Uint8Array(new Uint16Array([1]).buffer)[0];function parse(E,g="@"){if(!B)return init.then(()=>parse(E));const I=E.length+1,D=(B.__heap_base.value||B.__heap_base)+4*I-B.memory.buffer.byteLength;D>0&&B.memory.grow(Math.ceil(D/65536));const w=B.sa(I-1);if((A?C:Q)(E,new Uint16Array(B.memory.buffer,w,I)),!B.parse())throw Object.assign(new Error(`Parse error ${g}:${E.slice(0,B.e()).split("\n").length}:${B.e()-E.lastIndexOf("\n",B.e()-1)}`),{idx:B.e()});const L=[],k=[];for(;B.ri();){const A=B.is(),Q=B.ie();let C;B.ip()&&(C=N(E.slice(A-1,Q+1))),L.push({n:C,s:A,e:Q,ss:B.ss(),se:B.se(),d:B.id()});}for(;B.re();)k.push(E.slice(B.es(),B.ee()));function N(A){try{return (0,eval)(A)}catch{}}return [L,k,!!B.f()]}function Q(A,Q){const C=A.length;let B=0;for(;B<C;){const C=A.charCodeAt(B);Q[B++]=(255&C)<<8|C>>>8;}}function C(A,Q){const C=A.length;let B=0;for(;B<C;)Q[B]=A.charCodeAt(B++);}let B;const init=WebAssembly.compile((E="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","undefined"!=typeof window&&"function"==typeof atob?Uint8Array.from(atob(E),A=>A.charCodeAt(0)):Buffer.from(E,"base64"))).then(WebAssembly.instantiate).then(({exports:A})=>{B=A;});var E;
-
-  let id = 0;
-  const registry = {};
-
-  async function loadAll (load, seen) {
-    if (load.b || seen[load.u])
-      return;
-    seen[load.u] = 1;
-    await load.L;
-    return Promise.all(load.d.map(dep => loadAll(dep, seen)));
+  function u(e) {
+    return 13 === e || 10 === e;
   }
+  function o() {
+    throw Object.assign(Error(`Parse error ${f}:${c$1.slice(0, n).split("\n").length}:${n - c$1.lastIndexOf("\n", n - 1)}`), {
+      idx: n
+    });
+  }
+  async function _resolve(id, parentUrl) {
+    const urlResolved = resolveIfNotPlainOrUrl(id, parentUrl);
+    return {
+      r: resolveImportMap(importMap, urlResolved || id, parentUrl) || throwUnresolved(id, parentUrl),
+      // b = bare specifier
+      b: !urlResolved && !isURL(id)
+    };
+  }
+  const resolve = resolveHook ? async (id, parentUrl) => {
+    let result = resolveHook(id, parentUrl, defaultResolve);
+    // will be deprecated in next major
+    if (result && result.then) result = await result;
+    return result ? {
+      r: result,
+      b: !resolveIfNotPlainOrUrl(id, parentUrl) && !isURL(id)
+    } : _resolve(id, parentUrl);
+  } : _resolve;
 
-  let waitingForImportMapsInterval;
-  let firstTopLevelProcess = true;
-  async function topLevelLoad (url, source, polyfill) {
-    // no need to even fetch if we have feature support
-    await featureDetectionPromise;
-    if (waitingForImportMapsInterval > 0) {
-      clearTimeout(waitingForImportMapsInterval);
-      waitingForImportMapsInterval = 0;
-    }
-    if (firstTopLevelProcess) {
-      firstTopLevelProcess = false;
-      processScripts();
+  // importShim('mod');
+  // importShim('mod', { opts });
+  // importShim('mod', { opts }, parentUrl);
+  // importShim('mod', parentUrl);
+  async function importShim(id, ...args) {
+    // parentUrl if present will be the last argument
+    let parentUrl = args[args.length - 1];
+    if (typeof parentUrl !== 'string') parentUrl = baseUrl;
+    // needed for shim check
+    await initPromise;
+    if (importHook) await importHook(id, typeof args[1] !== 'string' ? args[1] : {}, parentUrl);
+    if (acceptingImportMaps || shimMode || !baselinePassthrough) {
+      if (hasDocument) processScriptsAndPreloads(true);
+      if (!shimMode) acceptingImportMaps = false;
     }
     await importMapPromise;
-    // early analysis opt-out
-    if (polyfill && supportsDynamicImport && supportsImportMeta && supportsImportMaps && !importMapSrcOrLazy) {
-      // dont reexec inline for polyfills -> just return null
-      return source && polyfill ? null : dynamicImport(source ? createBlob(source) : url);
+    return topLevelLoad((await resolve(id, parentUrl)).r, {
+      credentials: 'same-origin'
+    });
+  }
+  self.importShim = importShim;
+  function defaultResolve(id, parentUrl) {
+    return resolveImportMap(importMap, resolveIfNotPlainOrUrl(id, parentUrl) || id, parentUrl) || throwUnresolved(id, parentUrl);
+  }
+  function throwUnresolved(id, parentUrl) {
+    throw Error(`Unable to resolve specifier '${id}'${fromParent(parentUrl)}`);
+  }
+  const resolveSync = (id, parentUrl = baseUrl) => {
+    parentUrl = `${parentUrl}`;
+    const result = resolveHook && resolveHook(id, parentUrl, defaultResolve);
+    return result && !result.then ? result : defaultResolve(id, parentUrl);
+  };
+  function metaResolve(id, parentUrl = this.url) {
+    return resolveSync(id, parentUrl);
+  }
+  importShim.resolve = resolveSync;
+  importShim.getImportMap = () => JSON.parse(JSON.stringify(importMap));
+  importShim.addImportMap = importMapIn => {
+    if (!shimMode) throw new Error('Unsupported in polyfill mode.');
+    importMap = resolveAndComposeImportMap(importMapIn, baseUrl, importMap);
+  };
+  const registry = importShim._r = {};
+  async function loadAll(load, seen) {
+    if (load.b || seen[load.u]) return;
+    seen[load.u] = 1;
+    await load.L;
+    await Promise.all(load.d.map(dep => loadAll(dep, seen)));
+    if (!load.n) load.n = load.d.some(dep => dep.n);
+  }
+  let importMap = {
+    imports: {},
+    scopes: {}
+  };
+  let baselinePassthrough;
+  const initPromise = featureDetectionPromise.then(() => {
+    baselinePassthrough = esmsInitOptions.polyfillEnable !== true && supportsDynamicImport && supportsImportMeta && supportsImportMaps && (!jsonModulesEnabled || supportsJsonAssertions) && (!cssModulesEnabled || supportsCssAssertions) && !importMapSrcOrLazy;
+    if (hasDocument) {
+      if (!supportsImportMaps) {
+        const supports = HTMLScriptElement.supports || (type => type === 'classic' || type === 'module');
+        HTMLScriptElement.supports = type => type === 'importmap' || supports(type);
+      }
+      if (shimMode || !baselinePassthrough) {
+        new MutationObserver(mutations => {
+          for (const mutation of mutations) {
+            if (mutation.type !== 'childList') continue;
+            for (const node of mutation.addedNodes) {
+              if (node.tagName === 'SCRIPT') {
+                if (node.type === (shimMode ? 'module-shim' : 'module')) processScript(node, true);
+                if (node.type === (shimMode ? 'importmap-shim' : 'importmap')) processImportMap(node, true);
+              } else if (node.tagName === 'LINK' && node.rel === (shimMode ? 'modulepreload-shim' : 'modulepreload')) {
+                processPreload(node);
+              }
+            }
+          }
+        }).observe(document, {
+          childList: true,
+          subtree: true
+        });
+        processScriptsAndPreloads();
+        if (document.readyState === 'complete') {
+          readyStateCompleteCheck();
+        } else {
+          async function readyListener() {
+            await initPromise;
+            processScriptsAndPreloads();
+            if (document.readyState === 'complete') {
+              readyStateCompleteCheck();
+              document.removeEventListener('readystatechange', readyListener);
+            }
+          }
+          document.addEventListener('readystatechange', readyListener);
+        }
+      }
     }
-    await init;
-    const load = getOrCreateLoad(url, source);
+    return undefined;
+  });
+  let importMapPromise = initPromise;
+  let firstPolyfillLoad = true;
+  let acceptingImportMaps = true;
+  async function topLevelLoad(url, fetchOpts, source, nativelyLoaded, lastStaticLoadPromise) {
+    if (!shimMode) acceptingImportMaps = false;
+    await initPromise;
+    await importMapPromise;
+    if (importHook) await importHook(url, typeof fetchOpts !== 'string' ? fetchOpts : {}, '');
+    // early analysis opt-out - no need to even fetch if we have feature support
+    if (!shimMode && baselinePassthrough) {
+      // for polyfill case, only dynamic import needs a return value here, and dynamic import will never pass nativelyLoaded
+      if (nativelyLoaded) return null;
+      await lastStaticLoadPromise;
+      return dynamicImport(source ? createBlob(source) : url, {
+        errUrl: url || source
+      });
+    }
+    const load = getOrCreateLoad(url, fetchOpts, null, source);
     const seen = {};
     await loadAll(load, seen);
     lastLoad = undefined;
     resolveDeps(load, seen);
-    // inline "module-shim" must still execute even if no shim
-    if (source && !polyfill && !load.n)
-      return dynamicImport(createBlob(source));
-    const module = await dynamicImport(load.b);
+    await lastStaticLoadPromise;
+    if (source && !shimMode && !load.n) {
+      if (nativelyLoaded) return;
+      if (revokeBlobURLs) revokeObjectURLs(Object.keys(seen));
+      return await dynamicImport(createBlob(source), {
+        errUrl: source
+      });
+    }
+    if (firstPolyfillLoad && !shimMode && load.n && nativelyLoaded) {
+      onpolyfill();
+      firstPolyfillLoad = false;
+    }
+    const module = await dynamicImport(!shimMode && !load.n && nativelyLoaded ? load.u : load.b, {
+      errUrl: load.u
+    });
     // if the top-level load is a shell, run its update function
-    if (load.s)
-      (await dynamicImport(load.s)).u$_(module);
+    if (load.s) (await dynamicImport(load.s)).u$_(module);
+    if (revokeBlobURLs) revokeObjectURLs(Object.keys(seen));
+    // when tla is supported, this should return the tla promise as an actual handle
+    // so readystate can still correspond to the sync subgraph exec completions
     return module;
   }
-
-  async function importShim (id, parentUrl = baseUrl) {
-    return topLevelLoad(resolve(id, parentUrl).r || throwUnresolved(id, parentUrl));
+  function revokeObjectURLs(registryKeys) {
+    let batch = 0;
+    const keysLength = registryKeys.length;
+    const schedule = self.requestIdleCallback ? self.requestIdleCallback : self.requestAnimationFrame;
+    schedule(cleanup);
+    function cleanup() {
+      const batchStartIndex = batch * 100;
+      if (batchStartIndex > keysLength) return;
+      for (const key of registryKeys.slice(batchStartIndex, batchStartIndex + 100)) {
+        const load = registry[key];
+        if (load) URL.revokeObjectURL(load.b);
+      }
+      batch++;
+      schedule(cleanup);
+    }
   }
-
-  self.importShim = importShim;
-
-  const meta = {};
-
-  const edge = navigator.userAgent.match(/Edge\/\d\d\.\d+$/);
-
-  async function importMetaResolve (id, parentUrl = this.url) {
-    await importMapPromise;
-    return resolve(id, `${parentUrl}`).r || throwUnresolved(id, parentUrl);
-  }
-
-  self._esmsm = meta;
-
-  const esmsInitOptions = self.esmsInitOptions || {};
-  delete self.esmsInitOptions;
-  const shimMode = typeof esmsInitOptions.shimMode === 'boolean' ? esmsInitOptions.shimMode : !!esmsInitOptions.fetch || !!document.querySelector('script[type="module-shim"],script[type="importmap-shim"]');
-  const fetchHook = esmsInitOptions.fetch || (url => fetch(url));
-  const skip = esmsInitOptions.skip || /^https?:\/\/(cdn\.skypack\.dev|jspm\.dev)\//;
-  const onerror = esmsInitOptions.onerror || ((e) => { throw e; });
-
-  function urlJsString (url) {
+  function urlJsString(url) {
     return `'${url.replace(/'/g, "\\'")}'`;
   }
-
   let lastLoad;
-  function resolveDeps (load, seen) {
-    if (load.b || !seen[load.u])
-      return;
+  function resolveDeps(load, seen) {
+    if (load.b || !seen[load.u]) return;
     seen[load.u] = 0;
-
-    for (const dep of load.d)
-      resolveDeps(dep, seen);
-
-    if (!load.n && !shimMode) {
-      load.b = lastLoad = load.u;
-      load.S = undefined;
-      return;
-    }
-
-    const [imports] = load.a;
+    for (const dep of load.d) resolveDeps(dep, seen);
+    const [imports, exports] = load.a;
 
     // "execution"
     const source = load.S;
 
     // edge doesnt execute sibling in order, so we fix this up by ensuring all previous executions are explicit dependencies
-    let resolvedSource = edge && lastLoad ? `import '${lastLoad}';` : '';  
-
+    let resolvedSource = edge && lastLoad ? `import '${lastLoad}';` : '';
     if (!imports.length) {
       resolvedSource += source;
-    }
-    else {
+    } else {
       // once all deps have loaded we can inline the dependency resolution blobs
       // and define this blob
-      let lastIndex = 0, depIndex = 0;
-      for (const { s: start, e: end, d: dynamicImportIndex, n } of imports) {
+      let lastIndex = 0,
+        depIndex = 0,
+        dynamicImportEndStack = [];
+      function pushStringTo(originalIndex) {
+        while (dynamicImportEndStack[dynamicImportEndStack.length - 1] < originalIndex) {
+          const dynamicImportEnd = dynamicImportEndStack.pop();
+          resolvedSource += `${source.slice(lastIndex, dynamicImportEnd)}, ${urlJsString(load.r)}`;
+          lastIndex = dynamicImportEnd;
+        }
+        resolvedSource += source.slice(lastIndex, originalIndex);
+        lastIndex = originalIndex;
+      }
+      for (const {
+        s: start,
+        ss: statementStart,
+        se: statementEnd,
+        d: dynamicImportIndex
+      } of imports) {
         // dependency source replacements
         if (dynamicImportIndex === -1) {
-          const depLoad = load.d[depIndex++];
-          let blobUrl = depLoad.b;
-          if (!blobUrl) {
+          let depLoad = load.d[depIndex++],
+            blobUrl = depLoad.b,
+            cycleShell = !blobUrl;
+          if (cycleShell) {
             // circular shell creation
             if (!(blobUrl = depLoad.s)) {
-              blobUrl = depLoad.s = createBlob(`export function u$_(m){${
-                depLoad.a[1].map(
-                  name => name === 'default' ? `$_default=m.default` : `${name}=m.${name}`
-                ).join(',')
-              }}${
-                depLoad.a[1].map(name =>
-                  name === 'default' ? `let $_default;export{$_default as default}` : `export let ${name}`
-                ).join(';')
-              }\n//# sourceURL=${depLoad.r}?cycle`);
+              blobUrl = depLoad.s = createBlob(`export function u$_(m){${depLoad.a[1].map(({
+                s,
+                e
+              }, i) => {
+                const q = depLoad.S[s] === '"' || depLoad.S[s] === "'";
+                return `e$_${i}=m${q ? `[` : '.'}${depLoad.S.slice(s, e)}${q ? `]` : ''}`;
+              }).join(',')}}${depLoad.a[1].length ? `let ${depLoad.a[1].map((_, i) => `e$_${i}`).join(',')};` : ''}export {${depLoad.a[1].map(({
+                s,
+                e
+              }, i) => `e$_${i} as ${depLoad.S.slice(s, e)}`).join(',')}}\n//# sourceURL=${depLoad.r}?cycle`);
             }
           }
+          pushStringTo(start - 1);
+          resolvedSource += `/*${source.slice(start - 1, statementEnd)}*/${urlJsString(blobUrl)}`;
+
           // circular shell execution
-          else if (depLoad.s) {
-            resolvedSource += `${source.slice(lastIndex, start - 1)}/*${source.slice(start - 1, end + 1)}*/${urlJsString(blobUrl)};import*as m$_${depIndex} from'${depLoad.b}';import{u$_ as u$_${depIndex}}from'${depLoad.s}';u$_${depIndex}(m$_${depIndex})`;
-            lastIndex = end + 1;
+          if (!cycleShell && depLoad.s) {
+            resolvedSource += `;import*as m$_${depIndex} from'${depLoad.b}';import{u$_ as u$_${depIndex}}from'${depLoad.s}';u$_${depIndex}(m$_${depIndex})`;
             depLoad.s = undefined;
-            continue;
           }
-          resolvedSource += `${source.slice(lastIndex, start - 1)}/*${source.slice(start - 1, end + 1)}*/${urlJsString(blobUrl)}`;
-          lastIndex = end + 1;
+          lastIndex = statementEnd;
         }
         // import.meta
         else if (dynamicImportIndex === -2) {
-          meta[load.r] = { url: load.r, resolve: importMetaResolve };
-          resolvedSource += `${source.slice(lastIndex, start)}self._esmsm[${urlJsString(load.r)}]`;
-          lastIndex = end;
+          load.m = {
+            url: load.r,
+            resolve: metaResolve
+          };
+          metaHook(load.m, load.u);
+          pushStringTo(start);
+          resolvedSource += `importShim._r[${urlJsString(load.u)}].m`;
+          lastIndex = statementEnd;
         }
         // dynamic import
         else {
-          resolvedSource += `${source.slice(lastIndex, dynamicImportIndex + 6)}Shim(${source.slice(start, end)}, ${urlJsString(load.r)}`;
-          lastIndex = end;
+          pushStringTo(statementStart + 6);
+          resolvedSource += `Shim(`;
+          dynamicImportEndStack.push(statementEnd - 1);
+          lastIndex = start;
         }
       }
 
-      resolvedSource += source.slice(lastIndex);
+      // support progressive cycle binding updates (try statement avoids tdz errors)
+      if (load.s) resolvedSource += `\n;import{u$_}from'${load.s}';try{u$_({${exports.filter(e => e.ln).map(({
+        s,
+        e,
+        ln
+      }) => `${source.slice(s, e)}:${ln}`).join(',')}})}catch(_){};\n`;
+      pushStringTo(source.length);
     }
-
-    if (resolvedSource.indexOf('//# sourceURL=') === -1)
-      resolvedSource += '\n//# sourceURL=' + load.r;
-
+    let hasSourceURL = false;
+    resolvedSource = resolvedSource.replace(sourceMapURLRegEx, (match, isMapping, url) => (hasSourceURL = !isMapping, match.replace(url, () => new URL(url, load.r))));
+    if (!hasSourceURL) resolvedSource += '\n//# sourceURL=' + load.r;
     load.b = lastLoad = createBlob(resolvedSource);
     load.S = undefined;
   }
 
-  function getOrCreateLoad (url, source) {
-    let load = registry[url];
-    if (load)
-      return load;
+  // ; and // trailer support added for Ruby on Rails 7 source maps compatibility
+  // https://github.com/guybedford/es-module-shims/issues/228
+  const sourceMapURLRegEx = /\n\/\/# source(Mapping)?URL=([^\n]+)\s*((;|\/\/[^#][^\n]*)\s*)*$/;
+  const jsContentType = /^(text|application)\/(x-)?javascript(;|$)/;
+  const jsonContentType = /^(text|application)\/json(;|$)/;
+  const cssContentType = /^(text|application)\/css(;|$)/;
+  const cssUrlRegEx = /url\(\s*(?:(["'])((?:\\.|[^\n\\"'])+)\1|((?:\\.|[^\s,"'()\\])+))\s*\)/g;
 
-    load = registry[url] = {
+  // restrict in-flight fetches to a pool of 100
+  let p = [];
+  let c = 0;
+  function pushFetchPool() {
+    if (++c > 100) return new Promise(r => p.push(r));
+  }
+  function popFetchPool() {
+    c--;
+    if (p.length) p.shift()();
+  }
+  async function doFetch(url, fetchOpts, parent) {
+    if (enforceIntegrity && !fetchOpts.integrity) throw Error(`No integrity for ${url}${fromParent(parent)}.`);
+    const poolQueue = pushFetchPool();
+    if (poolQueue) await poolQueue;
+    try {
+      var res = await fetchHook(url, fetchOpts);
+    } catch (e) {
+      e.message = `Unable to fetch ${url}${fromParent(parent)} - see network log for details.\n` + e.message;
+      throw e;
+    } finally {
+      popFetchPool();
+    }
+    if (!res.ok) throw Error(`${res.status} ${res.statusText} ${res.url}${fromParent(parent)}`);
+    return res;
+  }
+  async function fetchModule(url, fetchOpts, parent) {
+    const res = await doFetch(url, fetchOpts, parent);
+    const contentType = res.headers.get('content-type');
+    if (jsContentType.test(contentType)) return {
+      r: res.url,
+      s: await res.text(),
+      t: 'js'
+    };else if (jsonContentType.test(contentType)) return {
+      r: res.url,
+      s: `export default ${await res.text()}`,
+      t: 'json'
+    };else if (cssContentType.test(contentType)) {
+      return {
+        r: res.url,
+        s: `var s=new CSSStyleSheet();s.replaceSync(${JSON.stringify((await res.text()).replace(cssUrlRegEx, (_match, quotes = '', relUrl1, relUrl2) => `url(${quotes}${resolveUrl(relUrl1 || relUrl2, url)}${quotes})`))});export default s;`,
+        t: 'css'
+      };
+    } else throw Error(`Unsupported Content-Type "${contentType}" loading ${url}${fromParent(parent)}. Modules must be served with a valid MIME type like application/javascript.`);
+  }
+  function getOrCreateLoad(url, fetchOpts, parent, source) {
+    let load = registry[url];
+    if (load && !source) return load;
+    load = {
       // url
       u: url,
       // response url
-      r: undefined,
+      r: source ? url : undefined,
       // fetchPromise
       f: undefined,
       // source
@@ -2397,126 +2666,143 @@ function isSlowBuffer (obj) {
       s: undefined,
       // needsShim
       n: false,
+      // type
+      t: null,
+      // meta
+      m: null
     };
-
+    if (registry[url]) {
+      let i = 0;
+      while (registry[load.u + ++i]);
+      load.u += i;
+    }
+    registry[load.u] = load;
     load.f = (async () => {
       if (!source) {
-        const res = await fetchHook(url, { credentials: 'same-origin' });
-        if (!res.ok)
-          throw new Error(`${res.status} ${res.statusText} ${res.url}`);
-        load.r = res.url;
-        const contentType = res.headers.get('content-type');
-        if (contentType.match(/^(text|application)\/(x-)?javascript(;|$)/))
-          source = await res.text();
-        else
-          throw new Error(`Unknown Content-Type "${contentType}"`);
+        // preload fetch options override fetch options (race)
+        let t;
+        ({
+          r: load.r,
+          s: source,
+          t
+        } = await (fetchCache[url] || fetchModule(url, fetchOpts, parent)));
+        if (t && !shimMode) {
+          if (t === 'css' && !cssModulesEnabled || t === 'json' && !jsonModulesEnabled) throw Error(`${t}-modules require <script type="esms-options">{ "polyfillEnable": ["${t}-modules"] }<${''}/script>`);
+          if (t === 'css' && !supportsCssAssertions || t === 'json' && !supportsJsonAssertions) load.n = true;
+        }
       }
       try {
         load.a = parse(source, load.u);
-      }
-      catch (e) {
-        console.warn(e);
-        load.a = [[], []];
+      } catch (e) {
+        throwError(e);
+        load.a = [[], [], false];
       }
       load.S = source;
-      // determine if this source needs polyfilling
-      for (const { e: end, d: dynamicImportIndex } of load.a[0]) {
-        if (dynamicImportIndex === -2) {
-          if (!supportsImportMeta || source.slice(end, end + 8) === '.resolve') {
-            load.n = true;
-            break;
-          }
-        }
-        else if (dynamicImportIndex !== -1) {
-          if (!supportsDynamicImport || !supportsImportMaps && hasImportMap || importMapSrcOrLazy) {
-            load.n = true;
-            break;
-          }
-        }
-      }
+      return load;
     })();
-
-    load.L = load.f.then(async () => {    
-      load.d = await Promise.all(load.a[0].filter(d => d.d === -1).map(d => d.n).map(async depId => {
-        const { r, m } = resolve(depId, load.r || load.u);
-        if (!r)
-          throwUnresolved(depId, load.r || load.u);
-        if (m && (!supportsImportMaps || importMapSrcOrLazy))
-          load.n = true;
-        if (skip.test(r))
-          return { b: r };
-        const depLoad = getOrCreateLoad(r);
-        await depLoad.f;
-        return depLoad;
-      }));
-      if (!load.n)
-        load.n = load.d.some(dep => dep.n);
+    load.L = load.f.then(async () => {
+      let childFetchOpts = fetchOpts;
+      load.d = (await Promise.all(load.a[0].map(async ({
+        n,
+        d
+      }) => {
+        if (d >= 0 && !supportsDynamicImport || d === -2 && !supportsImportMeta) load.n = true;
+        if (d !== -1 || !n) return;
+        const {
+          r,
+          b
+        } = await resolve(n, load.r || load.u);
+        if (b && (!supportsImportMaps || importMapSrcOrLazy)) load.n = true;
+        if (d !== -1) return;
+        if (skip && skip(r)) return {
+          b: r
+        };
+        if (childFetchOpts.integrity) childFetchOpts = Object.assign({}, childFetchOpts, {
+          integrity: undefined
+        });
+        return getOrCreateLoad(r, childFetchOpts, load.r).f;
+      }))).filter(l => l);
     });
-
     return load;
   }
-
-  let importMap = { imports: {}, scopes: {} };
-  let importMapSrcOrLazy = false;
-  let hasImportMap = false;
-  let importMapPromise = resolvedPromise;
-
+  function processScriptsAndPreloads(mapsOnly = false) {
+    if (!mapsOnly) for (const link of document.querySelectorAll(shimMode ? 'link[rel=modulepreload-shim]' : 'link[rel=modulepreload]')) processPreload(link);
+    for (const script of document.querySelectorAll(shimMode ? 'script[type=importmap-shim]' : 'script[type=importmap]')) processImportMap(script);
+    if (!mapsOnly) for (const script of document.querySelectorAll(shimMode ? 'script[type=module-shim]' : 'script[type=module]')) processScript(script);
+  }
+  function getFetchOpts(script) {
+    const fetchOpts = {};
+    if (script.integrity) fetchOpts.integrity = script.integrity;
+    if (script.referrerPolicy) fetchOpts.referrerPolicy = script.referrerPolicy;
+    if (script.crossOrigin === 'use-credentials') fetchOpts.credentials = 'include';else if (script.crossOrigin === 'anonymous') fetchOpts.credentials = 'omit';else fetchOpts.credentials = 'same-origin';
+    return fetchOpts;
+  }
+  let lastStaticLoadPromise = Promise.resolve();
+  let domContentLoadedCnt = 1;
+  function domContentLoadedCheck() {
+    if (--domContentLoadedCnt === 0 && !noLoadEventRetriggers && (shimMode || !baselinePassthrough)) {
+      document.dispatchEvent(new Event('DOMContentLoaded'));
+    }
+  }
+  // this should always trigger because we assume es-module-shims is itself a domcontentloaded requirement
   if (hasDocument) {
-    processScripts();
-    waitingForImportMapsInterval = setInterval(processScripts, 20);
+    document.addEventListener('DOMContentLoaded', async () => {
+      await initPromise;
+      domContentLoadedCheck();
+    });
   }
-
-  async function processScripts () {
-    if (waitingForImportMapsInterval > 0 && document.readyState !== 'loading') {
-      clearTimeout(waitingForImportMapsInterval);
-      waitingForImportMapsInterval = 0;
+  let readyStateCompleteCnt = 1;
+  function readyStateCompleteCheck() {
+    if (--readyStateCompleteCnt === 0 && !noLoadEventRetriggers && (shimMode || !baselinePassthrough)) {
+      document.dispatchEvent(new Event('readystatechange'));
     }
-    for (const script of document.querySelectorAll('script[type="module-shim"],script[type="importmap-shim"],script[type="module"],script[type="importmap"]'))
-      await processScript(script);
   }
-
-  new MutationObserver(mutations => {
-    for (const mutation of mutations) {
-      if (mutation.type !== 'childList') continue;
-      for (const node of mutation.addedNodes) {
-        if (node.tagName === 'SCRIPT' && node.type)
-          processScript(node, !firstTopLevelProcess);
-      }
+  const hasNext = script => script.nextSibling || script.parentNode && hasNext(script.parentNode);
+  const epCheck = (script, ready) => script.ep || !ready && (!script.src && !script.innerHTML || !hasNext(script)) || script.getAttribute('noshim') !== null || !(script.ep = true);
+  function processImportMap(script, ready = readyStateCompleteCnt > 0) {
+    if (epCheck(script, ready)) return;
+    // we dont currently support multiple, external or dynamic imports maps in polyfill mode to match native
+    if (script.src) {
+      if (!shimMode) return;
+      setImportMapSrcOrLazy();
     }
-  }).observe(document, { childList: true, subtree: true });
-
-  async function processScript (script, dynamic) {
-    if (script.ep) // ep marker = script processed
-      return;
-    const shim = script.type.endsWith('-shim');
-    const type = shim ? script.type.slice(0, -5) : script.type;
-    if (!shim && shimMode || script.getAttribute('noshim') !== null)
-      return;
-    // empty inline scripts sometimes show before domready
-    if (!script.src && !script.innerHTML)
-      return;
-    script.ep = true;
-    if (type === 'module') {
-      await topLevelLoad(script.src || `${baseUrl}?${id++}`, !script.src && script.innerHTML, !shim).catch(onerror);
-    }
-    else if (type === 'importmap') {
+    if (acceptingImportMaps) {
       importMapPromise = importMapPromise.then(async () => {
-        if (script.src || dynamic)
-          importMapSrcOrLazy = true;
-        hasImportMap = true;
-        importMap = resolveAndComposeImportMap(script.src ? await (await fetchHook(script.src)).json() : JSON.parse(script.innerHTML), script.src || baseUrl, importMap);
+        importMap = resolveAndComposeImportMap(script.src ? await (await doFetch(script.src, getFetchOpts(script))).json() : JSON.parse(script.innerHTML), script.src || baseUrl, importMap);
+      }).catch(e => {
+        console.log(e);
+        if (e instanceof SyntaxError) e = new Error(`Unable to parse import map ${e.message} in: ${script.src || script.innerHTML}`);
+        throwError(e);
       });
+      if (!shimMode) acceptingImportMaps = false;
     }
   }
-
-  function resolve (id, parentUrl) {
-    const urlResolved = resolveIfNotPlainOrUrl(id, parentUrl);
-    const resolved = resolveImportMap(importMap, urlResolved || id, parentUrl);
-    return { r: resolved, m: urlResolved !== resolved };
+  function processScript(script, ready = readyStateCompleteCnt > 0) {
+    if (epCheck(script, ready)) return;
+    // does this load block readystate complete
+    const isBlockingReadyScript = script.getAttribute('async') === null && readyStateCompleteCnt > 0;
+    // does this load block DOMContentLoaded
+    const isDomContentLoadedScript = domContentLoadedCnt > 0;
+    if (isBlockingReadyScript) readyStateCompleteCnt++;
+    if (isDomContentLoadedScript) domContentLoadedCnt++;
+    const loadPromise = topLevelLoad(script.src || baseUrl, getFetchOpts(script), !script.src && script.innerHTML, !shimMode, isBlockingReadyScript && lastStaticLoadPromise).then(() => {
+      // if the type of the script tag "module-shim", browser does not dispatch a "load" event
+      // see https://github.com/guybedford/es-module-shims/issues/346
+      if (shimMode) {
+        script.dispatchEvent(new Event('load'));
+      }
+    }).catch(throwError);
+    if (isBlockingReadyScript) lastStaticLoadPromise = loadPromise.then(readyStateCompleteCheck);
+    if (isDomContentLoadedScript) loadPromise.then(domContentLoadedCheck);
   }
-
-  function throwUnresolved (id, parentUrl) {
-    throw Error("Unable to resolve specifier '" + id + (parentUrl ? "' from " + parentUrl : "'"));
+  const fetchCache = {};
+  function processPreload(link) {
+    if (link.ep) return;
+    link.ep = true;
+    if (fetchCache[link.href]) return;
+    fetchCache[link.href] = fetchModule(link.href, getFetchOpts(link));
   }
+})();
+var esModuleShims = {};
 
-}());
+export default esModuleShims;

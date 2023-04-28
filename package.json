@@ -1,17 +1,22 @@
 {
   "name": "canvas-record",
-  "version": "3.1.0",
-  "description": "A one trick pony package to record and download a video from a canvas animation.",
+  "version": "4.0.0-beta.0",
+  "description": "Record a video in the browser or directly on the File System from a canvas (2D/WebGL/WebGPU) as MP4, WebM, MKV, GIF, PNG/JPG Sequence using WebCodecs and wasm when available.",
   "keywords": [
     "canvas",
-    "video",
     "record",
+    "video",
     "recorder",
     "capture",
-    "capturer",
-    "download",
-    "downloader",
-    "media-recorder"
+    "mp4",
+    "webm",
+    "mkv",
+    "gif",
+    "sequence",
+    "framesequence",
+    "media-recorder",
+    "ffmpeg",
+    "h264"
   ],
   "homepage": "https://github.com/dmnsgn/canvas-record",
   "bugs": "https://github.com/dmnsgn/canvas-record/issues",
@@ -33,15 +38,31 @@
   "exports": "./index.js",
   "main": "index.js",
   "types": "types/index.d.ts",
+  "scripts": {
+    "build": "npx snowdev build",
+    "deps": "npx snowdev install",
+    "dev": "npx snowdev dev"
+  },
   "dependencies": {
-    "file-extension": "^4.0.5"
+    "@ffmpeg/ffmpeg": "^0.11.6",
+    "canvas-screenshot": "^4.1.0",
+    "gifenc": "^1.0.3",
+    "h264-mp4-encoder": "^1.0.12",
+    "media-codecs": "^2.0.0",
+    "mp4-muxer": "^1.0.5",
+    "webm-muxer": "^3.0.1"
   },
   "devDependencies": {
-    "canvas-context": "^3.0.2",
-    "es-module-shims": "^0.10.4"
+    "canvas-context": "^3.2.0",
+    "es-module-shims": "^1.7.1",
+    "mp4-wasm": "^1.0.6",
+    "tweakpane": "^3.1.7"
   },
   "engines": {
-    "node": ">=15.0.0",
-    "npm": ">=7.0.0"
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "snowdev": {
+    "crossOriginIsolation": true
   }
 }
