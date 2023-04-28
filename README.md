@@ -88,22 +88,22 @@ tick(canvasRecorder);
 
 Encoder comparison:
 
-| Encoder        | Extension              | Required Web API   | WASM                     | Speed    |
-| -------------- | ---------------------- | ------------------ | ------------------------ | -------- |
-| `WebCodecs`    | `mp4` / `webm` / `mkv` | WebCodecs          | ❌                       | Fast     |
-| `MP4Wasm`      | `mp4`                  | WebCodecs          | ✅ (embed, only for mp4) | Fast     |
-| `H264MP4`      | `mp4`                  |                    | ✅ (embed)               | Medium   |
-| `FFmpeg`       | `mp4` / `webm`         | SharedArrayBuffer  | ✅ (need binary path)    | Slow     |
-| `GIF`          | `gif`                  | WebWorkers (wip)   | ❌                       | Fast     |
-| `Frame`        | `png` / `jpg`          | File System Access | ❌                       | Fast     |
-| `MediaCapture` | `mkv` / `webm`         | MediaStream        | ❌                       | Realtime |
+| Encoder        | Extension              | Required Web API   | WASM                  | Speed    |
+| -------------- | ---------------------- | ------------------ | --------------------- | -------- |
+| `WebCodecs`    | `mp4` / `webm` / `mkv` | WebCodecs          | ❌                    | Fast     |
+| `MP4Wasm`      | `mp4`                  | WebCodecs          | ✅ (embed)            | Fast     |
+| `H264MP4`      | `mp4`                  |                    | ✅ (embed)            | Medium   |
+| `FFmpeg`       | `mp4` / `webm`         | SharedArrayBuffer  | ✅ (need binary path) | Slow     |
+| `GIF`          | `gif`                  | WebWorkers (wip)   | ❌                    | Fast     |
+| `Frame`        | `png` / `jpg`          | File System Access | ❌                    | Fast     |
+| `MediaCapture` | `mkv` / `webm`         | MediaStream        | ❌                    | Realtime |
 
 Note:
 
-- WebCodecs encoderOptions allow different codecs to be used: VP8/VP9/AV1/HEVC. See [media-codecs](https://github.com/dmnsgn/media-codecs) to get a codec string from human readable options and check which ones are supported in your browser with [github.io/media-codecs](https://dmnsgn.github.io/media-codecs/).
-- WebCodecs 5-10x faster than H264MP4Encoder and 20x faster than FFmpeg (it needs to mux files after writing png to virtual FS)
-- FFmpeg (mp4 and webm) and WebCodecs (mp4) have a AVC maximum frame size of 9437184 pixels. That's fine until a bit more than 4K 16:9 @ 30fps. So if you need 4K Square or 8K exports, be patient with H264MP4Encoder (which probably also has the 4GB memory limit) or use Frame encoder and mux them manually with FFmpeg CLI.
-- MP4Wasm is embedded from [mp4-wasm](https://github.com/mattdesl/mp4-wasm/) for ease of use (FFmpeg will require `encoderOptions.corePath`)
+- `WebCodecs` encoderOptions allow different codecs to be used: VP8/VP9/AV1/HEVC. See [media-codecs](https://github.com/dmnsgn/media-codecs) to get a codec string from human readable options and check which ones are supported in your browser with [github.io/media-codecs](https://dmnsgn.github.io/media-codecs/).
+- `WebCodecs` 5-10x faster than H264MP4Encoder and 20x faster than `FFmpeg` (it needs to mux files after writing png to virtual FS)
+- `FFmpeg` (mp4 and webm) and `WebCodecs` (mp4) have a AVC maximum frame size of 9437184 pixels. That's fine until a bit more than 4K 16:9 @ 30fps. So if you need 4K Square or 8K exports, be patient with `H264MP4Encoder` (which probably also has the 4GB memory limit) or use Frame encoder and mux them manually with `FFmpeg` CLI (`ffmpeg -framerate 30 -i "%05d.jpg" -b:v 60M -r 30 -profile:v baseline -pix_fmt yuv420p -movflags +faststart output.mp4`)
+- `MP4Wasm` is embedded from [mp4-wasm](https://github.com/mattdesl/mp4-wasm/) for ease of use (`FFmpeg` will require `encoderOptions.corePath`)
 
 Roadmap:
 
@@ -294,5 +294,6 @@ All MIT:
 - [@ffmpeg/ffmpeg](https://github.com/ffmpegwasm/ffmpeg.wasm/blob/master/LICENSE)
 - [gifenc](https://github.com/mattdesl/gifenc/blob/master/LICENSE.md)
 - [webm-muxer](https://github.com/Vanilagy/webm-muxer/blob/main/LICENSE)
+- [mp4-muxer](https://github.com/Vanilagy/mp4-muxer/blob/main/LICENSE)
 
 MIT. See [license file](https://github.com/dmnsgn/canvas-record/blob/main/LICENSE.md).
