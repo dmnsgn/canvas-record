@@ -274,10 +274,10 @@ var shared = createCommonjsModule(function (module) {
 (module.exports = function (key, value) {
   return sharedStore[key] || (sharedStore[key] = value !== undefined ? value : {});
 })('versions', []).push({
-  version: '3.29.1',
+  version: '3.30.1',
   mode:  'global',
   copyright: '© 2014-2023 Denis Pushkarev (zloirock.ru)',
-  license: 'https://github.com/zloirock/core-js/blob/v3.29.1/LICENSE',
+  license: 'https://github.com/zloirock/core-js/blob/v3.30.1/LICENSE',
   source: 'https://github.com/zloirock/core-js'
 });
 });
@@ -1107,4 +1107,4 @@ exportWebAssemblyErrorCauseWrapper('RuntimeError', function (init) {
   return function RuntimeError(message) { return functionApply(init, this, arguments); };
 });
 
-export { toObject as A, defineBuiltIn as B, classofRaw as C, functionUncurryThis as D, functionBindNative as E, sharedStore as F, internalState as G, makeBuiltIn_1 as H, uid as I, objectSetPrototypeOf as J, toIntegerOrInfinity as K, indexedObject as L, inspectSource as M, toPropertyKey as N, toPrimitive as O, toAbsoluteIndex as P, createPropertyDescriptor as Q, normalizeStringArgument as R, errorStackClear as S, inheritIfRequired as T, toString_1 as U, requireObjectCoercible as V, functionUncurryThisAccessor as W, _export as _, aCallable as a, anObject as b, global_1 as c, isCallable as d, fails as e, functionCall as f, getBuiltIn as g, hasOwnProperty_1 as h, isObject as i, createNonEnumerableProperty as j, isNullOrUndefined as k, getMethod as l, classof as m, lengthOfArrayLike as n, objectIsPrototypeOf as o, objectKeysInternal as p, enumBugKeys as q, descriptors as r, toIndexedObject as s, tryToString as t, objectDefineProperty as u, v8PrototypeDefineBug as v, wellKnownSymbol as w, sharedKey as x, documentCreateElement as y, hiddenKeys as z };
+export { toObject as A, defineBuiltIn as B, classofRaw as C, functionUncurryThis as D, functionBindNative as E, sharedStore as F, internalState as G, makeBuiltIn_1 as H, uid as I, objectSetPrototypeOf as J, toIntegerOrInfinity as K, indexedObject as L, inspectSource as M, toPropertyKey as N, toPrimitive as O, toAbsoluteIndex as P, createPropertyDescriptor as Q, normalizeStringArgument as R, errorStackClear as S, inheritIfRequired as T, toString_1 as U, requireObjectCoercible as V, functionUncurryThisAccessor as W, _export as _, anObject as a, aCallable as b, global_1 as c, isCallable as d, fails as e, functionCall as f, getBuiltIn as g, hasOwnProperty_1 as h, isObject as i, createNonEnumerableProperty as j, isNullOrUndefined as k, getMethod as l, classof as m, lengthOfArrayLike as n, objectIsPrototypeOf as o, objectKeysInternal as p, enumBugKeys as q, descriptors as r, toIndexedObject as s, tryToString as t, objectDefineProperty as u, v8PrototypeDefineBug as v, wellKnownSymbol as w, sharedKey as x, documentCreateElement as y, hiddenKeys as z };

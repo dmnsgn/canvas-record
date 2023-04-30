@@ -1,6 +1,6 @@
-import { _ as _export, a as aCallable, b as anObject, f as functionCall, i as isObject } from './es.error.cause-21133fd0.js';
-import { g as getIteratorDirect, a as asyncIteratorClose } from './iterator-close-902907c1.js';
-import { a as asyncIteratorCreateProxy, c as createIterResultObject, i as iteratorCreateProxy, b as callWithSafeIterationClosing } from './call-with-safe-iteration-closing-68ae000a.js';
+import { _ as _export, a as anObject, b as aCallable, f as functionCall, i as isObject } from './es.error.cause-41d05cf9.js';
+import { g as getIteratorDirect, a as asyncIteratorClose } from './iterator-close-d0252338.js';
+import { a as asyncIteratorCreateProxy, c as createIterResultObject, i as iteratorCreateProxy, b as callWithSafeIterationClosing } from './call-with-safe-iteration-closing-e12c1e84.js';
 
 var AsyncIteratorProxy = asyncIteratorCreateProxy(function (Promise) {
   var state = this;
@@ -50,8 +50,10 @@ var AsyncIteratorProxy = asyncIteratorCreateProxy(function (Promise) {
 // https://github.com/tc39/proposal-async-iterator-helpers
 _export({ target: 'AsyncIterator', proto: true, real: true }, {
   filter: function filter(predicate) {
+    anObject(this);
+    aCallable(predicate);
     return new AsyncIteratorProxy(getIteratorDirect(this), {
-      predicate: aCallable(predicate)
+      predicate: predicate
     });
   }
 });
@@ -74,8 +76,10 @@ var IteratorProxy = iteratorCreateProxy(function () {
 // https://github.com/tc39/proposal-iterator-helpers
 _export({ target: 'Iterator', proto: true, real: true }, {
   filter: function filter(predicate) {
+    anObject(this);
+    aCallable(predicate);
     return new IteratorProxy(getIteratorDirect(this), {
-      predicate: aCallable(predicate)
+      predicate: predicate
     });
   }
 });

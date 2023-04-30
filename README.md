@@ -1,7 +1,7 @@
 # canvas-record
 
 [![npm version](https://img.shields.io/npm/v/canvas-record)](https://www.npmjs.com/package/canvas-record)
-[![stability-experimental](https://img.shields.io/badge/stability-experimental-orange.svg)](https://www.npmjs.com/package/canvas-record)
+[![stability-stable](https://img.shields.io/badge/stability-stable-green.svg)](https://www.npmjs.com/package/canvas-record)
 [![npm minzipped size](https://img.shields.io/bundlephobia/minzip/canvas-record)](https://bundlephobia.com/package/canvas-record)
 [![dependencies](https://img.shields.io/librariesio/release/npm/canvas-record)](https://github.com/dmnsgn/canvas-record/blob/main/package.json)
 [![types](https://img.shields.io/npm/types/canvas-record)](https://github.com/microsoft/TypeScript)

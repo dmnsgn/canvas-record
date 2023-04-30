@@ -1,6 +1,6 @@
-import { _ as _export, a as aCallable } from './es.error.cause-21133fd0.js';
-import { a as asyncIteratorIteration, i as iterate } from './iterate-ea425a93.js';
-import { g as getIteratorDirect } from './iterator-close-902907c1.js';
+import { _ as _export, a as anObject, b as aCallable } from './es.error.cause-41d05cf9.js';
+import { a as asyncIteratorIteration, i as iterate } from './iterate-ee5302e5.js';
+import { g as getIteratorDirect } from './iterator-close-d0252338.js';
 
 var $find = asyncIteratorIteration.find;
 
@@ -16,9 +16,10 @@ _export({ target: 'AsyncIterator', proto: true, real: true }, {
 // https://github.com/tc39/proposal-iterator-helpers
 _export({ target: 'Iterator', proto: true, real: true }, {
   find: function find(predicate) {
+    anObject(this);
+    aCallable(predicate);
     var record = getIteratorDirect(this);
     var counter = 0;
-    aCallable(predicate);
     return iterate(record, function (value, stop) {
       if (predicate(value, counter++)) return stop(value);
     }, { IS_RECORD: true, INTERRUPTED: true }).result;

@@ -1,6 +1,6 @@
-import { g as getBuiltIn, _ as _export, a as aCallable, b as anObject, f as functionCall, i as isObject } from './es.error.cause-21133fd0.js';
-import { g as getIteratorDirect, a as asyncIteratorClose } from './iterator-close-902907c1.js';
-import { i as iterate } from './iterate-ea425a93.js';
+import { g as getBuiltIn, _ as _export, a as anObject, b as aCallable, f as functionCall, i as isObject } from './es.error.cause-41d05cf9.js';
+import { g as getIteratorDirect, a as asyncIteratorClose } from './iterator-close-d0252338.js';
+import { i as iterate } from './iterate-ee5302e5.js';
 
 var Promise = getBuiltIn('Promise');
 var $TypeError = TypeError;
@@ -9,13 +9,14 @@ var $TypeError = TypeError;
 // https://github.com/tc39/proposal-async-iterator-helpers
 _export({ target: 'AsyncIterator', proto: true, real: true }, {
   reduce: function reduce(reducer /* , initialValue */) {
+    anObject(this);
+    aCallable(reducer);
     var record = getIteratorDirect(this);
     var iterator = record.iterator;
     var next = record.next;
     var noInitial = arguments.length < 2;
     var accumulator = noInitial ? undefined : arguments[1];
     var counter = 0;
-    aCallable(reducer);
 
     return new Promise(function (resolve, reject) {
       var ifAbruptCloseAsyncIterator = function (error) {
@@ -63,8 +64,9 @@ var $TypeError$1 = TypeError;
 // https://github.com/tc39/proposal-iterator-helpers
 _export({ target: 'Iterator', proto: true, real: true }, {
   reduce: function reduce(reducer /* , initialValue */) {
-    var record = getIteratorDirect(this);
+    anObject(this);
     aCallable(reducer);
+    var record = getIteratorDirect(this);
     var noInitial = arguments.length < 2;
     var accumulator = noInitial ? undefined : arguments[1];
     var counter = 0;

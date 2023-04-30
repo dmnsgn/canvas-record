@@ -1,9 +1,9 @@
-import { a as aCallable, b as anObject, l as getMethod, g as getBuiltIn, f as functionCall, p as objectKeysInternal, q as enumBugKeys, r as descriptors, v as v8PrototypeDefineBug, s as toIndexedObject, u as objectDefineProperty, x as sharedKey, y as documentCreateElement, z as hiddenKeys, e as fails, A as toObject, h as hasOwnProperty_1, d as isCallable, w as wellKnownSymbol, i as isObject, B as defineBuiltIn, C as classofRaw, D as functionUncurryThis, E as functionBindNative } from './es.error.cause-21133fd0.js';
+import { b as aCallable, l as getMethod, g as getBuiltIn, f as functionCall, p as objectKeysInternal, q as enumBugKeys, r as descriptors, v as v8PrototypeDefineBug, a as anObject, s as toIndexedObject, u as objectDefineProperty, x as sharedKey, y as documentCreateElement, z as hiddenKeys, e as fails, A as toObject, h as hasOwnProperty_1, d as isCallable, w as wellKnownSymbol, i as isObject, B as defineBuiltIn, C as classofRaw, D as functionUncurryThis, E as functionBindNative } from './es.error.cause-41d05cf9.js';
 
 var getIteratorDirect = function (obj) {
   return {
     iterator: obj,
-    next: aCallable(anObject(obj).next)
+    next: aCallable(obj.next)
   };
 };
 

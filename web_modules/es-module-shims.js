@@ -1,12 +1,12 @@
-import './common/esnext.iterator.map-e03af736.js';
-import { _ as _export, a as aCallable } from './common/es.error.cause-21133fd0.js';
-import { a as asyncIteratorIteration, i as iterate } from './common/iterate-ea425a93.js';
-import { g as getIteratorDirect } from './common/iterator-close-902907c1.js';
-import './common/es.typed-array.with-7e00cead.js';
-import './common/esnext.iterator.filter-faed8b2f.js';
+import './common/esnext.iterator.map-1f410563.js';
+import { _ as _export, a as anObject, b as aCallable } from './common/es.error.cause-41d05cf9.js';
+import { a as asyncIteratorIteration, i as iterate } from './common/iterate-ee5302e5.js';
+import { g as getIteratorDirect } from './common/iterator-close-d0252338.js';
+import './common/es.typed-array.with-3bd1b3da.js';
+import './common/esnext.iterator.filter-3a717346.js';
 import { a as commonjsGlobal } from './common/_commonjsHelpers-0597c316.js';
-import './common/call-with-safe-iteration-closing-68ae000a.js';
-import './common/map-iterate-2c3110bb.js';
+import './common/call-with-safe-iteration-closing-e12c1e84.js';
+import './common/map-iterate-5d4dc07c.js';
 
 var $some = asyncIteratorIteration.some;
 
@@ -22,16 +22,17 @@ _export({ target: 'AsyncIterator', proto: true, real: true }, {
 // https://github.com/tc39/proposal-iterator-helpers
 _export({ target: 'Iterator', proto: true, real: true }, {
   some: function some(predicate) {
+    anObject(this);
+    aCallable(predicate);
     var record = getIteratorDirect(this);
     var counter = 0;
-    aCallable(predicate);
     return iterate(record, function (value, stop) {
       if (predicate(value, counter++)) return stop();
     }, { IS_RECORD: true, INTERRUPTED: true }).stopped;
   }
 });
 
-/* ES Module Shims 1.7.1 */
+/* ES Module Shims 1.7.2 */
 (function () {
   const hasWindow = typeof window !== 'undefined';
   const hasDocument = typeof document !== 'undefined';
@@ -308,19 +309,20 @@ _export({ target: 'Iterator', proto: true, real: true }, {
       function cb({
         data
       }) {
-        // failed feature detection (security policy) -> revert to default assumptions
-        if (Array.isArray(data)) {
-          supportsImportMaps = data[0];
-          supportsImportMeta = data[1];
-          supportsCssAssertions = data[2];
-          supportsJsonAssertions = data[3];
+        const isFeatureDetectionMessage = Array.isArray(data) && data[0] === 'esms';
+        if (!isFeatureDetectionMessage) {
+          return;
         }
+        supportsImportMaps = data[1];
+        supportsImportMeta = data[2];
+        supportsCssAssertions = data[3];
+        supportsJsonAssertions = data[4];
         resolve();
         document.head.removeChild(iframe);
         window.removeEventListener('message', cb, false);
       }
       window.addEventListener('message', cb, false);
-      const importMapTest = `<script nonce=${nonce || ''}>b=(s,type='text/javascript')=>URL.createObjectURL(new Blob([s],{type}));document.head.appendChild(Object.assign(document.createElement('script'),{type:'importmap',nonce:"${nonce}",innerText:\`{"imports":{"x":"\${b('')}"}}\`}));Promise.all([${supportsImportMaps ? 'true,true' : `'x',b('${importMetaCheck}')`}, ${cssModulesEnabled ? `b('${cssModulesCheck}'.replace('x',b('','text/css')))` : 'false'}, ${jsonModulesEnabled ? `b('${jsonModulesCheck}'.replace('x',b('{}','text/json')))` : 'false'}].map(x =>typeof x==='string'?import(x).then(x =>!!x,()=>false):x)).then(a=>parent.postMessage(a,'*'))<${''}/script>`;
+      const importMapTest = `<script nonce=${nonce || ''}>b=(s,type='text/javascript')=>URL.createObjectURL(new Blob([s],{type}));document.head.appendChild(Object.assign(document.createElement('script'),{type:'importmap',nonce:"${nonce}",innerText:\`{"imports":{"x":"\${b('')}"}}\`}));Promise.all([${supportsImportMaps ? 'true,true' : `'x',b('${importMetaCheck}')`}, ${cssModulesEnabled ? `b('${cssModulesCheck}'.replace('x',b('','text/css')))` : 'false'}, ${jsonModulesEnabled ? `b('${jsonModulesCheck}'.replace('x',b('{}','text/json')))` : 'false'}].map(x =>typeof x==='string'?import(x).then(x =>!!x,()=>false):x)).then(a=>parent.postMessage(['esms'].concat(a),'*'))<${''}/script>`;
 
       // Safari will call onload eagerly on head injection, but we don't want the Wechat
       // path to trigger before setting srcdoc, therefore we track the timing

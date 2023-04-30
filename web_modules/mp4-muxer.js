@@ -1,13 +1,13 @@
-import { _ as _export, a as aCallable } from './common/es.error.cause-21133fd0.js';
-import './common/esnext.weak-map.emplace-ba2c54ba.js';
-import './common/es.typed-array.with-7e00cead.js';
-import './common/esnext.iterator.map-e03af736.js';
-import './common/esnext.iterator.filter-faed8b2f.js';
-import { a as asyncIteratorIteration, i as iterate } from './common/iterate-ea425a93.js';
-import { g as getIteratorDirect } from './common/iterator-close-902907c1.js';
+import { _ as _export, a as anObject, b as aCallable } from './common/es.error.cause-41d05cf9.js';
+import './common/esnext.weak-map.emplace-b91c4ea8.js';
+import './common/es.typed-array.with-3bd1b3da.js';
+import './common/esnext.iterator.map-1f410563.js';
+import './common/esnext.iterator.filter-3a717346.js';
+import { a as asyncIteratorIteration, i as iterate } from './common/iterate-ee5302e5.js';
+import { g as getIteratorDirect } from './common/iterator-close-d0252338.js';
 import { b as getDefaultExportFromCjs, c as createCommonjsModule } from './common/_commonjsHelpers-0597c316.js';
-import './common/map-iterate-2c3110bb.js';
-import './common/call-with-safe-iteration-closing-68ae000a.js';
+import './common/map-iterate-5d4dc07c.js';
+import './common/call-with-safe-iteration-closing-e12c1e84.js';
 
 var $every = asyncIteratorIteration.every;
 
@@ -23,9 +23,10 @@ _export({ target: 'AsyncIterator', proto: true, real: true }, {
 // https://github.com/tc39/proposal-iterator-helpers
 _export({ target: 'Iterator', proto: true, real: true }, {
   every: function every(predicate) {
+    anObject(this);
+    aCallable(predicate);
     var record = getIteratorDirect(this);
     var counter = 0;
-    aCallable(predicate);
     return !iterate(record, function (value, stop) {
       if (!predicate(value, counter++)) return stop();
     }, { IS_RECORD: true, INTERRUPTED: true }).stopped;
@@ -148,6 +149,10 @@ var mp4Muxer = createCommonjsModule(function (module) {
     var last = arr => {
       return arr && arr[arr.length - 1];
     };
+    var intoTimescale = (timeInSeconds, timescale, round = true) => {
+      let value = timeInSeconds * timescale;
+      return round ? Math.round(value) : value;
+    };
 
     // src/box.ts
     var IDENTITY_MATRIX = [65536, 0, 0, 0, 65536, 0, 0, 0, 1073741824].map(u32);
@@ -157,9 +162,6 @@ var mp4Muxer = createCommonjsModule(function (module) {
       children
     });
     var fullBox = (type, version, flags, contents, children) => box(type, [u8(version), u24(flags), contents != null ? contents : []], children);
-    var intoTimescale = (timeInSeconds, timescale) => {
-      return Math.round(timeInSeconds * timescale);
-    };
     var ftyp = holdsHevc => {
       if (holdsHevc) return box("ftyp", [ascii("isom"),
       // Major brand
@@ -396,28 +398,9 @@ var mp4Muxer = createCommonjsModule(function (module) {
     ]);
 
     var stts = track => {
-      let current = [];
-      let entries = [];
-      for (let sample of track.samples) {
-        current.push(sample);
-        if (current.length <= 2) continue;
-        let referenceDelta = intoTimescale(current[1].timestamp - current[0].timestamp, track.timescale);
-        let newDelta = intoTimescale(sample.timestamp - current[current.length - 2].timestamp, track.timescale);
-        if (newDelta !== referenceDelta) {
-          entries.push({
-            sampleCount: current.length - 1,
-            sampleDelta: referenceDelta
-          });
-          current = current.slice(-2);
-        }
-      }
-      if (current.length > 0) entries.push({
-        sampleCount: current.length,
-        sampleDelta: current.length === 1 ? intoTimescale(current[0].duration, track.timescale) : intoTimescale(current[1].timestamp - current[0].timestamp, track.timescale)
-      });
-      return fullBox("stts", 0, 0, [u32(entries.length),
+      return fullBox("stts", 0, 0, [u32(track.timeToSampleTable.length),
       // Number of entries
-      entries.map(x => [
+      track.timeToSampleTable.map(x => [
       // Time-to-sample table
       u32(x.sampleCount),
       // Sample count
@@ -437,19 +420,9 @@ var mp4Muxer = createCommonjsModule(function (module) {
     };
 
     var stsc = track => {
-      let compactlyCodedChunks = [];
-      for (let i = 0; i < track.writtenChunks.length; i++) {
-        let next = track.writtenChunks[i];
-        if (compactlyCodedChunks.length === 0 || last(compactlyCodedChunks).samplesPerChunk !== next.sampleCount) {
-          compactlyCodedChunks.push({
-            firstChunk: i + 1,
-            samplesPerChunk: next.sampleCount
-          });
-        }
-      }
-      return fullBox("stsc", 0, 0, [u32(compactlyCodedChunks.length),
+      return fullBox("stsc", 0, 0, [u32(track.compactlyCodedChunkTable.length),
       // Number of entries
-      compactlyCodedChunks.map(x => [
+      track.compactlyCodedChunkTable.map(x => [
       // Sample-to-chunk table
       u32(x.firstChunk),
       // First chunk
@@ -777,7 +750,7 @@ var mp4Muxer = createCommonjsModule(function (module) {
     var MAX_CHUNK_DURATION = 0.5;
     var SUPPORTED_VIDEO_CODECS = ["avc", "hevc"];
     var SUPPORTED_AUDIO_CODECS = ["aac"];
-    var FIRST_TIMESTAMP_BEHAVIORS = ["strict", "offset", "permissive"];
+    var FIRST_TIMESTAMP_BEHAVIORS = ["strict", "offset"];
     var _options, _writer, _mdat, _videoTrack, _audioTrack, _creationTime, _finalized, _validateOptions, validateOptions_fn, _writeHeader, writeHeader_fn, _prepareTracks, prepareTracks_fn, _generateMpeg4AudioSpecificConfig, generateMpeg4AudioSpecificConfig_fn, _addSampleToTrack, addSampleToTrack_fn, _validateTimestamp, validateTimestamp_fn, _writeCurrentChunk, writeCurrentChunk_fn, _maybeFlushStreamingTargetWriter, maybeFlushStreamingTargetWriter_fn, _ensureNotFinalized, ensureNotFinalized_fn;
     var Muxer = class {
       constructor(options) {
@@ -897,7 +870,10 @@ var mp4Muxer = createCommonjsModule(function (module) {
           writtenChunks: [],
           currentChunk: null,
           firstTimestamp: void 0,
-          lastTimestamp: -1
+          lastTimestamp: -1,
+          timeToSampleTable: [],
+          lastTimescaleUnits: null,
+          compactlyCodedChunkTable: []
         });
       }
       if (__privateGet(this, _options).audio) {
@@ -918,7 +894,10 @@ var mp4Muxer = createCommonjsModule(function (module) {
           writtenChunks: [],
           currentChunk: null,
           firstTimestamp: void 0,
-          lastTimestamp: -1
+          lastTimestamp: -1,
+          timeToSampleTable: [],
+          lastTimescaleUnits: null,
+          compactlyCodedChunkTable: []
         });
       }
     };
@@ -966,6 +945,30 @@ var mp4Muxer = createCommonjsModule(function (module) {
         size: data.byteLength,
         type
       });
+      if (track.lastTimescaleUnits !== null) {
+        let timescaleUnits = intoTimescale(timestampInSeconds, track.timescale, false);
+        let delta = Math.round(timescaleUnits - track.lastTimescaleUnits);
+        track.lastTimescaleUnits += delta;
+        let lastTableEntry = last(track.timeToSampleTable);
+        if (lastTableEntry.sampleCount === 1) {
+          lastTableEntry.sampleDelta = delta;
+          lastTableEntry.sampleCount++;
+        } else if (lastTableEntry.sampleDelta === delta) {
+          lastTableEntry.sampleCount++;
+        } else {
+          lastTableEntry.sampleCount--;
+          track.timeToSampleTable.push({
+            sampleCount: 2,
+            sampleDelta: delta
+          });
+        }
+      } else {
+        track.lastTimescaleUnits = 0;
+        track.timeToSampleTable.push({
+          sampleCount: 1,
+          sampleDelta: intoTimescale(durationInSeconds, track.timescale)
+        });
+      }
     };
     _validateTimestamp = new WeakSet();
     validateTimestamp_fn = function (timestamp, track) {
@@ -973,7 +976,6 @@ var mp4Muxer = createCommonjsModule(function (module) {
         throw new Error(`The first chunk for your media track must have a timestamp of 0 (received ${timestamp}). Non-zero first timestamps are often caused by directly piping frames or audio data from a MediaStreamTrack into the encoder. Their timestamps are typically relative to the age of the document, which is probably what you want.
 
 If you want to offset all timestamps of a track such that the first one is zero, set firstTimestampBehavior: 'offset' in the options.
-If you want to allow non-zero first timestamps, set firstTimestampBehavior: 'permissive'.
 `);
       } else if (__privateGet(this, _options).firstTimestampBehavior === "offset") {
         timestamp -= track.firstTimestamp;
@@ -989,6 +991,13 @@ If you want to allow non-zero first timestamps, set firstTimestampBehavior: 'per
       track.currentChunk.offset = __privateGet(this, _writer).pos;
       for (let bytes2 of track.currentChunk.sampleData) __privateGet(this, _writer).write(bytes2);
       track.currentChunk.sampleData = null;
+      if (track.compactlyCodedChunkTable.length === 0 || last(track.compactlyCodedChunkTable).samplesPerChunk !== track.currentChunk.sampleCount) {
+        track.compactlyCodedChunkTable.push({
+          firstChunk: track.writtenChunks.length + 1,
+          // 1-indexed
+          samplesPerChunk: track.currentChunk.sampleCount
+        });
+      }
       track.writtenChunks.push(track.currentChunk);
       __privateMethod(this, _maybeFlushStreamingTargetWriter, maybeFlushStreamingTargetWriter_fn).call(this);
     };

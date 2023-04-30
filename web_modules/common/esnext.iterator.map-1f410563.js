@@ -1,6 +1,6 @@
-import { a as aCallable, b as anObject, f as functionCall, i as isObject, _ as _export } from './es.error.cause-21133fd0.js';
-import { g as getIteratorDirect, a as asyncIteratorClose } from './iterator-close-902907c1.js';
-import { a as asyncIteratorCreateProxy, c as createIterResultObject, i as iteratorCreateProxy, b as callWithSafeIterationClosing } from './call-with-safe-iteration-closing-68ae000a.js';
+import { a as anObject, b as aCallable, f as functionCall, i as isObject, _ as _export } from './es.error.cause-41d05cf9.js';
+import { g as getIteratorDirect, a as asyncIteratorClose } from './iterator-close-d0252338.js';
+import { a as asyncIteratorCreateProxy, c as createIterResultObject, i as iteratorCreateProxy, b as callWithSafeIterationClosing } from './call-with-safe-iteration-closing-e12c1e84.js';
 
 var AsyncIteratorProxy = asyncIteratorCreateProxy(function (Promise) {
   var state = this;
@@ -43,8 +43,10 @@ var AsyncIteratorProxy = asyncIteratorCreateProxy(function (Promise) {
 // `AsyncIterator.prototype.map` method
 // https://github.com/tc39/proposal-iterator-helpers
 var asyncIteratorMap = function map(mapper) {
+  anObject(this);
+  aCallable(mapper);
   return new AsyncIteratorProxy(getIteratorDirect(this), {
-    mapper: aCallable(mapper)
+    mapper: mapper
   });
 };
 
@@ -64,8 +66,10 @@ var IteratorProxy = iteratorCreateProxy(function () {
 // `Iterator.prototype.map` method
 // https://github.com/tc39/proposal-iterator-helpers
 var iteratorMap = function map(mapper) {
+  anObject(this);
+  aCallable(mapper);
   return new IteratorProxy(getIteratorDirect(this), {
-    mapper: aCallable(mapper)
+    mapper: mapper
   });
 };
 

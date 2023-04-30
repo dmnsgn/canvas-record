@@ -1,5 +1,5 @@
-import { g as getBuiltIn, a as aCallable, b as anObject, f as functionCall, i as isObject, o as objectIsPrototypeOf, w as wellKnownSymbol, c as global_1, d as isCallable, e as fails, h as hasOwnProperty_1, j as createNonEnumerableProperty, _ as _export, k as isNullOrUndefined, l as getMethod, m as classof, t as tryToString, n as lengthOfArrayLike } from './es.error.cause-21133fd0.js';
-import { g as getIteratorDirect, a as asyncIteratorClose, i as iteratorsCore, f as functionBindContext, b as iteratorClose } from './iterator-close-902907c1.js';
+import { a as anObject, b as aCallable, g as getBuiltIn, f as functionCall, i as isObject, o as objectIsPrototypeOf, w as wellKnownSymbol, c as global_1, d as isCallable, e as fails, h as hasOwnProperty_1, j as createNonEnumerableProperty, _ as _export, k as isNullOrUndefined, l as getMethod, m as classof, t as tryToString, n as lengthOfArrayLike } from './es.error.cause-41d05cf9.js';
+import { g as getIteratorDirect, a as asyncIteratorClose, i as iteratorsCore, f as functionBindContext, b as iteratorClose } from './iterator-close-d0252338.js';
 
 var $TypeError = TypeError;
 var MAX_SAFE_INTEGER = 0x1FFFFFFFFFFFFF; // 2 ** 53 - 1 == 9007199254740991
@@ -26,13 +26,14 @@ var createMethod = function (TYPE) {
   var IS_EVERY = TYPE == 2;
   var IS_SOME = TYPE == 3;
   return function (object, fn, target) {
+    anObject(object);
+    var MAPPING = fn !== undefined;
+    if (MAPPING || !IS_TO_ARRAY) aCallable(fn);
     var record = getIteratorDirect(object);
     var Promise = getBuiltIn('Promise');
     var iterator = record.iterator;
     var next = record.next;
     var counter = 0;
-    var MAPPING = fn !== undefined;
-    if (MAPPING || !IS_TO_ARRAY) aCallable(fn);
 
     return new Promise(function (resolve, reject) {
       var ifAbruptCloseAsyncIterator = function (error) {

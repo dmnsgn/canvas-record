@@ -49,14 +49,14 @@
     "gifenc": "^1.0.3",
     "h264-mp4-encoder": "^1.0.12",
     "media-codecs": "^2.0.0",
-    "mp4-muxer": "^1.0.5",
-    "webm-muxer": "^3.0.1"
+    "mp4-muxer": "^2.0.0",
+    "webm-muxer": "^3.0.3"
   },
   "devDependencies": {
     "canvas-context": "^3.2.0",
-    "es-module-shims": "^1.7.1",
+    "es-module-shims": "^1.7.2",
     "mp4-wasm": "^1.0.6",
-    "tweakpane": "^3.1.7"
+    "tweakpane": "^3.1.9"
   },
   "engines": {
     "node": ">=18.0.0",
