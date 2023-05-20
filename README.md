@@ -139,10 +139,10 @@ Roadmap:
 ## Typedefs
 
 <dl>
-<dt><a href="#RecorderOptions">RecorderOptions</a> : <code>Object</code></dt>
+<dt><a href="#RecorderOptions">RecorderOptions</a> : <code>object</code></dt>
 <dd><p>Options for recording. All optional.</p>
 </dd>
-<dt><a href="#RecorderStartOptions">RecorderStartOptions</a> : <code>Object</code></dt>
+<dt><a href="#RecorderStartOptions">RecorderStartOptions</a> : <code>object</code></dt>
 <dd><p>Options for recording. All optional.</p>
 </dd>
 </dl>
@@ -170,7 +170,7 @@ Base Recorder class.
   - [new Recorder(context, options)](#new_Recorder_new)
   - [.start(startOptions)](#Recorder+start)
   - [.step()](#Recorder+step)
-  - [.stop()](#Recorder+stop)
+  - [.stop()](#Recorder+stop) ⇒ <code>ArrayBuffer</code> \| <code>Uint8Array</code> \| <code>Array.&lt;Blob&gt;</code> \| <code>undefined</code>
   - [.dispose()](#Recorder+dispose)
 
 <a name="new_Recorder_new"></a>
@@ -204,7 +204,7 @@ Calls `await canvasRecorder.stop()` when duration is reached.
 **Kind**: instance method of [<code>Recorder</code>](#Recorder)
 <a name="Recorder+stop"></a>
 
-### recorder.stop()
+### recorder.stop() ⇒ <code>ArrayBuffer</code> \| <code>Uint8Array</code> \| <code>Array.&lt;Blob&gt;</code> \| <code>undefined</code>
 
 Stop the recording and return the recorded buffer.
 If options.download is set, automatically start downloading the resulting file.
@@ -249,7 +249,7 @@ A callback to notify on the status change. To compare with RecorderStatus enum v
 
 <a name="RecorderOptions"></a>
 
-## RecorderOptions : <code>Object</code>
+## RecorderOptions : <code>object</code>
 
 Options for recording. All optional.
 
@@ -264,14 +264,14 @@ Options for recording. All optional.
 | [download]       | <code>boolean</code>                               | <code>true</code>                                 | Automatically download the recording when duration is reached or when `await canvasRecorder.stop()` is manually called. |
 | [extension]      | <code>boolean</code>                               | <code>&quot;mp4&quot;</code>                      | Default file extension: infers which Encoder is selected.                                                               |
 | [target]         | <code>string</code>                                | <code>&quot;\&quot;in-browser\&quot;&quot;</code> | Default writing target: in-browser or file-system when available.                                                       |
-| [encoder]        | <code>Object</code>                                |                                                   | A specific encoder. Default encoder based on options.extension: GIF > WebCodecs > H264MP4.                              |
-| [encoderOptions] | <code>Object</code>                                |                                                   | See `src/encoders` or individual packages for a list of options.                                                        |
-| [muxerOptions]   | <code>Object</code>                                |                                                   | See "mp4-muxer" and "webm-muxer" for a list of options.                                                                 |
+| [encoder]        | <code>object</code>                                |                                                   | A specific encoder. Default encoder based on options.extension: GIF > WebCodecs > H264MP4.                              |
+| [encoderOptions] | <code>object</code>                                |                                                   | See `src/encoders` or individual packages for a list of options.                                                        |
+| [muxerOptions]   | <code>object</code>                                |                                                   | See "mp4-muxer" and "webm-muxer" for a list of options.                                                                 |
 | [onStatusChange] | [<code>onStatusChangeCb</code>](#onStatusChangeCb) |                                                   |                                                                                                                         |
 
 <a name="RecorderStartOptions"></a>
 
-## RecorderStartOptions : <code>Object</code>
+## RecorderStartOptions : <code>object</code>
 
 Options for recording. All optional.
 

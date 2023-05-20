@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+# [4.2.0](https://github.com/dmnsgn/canvas-record/compare/v4.1.0...v4.2.0) (2023-05-20)
+
+
+### Bug Fixes
+
+* add missing default options ([fc7c13f](https://github.com/dmnsgn/canvas-record/commit/fc7c13f9840d64691b337e4b32d36d21b10b9842))
+
+
+
 # [4.1.0](https://github.com/dmnsgn/canvas-record/compare/v4.0.0...v4.1.0) (2023-04-30)
 
 
