@@ -68,10 +68,11 @@ const RecorderStatus = Object.freeze({
 class Recorder {
   static defaultOptions = {
     name: "",
-    duration: 3, // 0 to Infinity
+    duration: 10, // 0 to Infinity
     frameRate: 30,
     download: true,
     extension: "mp4",
+    target: "in-browser",
     onStatusChange: () => {},
   };
 
