@@ -42,21 +42,21 @@ const RecorderStatus = Object.freeze({
  */
 
 /**
- * @typedef {Object} RecorderOptions Options for recording. All optional.
+ * @typedef {object} RecorderOptions Options for recording. All optional.
  * @property {string} [name=""] A name for the recorder, used as prefix for the default file name.
  * @property {number} [duration=10] The recording duration in seconds. If set to Infinity, `await canvasRecorder.stop()` needs to be called manually.
  * @property {number} [frameRate=30] The frame rate in frame per seconds. Use `await canvasRecorder.step();` to go to the next frame.
  * @property {boolean} [download=true] Automatically download the recording when duration is reached or when `await canvasRecorder.stop()` is manually called.
  * @property {boolean} [extension="mp4"] Default file extension: infers which Encoder is selected.
  * @property {string} [target="in-browser"] Default writing target: in-browser or file-system when available.
- * @property {Object} [encoder] A specific encoder. Default encoder based on options.extension: GIF > WebCodecs > H264MP4.
- * @property {Object} [encoderOptions] See `src/encoders` or individual packages for a list of options.
- * @property {Object} [muxerOptions] See "mp4-muxer" and "webm-muxer" for a list of options.
+ * @property {object} [encoder] A specific encoder. Default encoder based on options.extension: GIF > WebCodecs > H264MP4.
+ * @property {object} [encoderOptions] See `src/encoders` or individual packages for a list of options.
+ * @property {object} [muxerOptions] See "mp4-muxer" and "webm-muxer" for a list of options.
  * @property {onStatusChangeCb} [onStatusChange]
  */
 
 /**
- * @typedef {Object} RecorderStartOptions Options for recording. All optional.
+ * @typedef {object} RecorderStartOptions Options for recording. All optional.
  * @property {string} [filename] Overwrite the file name completely.
  * @property {boolean} [initOnly] Only initialised the recorder and don't call the first await recorder.step().
  */
@@ -333,6 +333,7 @@ Speedup: x${(this.time / renderTime).toFixed(3)}`,
    * Stop the recording and return the recorded buffer.
    * If options.download is set, automatically start downloading the resulting file.
    * Is called when duration is reached or manually.
+   * @returns {(ArrayBuffer|Uint8Array|Blob[]|undefined)}
    */
   async stop() {
     if (this.status !== RecorderStatus.Recording) return;
