@@ -47,7 +47,7 @@ const RecorderStatus = Object.freeze({
  * @property {number} [duration=10] The recording duration in seconds. If set to Infinity, `await canvasRecorder.stop()` needs to be called manually.
  * @property {number} [frameRate=30] The frame rate in frame per seconds. Use `await canvasRecorder.step();` to go to the next frame.
  * @property {boolean} [download=true] Automatically download the recording when duration is reached or when `await canvasRecorder.stop()` is manually called.
- * @property {boolean} [extension="mp4"] Default file extension: infers which Encoder is selected.
+ * @property {string} [extension="mp4"] Default file extension: infers which Encoder is selected.
  * @property {string} [target="in-browser"] Default writing target: in-browser or file-system when available.
  * @property {object} [encoder] A specific encoder. Default encoder based on options.extension: GIF > WebCodecs > H264MP4.
  * @property {object} [encoderOptions] See `src/encoders` or individual packages for a list of options.
