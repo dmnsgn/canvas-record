@@ -1,7 +1,7 @@
 import HME from "h264-mp4-encoder";
 import Encoder from "./Encoder.js";
 
-import { nextMultiple } from "../utils.js";
+import { estimateBitRate, nextMultiple } from "../utils.js";
 
 class H264MP4Encoder extends Encoder {
   static supportedExtensions = ["mp4"];
@@ -25,7 +25,7 @@ class H264MP4Encoder extends Encoder {
       width: nextMultiple(this.width, 2),
       height: nextMultiple(this.height, 2),
       frameRate: this.frameRate, // 30
-      // kbps: 0, // The bitrate in kbps relative to the frame_rate. Overwrites quantization_parameter if not 0.
+      kbps: estimateBitRate(this.width, this.height, this.frameRate) / 1000, // The bitrate in kbps relative to the frame_rate. Overwrites quantization_parameter if not 0.
       // speed: 0, // Speed where 0 means best quality and 10 means fastest speed [0..10].
       // quantizationParameter: 33, // Higher means better compression, and lower means better quality [10..51].
       // groupOfPictures: 20, // How often a keyframe occurs (key frame period, also known as GOP).

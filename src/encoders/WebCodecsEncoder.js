@@ -3,6 +3,7 @@ import * as WebMMuxer from "webm-muxer";
 import { AVC, VP } from "media-codecs";
 
 import Encoder from "./Encoder.js";
+import { estimateBitRate } from "../utils.js";
 
 class WebCodecsEncoder extends Encoder {
   static supportedExtensions = ["mp4", "webm", "mkv"];
@@ -81,8 +82,14 @@ class WebCodecsEncoder extends Encoder {
     const config = {
       width: this.width,
       height: this.height,
-      bitrate: 1e6,
       framerate: this.frameRate,
+      bitrate: estimateBitRate(
+        this.width,
+        this.height,
+        this.frameRate,
+        this.encoderOptions.bitrateMode
+      ),
+      // bitrate: 1e6,
       // alpha: "discard", // "keep"
       // bitrateMode: "variable", // "constant"
       // latencyMode: "quality", // "realtime" (faster encoding)

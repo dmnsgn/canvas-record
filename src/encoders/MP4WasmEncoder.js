@@ -1,6 +1,7 @@
 import MP4Wasm from "./mp4.embed.js"; // mp4-wasm
 
 import Encoder from "./Encoder.js";
+import { estimateBitRate } from "../utils.js";
 
 let mp4wasm;
 
@@ -35,6 +36,12 @@ class MP4WasmEncoder extends Encoder {
       fps: this.frameRate,
       encoderOptions: {
         framerate: this.frameRate,
+        bitrate: estimateBitRate(
+          this.width,
+          this.height,
+          this.frameRate,
+          this.encoderOptions.bitrateMode
+        ),
         ...this.encoderOptions,
       },
     });

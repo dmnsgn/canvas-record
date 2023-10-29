@@ -44,6 +44,41 @@ class Deferred {
   }
 }
 
+/**
+ * Estimate the bit rate of a video rounded to nearest megabit.
+ * Based on "H.264 for the rest of us" by Kush Amerasinghe.
+ *
+ *  * @example
+ * ```js
+ * // Full HD (1080p)
+ * const bitRate = estimateBitRate(1920, 1080, 30, "variable");
+ * const bitRateMbps = bitRate * 1_000_000; // => 13 Mbps
+ * ```
+ *
+ * @param {number} width
+ * @param {number} height
+ * @param {number} frameRate
+ * @param {number} motionRank A factor of 1, 2 or 4
+ * @param {"variable" | "constant"} bitrateMode
+ * @returns {number} A bitrate value in bits per second
+ */
+const estimateBitRate = (
+  width,
+  height,
+  frameRate = 30,
+  motionRank = 4,
+  bitrateMode = "variable"
+) =>
+  Math.round(
+    (width *
+      height *
+      frameRate *
+      motionRank *
+      0.07 *
+      (bitrateMode === "variable" ? 0.75 : 1)) /
+      1_000_000
+  ) * 1_000_000;
+
 export {
   isWebCodecsSupported,
   downloadBlob,
@@ -51,4 +86,5 @@ export {
   formatSeconds,
   nextMultiple,
   Deferred,
+  estimateBitRate,
 };
