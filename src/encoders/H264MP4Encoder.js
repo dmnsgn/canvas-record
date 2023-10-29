@@ -1,5 +1,4 @@
-import { createH264MP4Encoder } from "h264-mp4-encoder";
-
+import HME from "h264-mp4-encoder";
 import Encoder from "./Encoder.js";
 
 import { nextMultiple } from "../utils.js";
@@ -19,7 +18,7 @@ class H264MP4Encoder extends Encoder {
   async init(options) {
     super.init(options);
 
-    this.encoder = await createH264MP4Encoder();
+    this.encoder = await HME.createH264MP4Encoder();
 
     Object.assign(this.encoder, {
       // outputFilename:"output.mp4"
