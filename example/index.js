@@ -2,6 +2,7 @@ import { Recorder, RecorderStatus, Encoders } from "../index.js";
 
 import createCanvasContext from "canvas-context";
 import { Pane } from "tweakpane";
+import { toBlobURL } from "@ffmpeg/util";
 
 // GUI
 const CONFIG = {
@@ -14,7 +15,7 @@ const CONFIG = {
   ...Object.fromEntries(new URLSearchParams(window.location.search).entries()),
 };
 const pane = new Pane();
-pane.addInput(CONFIG, "extension", {
+pane.addBinding(CONFIG, "extension", {
   options: Array.from(
     new Set(
       Object.values(Encoders)
@@ -23,12 +24,12 @@ pane.addInput(CONFIG, "extension", {
     )
   ).map((value) => ({ text: value, value })),
 });
-pane.addInput(CONFIG, "encoder", {
+pane.addBinding(CONFIG, "encoder", {
   options: Object.keys(Encoders)
     .map((e) => (e === "Encoder" ? "" : e))
     .map((value) => ({ text: value, value })),
 });
-pane.addInput(CONFIG, "target", {
+pane.addBinding(CONFIG, "target", {
   options: Array.from(
     new Set(
       Object.values(Encoders)
@@ -37,9 +38,9 @@ pane.addInput(CONFIG, "target", {
     )
   ).map((value) => ({ text: value, value })),
 });
-pane.addInput(CONFIG, "duration", { step: 1, min: 1, max: 30 });
-pane.addInput(CONFIG, "frameRate", { step: 1, min: 1, max: 60 });
-pane.addInput(CONFIG, "filename");
+pane.addBinding(CONFIG, "duration", { step: 1, min: 1, max: 30 });
+pane.addBinding(CONFIG, "frameRate", { step: 1, min: 1, max: 60 });
+pane.addBinding(CONFIG, "filename");
 
 const startButton = pane.addButton({ title: "Start Recording" });
 const stopButton = pane.addButton({ title: "Stop Recording" });
@@ -146,18 +147,50 @@ const reset = async () => {
 startButton.on("click", async () => {
   await reset();
 
+  // const baseURL = "https://unpkg.com/@ffmpeg/core-mt@0.12.4/dist/esm";
+
   canvasRecorder = new Recorder(context, {
     name: `canvas-record-example-${CONFIG.encoder || "default"}`,
     ...CONFIG,
     encoder: CONFIG.encoder ? new Encoders[`${CONFIG.encoder}`]() : null,
     debug: true,
     encoderOptions: {
-      corePath: new URL(
-        "./assets/@ffmpeg/core/dist/ffmpeg-core.js",
+      // FFmpeg requires more effort...
+      coreURL: new URL(
+        "../web_modules/@ffmpeg/core.js",
         import.meta.url
       ).toString(),
+      // ...and 32MB of wasm to be fetch so maybe let's keep fetching from unpkg.
+      // wasmURL: new URL("./ffmpeg-core.wasm", import.meta.url).toString(),
+
+      // Defaults values are...
+      // coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, "text/javascript"),
+      // wasmURL: await toBlobURL(
+      //   `${baseURL}/ffmpeg-core.wasm`,
+      //   "application/wasm"
+      // ),
+      // workerURL: await toBlobURL(
+      //   `${baseURL}/ffmpeg-core.worker.js`,
+      //   "text/javascript"
+      // ),
+
+      // ...but need older version because it doesn't work in Chromium as Multi Threading is unstable.
+      // coreURL: await toBlobURL(
+      //   "https://unpkg.com/@ffmpeg/core@0.12.3/dist/esm/ffmpeg-core.js",
+      //   "text/javascript"
+      // ),
+      wasmURL: await toBlobURL(
+        "https://unpkg.com/@ffmpeg/core@0.12.3/dist/esm/ffmpeg-core.wasm",
+        "application/wasm"
+      ),
+      // workerURL: await toBlobURL(
+      //   "https://unpkg.com/@ffmpeg/ffmpeg@0.12.3/dist/esm/worker.js",
+      //   "text/javascript"
+      // ),
+      // Good luck: https://github.com/ffmpegwasm/ffmpeg.wasm/issues
     },
   });
+
   console.log(canvasRecorder);
 
   // Start and encode frame 0

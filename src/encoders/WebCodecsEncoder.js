@@ -69,6 +69,7 @@ class WebCodecsEncoder extends Encoder {
         height: this.height,
       },
       firstTimestampBehavior: "offset", // "strict" | "offset" | "permissive"
+      fastStart: this.writableFileStream ? false : "in-memory",
       ...this.muxerOptions,
     });
 

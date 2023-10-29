@@ -1,4 +1,5 @@
-import FFmpeg from "@ffmpeg/ffmpeg";
+import { FFmpeg } from "@ffmpeg/ffmpeg";
+import { fetchFile } from "@ffmpeg/util";
 
 import Encoder from "./Encoder.js";
 
@@ -10,21 +11,20 @@ class FFmpegEncoder extends Encoder {
   async init(options) {
     super.init(options);
 
-    this.encoder = FFmpeg.createFFmpeg({
-      corePath: "https://unpkg.com/@ffmpeg/core@0.11.0/dist/ffmpeg-core.js",
-      log: this.debug,
-      ...this.encoderOptions,
+    this.encoder = new FFmpeg();
+    this.encoder.on("log", ({ message }) => {
+      console.log(message);
     });
-    await this.encoder.load();
+
+    await this.encoder.load({ ...this.encoderOptions });
 
     this.frameCount = 0;
   }
 
   async encode(frame, frameNumber) {
-    this.encoder.FS(
-      "writeFile",
+    await this.encoder.writeFile(
       getFrameName(frameNumber),
-      await FFmpeg.fetchFile(frame)
+      await fetchFile(frame)
     );
     this.frameCount++;
   }
@@ -32,24 +32,25 @@ class FFmpegEncoder extends Encoder {
   async stop() {
     const outputFilename = `output.${this.extension}`;
     const codec = this.extension === "mp4" ? "libx264" : "libvpx";
-    await this.encoder.run(
-      ...`-framerate ${this.frameRate} -pattern_type glob -i *.png -s ${this.width}x${this.height} -pix_fmt yuv420p -c:v ${codec} ${outputFilename}`.split(
+
+    await this.encoder.exec(
+      `-framerate ${this.frameRate} -pattern_type glob -i *.png -s ${this.width}x${this.height} -pix_fmt yuv420p -c:v ${codec} ${outputFilename}`.split(
         " "
       )
     );
 
-    const data = await this.encoder.FS("readFile", outputFilename);
+    const data = await this.encoder.readFile(outputFilename);
 
     for (let i = 0; i < this.frameCount; i++) {
       try {
-        this.encoder.FS("unlink", getFrameName(i));
+        this.encoder.deleteFile(getFrameName(i));
       } catch (error) {
         console.error(error);
       }
     }
 
     try {
-      this.encoder.FS("unlink", outputFilename);
+      this.encoder.deleteFile(outputFilename);
     } catch (error) {
       console.error(error);
     }
@@ -57,8 +58,8 @@ class FFmpegEncoder extends Encoder {
     return data;
   }
 
-  dispose() {
-    this.encoder.exit();
+  async dispose() {
+    await this.encoder.terminate();
     this.encoder = null;
   }
 }
