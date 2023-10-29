@@ -80,8 +80,8 @@ class WebCodecsEncoder extends Encoder {
     const config = {
       width: this.width,
       height: this.height,
-      frameRate: this.frameRate,
       bitrate: 1e6,
+      framerate: this.frameRate,
       // alpha: "discard", // "keep"
       // bitrateMode: "variable", // "constant"
       // latencyMode: "quality", // "realtime" (faster encoding)
