@@ -48,7 +48,7 @@ class Deferred {
  * Estimate the bit rate of a video rounded to nearest megabit.
  * Based on "H.264 for the rest of us" by Kush Amerasinghe.
  *
- *  * @example
+ * @example
  * ```js
  * // Full HD (1080p)
  * const bitRate = estimateBitRate(1920, 1080, 30, "variable");
