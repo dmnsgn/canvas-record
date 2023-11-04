@@ -1,6 +1,34 @@
 import { GIFEncoder as GIFEnc, quantize, applyPalette } from "gifenc";
 import Encoder from "./Encoder.js";
 
+/**
+ * @typedef {object} GIFEncoderOptions
+ * @property {number} [maxColors=256]
+ * @property {GIFEncoderQuantizeOptions} [quantizeOptions]
+ * @property {GIFEncoderEncoderOptions} [encoderOptions={}]
+ */
+
+/**
+ * @typedef {object} GIFEncoderQuantizeOptions
+ * @property {"rgb565" | "rgb444" | "rgba4444"} [format="rgb565"]
+ * @property {boolean | number} [oneBitAlpha=false]
+ * @property {boolean} [clearAlpha=true]
+ * @property {number} [clearAlphaThreshold=0]
+ * @property {number} [clearAlphaColor=0x00]
+ * @see [QuantizeOptions]{@link https://github.com/mattdesl/gifenc#palette--quantizergba-maxcolors-options--}
+ */
+/**
+ * @typedef {object} GIFEncoderEncoderOptions
+ * @property {number[][]} [palette]
+ * @property {boolean} [first=false]
+ * @property {boolean} [transparent=0]
+ * @property {number} [transparentIndex=0]
+ * @property {number} [delay=0]
+ * @property {number} [repeat=0]
+ * @property {number} [dispose=-1]
+ * @see [WriteFrameOpts]{@link https://github.com/mattdesl/gifenc#gifwriteframeindex-width-height-opts--}
+ */
+
 class GIFEncoder extends Encoder {
   static supportedExtensions = ["gif"];
 
@@ -17,6 +45,9 @@ class GIFEncoder extends Encoder {
     },
   };
 
+  /**
+   * @param {GIFEncoderOptions} [options]
+   */
   constructor(options) {
     super({ ...GIFEncoder.defaultOptions, ...options });
   }

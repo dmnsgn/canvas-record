@@ -1,6 +1,22 @@
+/**
+ * @typedef {"mp4" | "webm" | "png" | "jpg" | "gif" | "mkv"} EncoderExtensions
+ */
+
+/**
+ * @typedef {"in-browser" | "file-system"} EncoderTarget
+ */
+
 class Encoder {
+  /**
+   * The extension the encoder supports
+   * @type {Extensions[]}
+   */
   static supportedExtensions = ["mp4", "webm"];
-  static supportedTargets = ["in-browser"]; // or "file-system"
+  /**
+   * The target to download the file to.
+   * @type {EncoderTarget[]}
+   */
+  static supportedTargets = ["in-browser"];
 
   static defaultOptions = {
     frameMethod: "blob",
@@ -8,10 +24,24 @@ class Encoder {
     target: Encoder.supportedTargets[0],
   };
 
+  /**
+   * Base Encoder class. All Encoders extend it and its method are called by the Recorder.
+   * @class Encoder
+   * @param {object} options
+   *
+   * @property {EncoderTarget} target
+   * @property {EncoderExtensions} extension
+   * @property {object} [encoderOptions]
+   * @property {object} [muxerOptions]
+   */
   constructor(options) {
     Object.assign(this, options);
   }
 
+  /**
+   * Setup the encoder: load binary, instantiate muxers, setup file system target...
+   * @param {object} options
+   */
   async init(options) {
     Object.assign(this, options);
   }
@@ -49,11 +79,21 @@ class Encoder {
 
   // Override methods
   /**
+   * Encode a single frame. The frameNumber is usually used for GOP (Group Of Pictures).
    * @param {number} frame
-   * @param {number} frameNumber
+   * @param {number} [frameNumber]
    */
   async encode() {}
+
+  /**
+   * Stop the encoding process and cleanup the temporary data.
+   * @returns {(ArrayBuffer|Uint8Array|Blob[]|undefined)}
+   */
   async stop() {}
+
+  /**
+   * Clean up the encoder
+   */
   dispose() {}
 }
 

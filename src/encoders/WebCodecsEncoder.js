@@ -5,6 +5,22 @@ import { AVC, VP } from "media-codecs";
 import Encoder from "./Encoder.js";
 import { estimateBitRate } from "../utils.js";
 
+/**
+ * @typedef {object} WebCodecsEncoderOptions
+ * @property {number} [groupOfPictures=20]
+ * @property {number} [flushFrequency=10]
+ * @property {WebCodecsEncoderEncoderOptions} [encoderOptions={}]
+ */
+/**
+ * @typedef {VideoEncoderConfig} WebCodecsEncoderEncoderOptions
+ * @see [VideoEncoder.configure]{@link https://developer.mozilla.org/en-US/docs/Web/API/VideoEncoder/configure#config}
+ */
+/**
+ * @typedef {MuxerOptions} WebCodecsMuxerOptions
+ * @see [Mp4.MuxerOptions]{@link https://github.com/Vanilagy/mp4-muxer/#usage}
+ * @see [WebM.MuxerOptions]{@link https://github.com/Vanilagy/webm-muxer/#usage}
+ */
+
 class WebCodecsEncoder extends Encoder {
   static supportedExtensions = ["mp4", "webm", "mkv"];
   static supportedTargets = ["in-browser", "file-system"];
@@ -19,6 +35,9 @@ class WebCodecsEncoder extends Encoder {
     return "videoFrame";
   }
 
+  /**
+   * @param {WebCodecsEncoderOptions} [options]
+   */
   constructor(options) {
     super({ ...WebCodecsEncoder.defaultOptions, ...options });
   }
@@ -87,7 +106,7 @@ class WebCodecsEncoder extends Encoder {
         this.width,
         this.height,
         this.frameRate,
-        this.encoderOptions.bitrateMode
+        this.encoderOptions.bitrateMode,
       ),
       // bitrate: 1e6,
       // alpha: "discard", // "keep"
@@ -102,8 +121,8 @@ class WebCodecsEncoder extends Encoder {
     if (!(await VideoEncoder.isConfigSupported(config)).supported) {
       throw new Error(
         `canvas-record: Unsupported VideoEncoder config\n ${JSON.stringify(
-          config
-        )}`
+          config,
+        )}`,
       );
     }
   }

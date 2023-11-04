@@ -3,6 +3,17 @@ import MP4Wasm from "./mp4.embed.js"; // mp4-wasm
 import Encoder from "./Encoder.js";
 import { estimateBitRate } from "../utils.js";
 
+/**
+ * @typedef {object} MP4WasmEncoderOptions
+ * @property {number} [groupOfPictures=20]
+ * @property {number} [flushFrequency=10]
+ * @property {MP4WasmEncoderEncoderOptions} [encoderOptions={}]
+ */
+/**
+ * @typedef {VideoEncoderConfig} MP4WasmEncoderEncoderOptions
+ * @see [VideoEncoder.configure]{@link https://developer.mozilla.org/en-US/docs/Web/API/VideoEncoder/configure#config}
+ */
+
 let mp4wasm;
 
 class MP4WasmEncoder extends Encoder {
@@ -19,6 +30,9 @@ class MP4WasmEncoder extends Encoder {
     return "bitmap";
   }
 
+  /**
+   * @param {MP4WasmEncoderOptions} [options]
+   */
   constructor(options) {
     super({ ...MP4WasmEncoder.defaultOptions, ...options });
   }
@@ -40,7 +54,7 @@ class MP4WasmEncoder extends Encoder {
           this.width,
           this.height,
           this.frameRate,
-          this.encoderOptions.bitrateMode
+          this.encoderOptions.bitrateMode,
         ),
         ...this.encoderOptions,
       },

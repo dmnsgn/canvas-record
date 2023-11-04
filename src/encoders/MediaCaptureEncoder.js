@@ -2,15 +2,29 @@ import Encoder from "./Encoder.js";
 
 import { Deferred } from "../utils.js";
 
+/**
+ * @typedef {object} MediaCaptureEncoderOptions
+ * @property {number} [flushFrequency=10]
+ * @property {MediaCaptureEncoderEncoderOptions} [encoderOptions={}]
+ */
+
+/**
+ * @typedef {MediaRecorderOptions} MediaCaptureEncoderEncoderOptions
+ * @see [MediaRecorder#options]{@link https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder/MediaRecorder#options}
+ */
+
 class MediaCaptureEncoder extends Encoder {
   static supportedExtensions = ["mkv", "webm"];
 
   static defaultOptions = {
     extension: MediaCaptureEncoder.supportedExtensions[0],
-    flushFrequency: 10,
     frameMethod: "requestFrame",
+    flushFrequency: 10,
   };
 
+  /**
+   * @param {MediaCaptureEncoderOptions} [options]
+   */
   constructor(options) {
     super({ ...MediaCaptureEncoder.defaultOptions, ...options });
   }

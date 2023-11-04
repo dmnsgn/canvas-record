@@ -5,8 +5,24 @@ import Encoder from "./Encoder.js";
 
 const getFrameName = (frame) => `${String(frame).padStart(5, "0")}.png`;
 
+/**
+ * @typedef {object} FFmpegEncoderOptions
+ * @property {FFmpegEncoderEncoderOptions} [encoderOptions={}]
+ */
+/**
+ * @typedef {import("@ffmpeg/ffmpeg/dist/esm/types.js").FFMessageLoadConfig} FFmpegEncoderEncoderOptions
+ * @see [FFmpeg#load]{@link https://ffmpegwasm.netlify.app/docs/api/ffmpeg/classes/FFmpeg#load}
+ */
+
 class FFmpegEncoder extends Encoder {
   static supportedExtensions = ["mp4", "webm"];
+
+  /**
+   * @param {FFmpegEncoderOptions} [options]
+   */
+  constructor(options) {
+    super(options);
+  }
 
   async init(options) {
     super.init(options);
@@ -24,7 +40,7 @@ class FFmpegEncoder extends Encoder {
   async encode(frame, frameNumber) {
     await this.encoder.writeFile(
       getFrameName(frameNumber),
-      await fetchFile(frame)
+      await fetchFile(frame),
     );
     this.frameCount++;
   }
@@ -35,8 +51,8 @@ class FFmpegEncoder extends Encoder {
 
     await this.encoder.exec(
       `-framerate ${this.frameRate} -pattern_type glob -i *.png -s ${this.width}x${this.height} -pix_fmt yuv420p -c:v ${codec} ${outputFilename}`.split(
-        " "
-      )
+        " ",
+      ),
     );
 
     const data = await this.encoder.readFile(outputFilename);

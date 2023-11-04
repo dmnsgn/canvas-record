@@ -36,8 +36,7 @@ const RecorderStatus = Object.freeze({
 
 /**
  * A callback to notify on the status change. To compare with RecorderStatus enum values.
- * @name onStatusChangeCb
- * @function
+ * @callback onStatusChangeCb
  * @param {number} RecorderStatus the status
  */
 
@@ -56,16 +55,16 @@ const RecorderStatus = Object.freeze({
  */
 
 /**
- * @typedef {object} RecorderStartOptions Options for recording. All optional.
+ * @typedef {object} RecorderStartOptions Options for recording initialisation. All optional.
  * @property {string} [filename] Overwrite the file name completely.
  * @property {boolean} [initOnly] Only initialised the recorder and don't call the first await recorder.step().
  */
 
-/**
- * Base Recorder class.
- * @property {boolean} [enabled=true] Enable/disable pointer interaction and drawing.
- */
 class Recorder {
+  /**
+   * Sensible defaults for recording so that the recorder "just works".
+   * @type {RecorderOptions}
+   */
   static defaultOptions = {
     name: "",
     duration: 10, // 0 to Infinity
@@ -76,6 +75,10 @@ class Recorder {
     onStatusChange: () => {},
   };
 
+  /**
+   * A mapping of extension to their mime types
+   * @type {object}
+   */
   static mimeTypes = {
     mkv: "video/x-matroska;codecs=avc1",
     webm: "video/webm",
@@ -133,7 +136,7 @@ Speedup: x${(this.time / renderTime).toFixed(3)}`,
   getSupportedExtension() {
     const CurrentEncoder = this.encoder.constructor;
     const isExtensionSupported = CurrentEncoder.supportedExtensions.includes(
-      this.extension
+      this.extension,
     );
     const extension = isExtensionSupported
       ? this.extension
@@ -141,7 +144,7 @@ Speedup: x${(this.time / renderTime).toFixed(3)}`,
 
     if (!isExtensionSupported) {
       console.warn(
-        `canvas-record: unsupported extension for encoder "${CurrentEncoder.name}". Defaulting to "${extension}".`
+        `canvas-record: unsupported extension for encoder "${CurrentEncoder.name}". Defaulting to "${extension}".`,
       );
     }
     return extension;
@@ -150,7 +153,7 @@ Speedup: x${(this.time / renderTime).toFixed(3)}`,
   getSupportedTarget() {
     const CurrentEncoder = this.encoder.constructor;
     let isTargetSupported = CurrentEncoder.supportedTargets.includes(
-      this.target
+      this.target,
     );
 
     if (this.target === "file-system" && !("showSaveFilePicker" in window)) {
@@ -163,15 +166,17 @@ Speedup: x${(this.time / renderTime).toFixed(3)}`,
 
     if (!isTargetSupported) {
       console.warn(
-        `canvas-record: unsupported target for encoder "${CurrentEncoder.name}". Defaulting to "${target}".`
+        `canvas-record: unsupported target for encoder "${CurrentEncoder.name}". Defaulting to "${target}".`,
       );
     }
     return target;
   }
 
   /**
+   * Create a Recorder instance
+   * @class Recorder
    * @param {RenderingContext} context
-   * @param {RecorderOptions} options
+   * @param {RecorderOptions} [options={}]
    */
   constructor(context, options = {}) {
     this.context = context;
@@ -231,7 +236,7 @@ Speedup: x${(this.time / renderTime).toFixed(3)}`,
 
   /**
    * Start the recording by initializing and optionally calling the initial step.
-   * @param {RecorderStartOptions} startOptions
+   * @param {RecorderStartOptions} [startOptions={}]
    */
   async start(startOptions = {}) {
     await this.init(startOptions);
@@ -279,7 +284,7 @@ Speedup: x${(this.time / renderTime).toFixed(3)}`,
             height,
             this.context.RGBA,
             this.context.UNSIGNED_BYTE,
-            pixels
+            pixels,
           );
 
           // Flip vertically
@@ -296,7 +301,7 @@ Speedup: x${(this.time / renderTime).toFixed(3)}`,
           0,
           0,
           nextMultiple(this.width, 2),
-          nextMultiple(this.height, 2)
+          nextMultiple(this.height, 2),
         ).data;
       }
       default: {
@@ -320,7 +325,7 @@ Speedup: x${(this.time / renderTime).toFixed(3)}`,
     ) {
       await this.encoder.encode(
         await this.getFrame(this.encoder.frameMethod),
-        this.frame
+        this.frame,
       );
       this.time += this.deltaTime;
       this.frame++;
@@ -346,7 +351,7 @@ Speedup: x${(this.time / renderTime).toFixed(3)}`,
       downloadBlob(
         this.filename,
         Array.isArray(buffer) ? buffer : [buffer],
-        this.encoder.mimeType
+        this.encoder.mimeType,
       );
     }
     this.#updateStatus(RecorderStatus.Stopped);
@@ -355,7 +360,7 @@ Speedup: x${(this.time / renderTime).toFixed(3)}`,
   }
 
   /**
-   * Clean up
+   * Clean up the recorder and encoder
    */
   async dispose() {
     await this.encoder.dispose();

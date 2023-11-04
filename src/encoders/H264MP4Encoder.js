@@ -3,6 +3,16 @@ import Encoder from "./Encoder.js";
 
 import { estimateBitRate, nextMultiple } from "../utils.js";
 
+/**
+ * @typedef {object} H264MP4EncoderOptions
+ * @property {boolean} [debug]
+ * @property {H264MP4EncoderEncoderOptions} [encoderOptions={}]
+ */
+/**
+ * @typedef {import("h264-mp4-encoder").H264MP4Encoder} H264MP4EncoderEncoderOptions
+ * @see [h264-mp4-encoder#api]{@link https://github.com/TrevorSundberg/h264-mp4-encoder#api}
+ */
+
 class H264MP4Encoder extends Encoder {
   static supportedExtensions = ["mp4"];
 
@@ -11,6 +21,9 @@ class H264MP4Encoder extends Encoder {
     frameMethod: "imageData",
   };
 
+  /**
+   * @param {H264MP4EncoderOptions} [options]
+   */
   constructor(options) {
     super({ ...H264MP4Encoder.defaultOptions, ...options });
   }

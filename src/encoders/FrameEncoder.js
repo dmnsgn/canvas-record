@@ -2,13 +2,14 @@ import Encoder from "./Encoder.js";
 
 import { downloadBlob } from "../utils.js";
 
+/** @class */
 class FrameEncoder extends Encoder {
   static supportedExtensions = ["png", "jpg"];
   static supportedTargets = ["in-browser", "file-system"];
 
   static defaultOptions = {
-    frameMethod: "blob",
     extension: FrameEncoder.supportedExtensions[0],
+    frameMethod: "blob",
   };
 
   constructor(options) {
@@ -22,7 +23,7 @@ class FrameEncoder extends Encoder {
       this.directory ||= await this.getDirectory();
       this.directoryHandle = await this.getDirectoryHandle(
         this.directory,
-        this.filename
+        this.filename,
       );
     }
   }
@@ -47,7 +48,7 @@ class FrameEncoder extends Encoder {
   async encode(frame, frameNumber) {
     await this.writeFile(
       `${`${frameNumber}`.padStart(5, "0")}.${this.extension}`,
-      frame
+      frame,
     );
   }
 }

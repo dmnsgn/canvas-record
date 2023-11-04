@@ -1,3 +1,7 @@
+/**
+ * Check for WebCodecs support on the current platform.
+ * @type {boolean}
+ */
 const isWebCodecsSupported =
   typeof window !== "undefined" && typeof window.VideoEncoder === "function";
 
@@ -26,7 +30,7 @@ const formatSeconds = (seconds) => {
   const minutes = Math.floor(seconds / 60);
   const remainingSeconds = Math.floor(seconds - minutes * 60);
   return `${String(minutes).padStart(2, "0")}:${String(
-    remainingSeconds
+    remainingSeconds,
   ).padStart(2, "0")}`;
 };
 
@@ -67,7 +71,7 @@ const estimateBitRate = (
   height,
   frameRate = 30,
   motionRank = 4,
-  bitrateMode = "variable"
+  bitrateMode = "variable",
 ) =>
   Math.round(
     (width *
@@ -76,7 +80,7 @@ const estimateBitRate = (
       motionRank *
       0.07 *
       (bitrateMode === "variable" ? 0.75 : 1)) /
-      1_000_000
+      1_000_000,
   ) * 1_000_000;
 
 export {
