@@ -1,6 +1,31 @@
 # Changelog
 
-All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
+All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
+
+# [5.0.0-beta.0](https://github.com/dmnsgn/canvas-record/compare/v4.2.0...v5.0.0-beta.0) (2023-11-04)
+
+
+### Bug Fixes
+
+* correct RecorderOptions extension type ([084a155](https://github.com/dmnsgn/canvas-record/commit/084a155f515fcff5a27b0cde73fdef40a173b96d)), closes [#12](https://github.com/dmnsgn/canvas-record/issues/12)
+* framerate spelling is not following camelcase in VideoEncoder config ([f9c2662](https://github.com/dmnsgn/canvas-record/commit/f9c2662aced88880e40bff8c8ea0b690938b3235))
+
+
+### Build System
+
+* update dependencies ([66defa1](https://github.com/dmnsgn/canvas-record/commit/66defa1d1ba1acb8428f10ab4d43f556bf538b23))
+
+
+### Features
+
+* educated guess for bitrate from resolution and framerate ([acb38c5](https://github.com/dmnsgn/canvas-record/commit/acb38c56994a76263c3a66e714763ea96ef3a050)), closes [#13](https://github.com/dmnsgn/canvas-record/issues/13)
+
+
+### BREAKING CHANGES
+
+* ffmpeg has different binaries and likely to break
+
+
 
 # [4.2.0](https://github.com/dmnsgn/canvas-record/compare/v4.1.0...v4.2.0) (2023-05-20)
 
