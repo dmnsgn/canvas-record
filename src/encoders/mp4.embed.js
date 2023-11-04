@@ -369,7 +369,7 @@ var YA = (() => {
                   String.fromCharCode(B) +
                   ")  at offset " +
                   g +
-                  " not in 0x00-0xFF."
+                  " not in 0x00-0xFF.",
               ),
             (B &= 255)),
             I.push(String.fromCharCode(B));
@@ -381,7 +381,7 @@ var YA = (() => {
           "Assertion failed: " +
             G(A) +
             ", at: " +
-            [I ? G(I) : "unknown filename", g, B ? G(B) : "unknown function"]
+            [I ? G(I) : "unknown filename", g, B ? G(B) : "unknown function"],
         );
       }
       function eI(A, I, g, B, Q) {}
@@ -430,7 +430,7 @@ var YA = (() => {
               `() {
     "use strict";    return body.apply(this, arguments);
 };
-`
+`,
           )(I)
         );
       }
@@ -490,7 +490,7 @@ var YA = (() => {
       function L(A, I, g = {}) {
         if (!("argPackAdvance" in I))
           throw new TypeError(
-            "registerType registeredInstance requires argPackAdvance"
+            "registerType registeredInstance requires argPackAdvance",
           );
         var B = I.name;
         if (
@@ -626,7 +626,7 @@ var YA = (() => {
           throw new TypeError(
             "new_ called with constructor type " +
               typeof A +
-              " which is not a function"
+              " which is not a function",
           );
         var g = mA(A.name || "unknownFunctionName", function () {});
         g.prototype = A.prototype;
@@ -645,7 +645,7 @@ var YA = (() => {
         var i = I.length;
         i < 2 &&
           Y(
-            "argTypes array size mismatch! Must at least get return value and 'this' types!"
+            "argTypes array size mismatch! Must at least get return value and 'this' types!",
           );
         for (
           var n = I[1] !== null && g !== null, E = !1, o = 1;
@@ -765,7 +765,7 @@ return ret;
                     arguments.length +
                     ") - expects one of (" +
                     A[I].overloadTable +
-                    ")!"
+                    ")!",
                 ),
               A[I].overloadTable[arguments.length].apply(this, arguments)
             );
@@ -785,7 +785,7 @@ return ret;
               Y(
                 "Cannot register multiple overloads of a function with the same number of arguments (" +
                   g +
-                  ")!"
+                  ")!",
               ),
             (C[A].overloadTable[g] = I))
           : ((C[A] = I), g !== void 0 && (C[A].numArguments = g));
@@ -864,7 +864,7 @@ return ret;
             function () {
               MI("Cannot call " + A + " due to unbound types", n);
             },
-            I - 1
+            I - 1,
           ),
           DI([], n, function (E) {
             var o = [E[0], null].concat(E.slice(1));
@@ -956,7 +956,7 @@ return ret;
               argPackAdvance: 8,
               readValueFromPointer: i,
             },
-            { ignoreDuplicateRegistrations: !0 }
+            { ignoreDuplicateRegistrations: !0 },
           );
       }
       function vI(A, I) {
@@ -1300,7 +1300,7 @@ return ret;
         cg = (C.__embind_initialize_bindings = function () {
           return (cg = C.__embind_initialize_bindings = C.asm.D).apply(
             null,
-            arguments
+            arguments,
           );
         }),
         Dg = (C.dynCall_ijiii = function () {
@@ -1397,7 +1397,7 @@ function Fg(c, D = {}) {
   } = D;
   if (!_A())
     throw new Error(
-      "MP4 H264 encoding/decoding depends on WebCodecs API which is not supported in this environment"
+      "MP4 H264 encoding/decoding depends on WebCodecs API which is not supported in this environment",
     );
   if (typeof C != "number" || typeof s != "number")
     throw new Error("Must specify { width, height } options");
@@ -1406,7 +1406,7 @@ function Fg(c, D = {}) {
   let q = OA(),
     EA = c.create_muxer(
       { width: C, height: s, fps: e, fragmentation: a, sequential: v, hevc: m },
-      x
+      x,
     ),
     dA = {
       codec: W,

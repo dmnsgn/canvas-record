@@ -5,7 +5,7 @@ import { importMetaAssets } from "@web/rollup-plugin-import-meta-assets";
 try {
   await copyFile(
     "./node_modules/@ffmpeg/core/dist/esm/ffmpeg-core.wasm",
-    "./example/ffmpeg-core.wasm"
+    "./example/ffmpeg-core.wasm",
   );
   // await copyFile(
   //   "./node_modules/@ffmpeg/core-mt/dist/esm/ffmpeg-core.wasm",
@@ -20,6 +20,9 @@ try {
 }
 
 export default {
+  eslint: {
+    ignorePatterns: ["src/encoders/mp4.embed.js"],
+  },
   dependencies: [
     "@ffmpeg/ffmpeg",
     "@ffmpeg/core",

@@ -5,10 +5,10 @@ function isEmpty(value) {
     return value === null || value === undefined;
 }
 function isObject$1(value) {
-    return value !== null && typeof value === 'object';
+    return value !== null && typeof value === "object";
 }
 function isRecord(value) {
-    return value !== null && typeof value === 'object';
+    return value !== null && typeof value === "object";
 }
 function deepEqualsArray(a1, a2) {
     if (a1.length !== a2.length) {
@@ -40,32 +40,32 @@ function isBinding(value) {
     if (!isObject$1(value)) {
         return false;
     }
-    return 'target' in value;
+    return "target" in value;
 }
 const CREATE_MESSAGE_MAP = {
-    alreadydisposed: ()=>'View has been already disposed',
+    alreadydisposed: ()=>"View has been already disposed",
     invalidparams: (context)=>`Invalid parameters for '${context.name}'`,
     nomatchingcontroller: (context)=>`No matching controller for '${context.key}'`,
     nomatchingview: (context)=>`No matching view for '${JSON.stringify(context.params)}'`,
     notbindable: ()=>`Value is not bindable`,
     notcompatible: (context)=>`Not compatible with  plugin '${context.id}'`,
     propertynotfound: (context)=>`Property '${context.name}' not found`,
-    shouldneverhappen: ()=>'This error should never happen'
+    shouldneverhappen: ()=>"This error should never happen"
 };
 class TpError {
     static alreadyDisposed() {
         return new TpError({
-            type: 'alreadydisposed'
+            type: "alreadydisposed"
         });
     }
     static notBindable() {
         return new TpError({
-            type: 'notbindable'
+            type: "notbindable"
         });
     }
     static notCompatible(bundleId, id) {
         return new TpError({
-            type: 'notcompatible',
+            type: "notcompatible",
             context: {
                 id: `${bundleId}.${id}`
             }
@@ -73,7 +73,7 @@ class TpError {
     }
     static propertyNotFound(name) {
         return new TpError({
-            type: 'propertynotfound',
+            type: "propertynotfound",
             context: {
                 name: name
             }
@@ -81,7 +81,7 @@ class TpError {
     }
     static shouldNeverHappen() {
         return new TpError({
-            type: 'shouldneverhappen'
+            type: "shouldneverhappen"
         });
     }
     toString() {
@@ -89,7 +89,7 @@ class TpError {
     }
     constructor(config){
         var _a;
-        this.message = (_a = CREATE_MESSAGE_MAP[config.type](forceCast(config.context))) !== null && _a !== void 0 ? _a : 'Unexpected error';
+        this.message = (_a = CREATE_MESSAGE_MAP[config.type](forceCast(config.context))) !== null && _a !== void 0 ? _a : "Unexpected error";
         this.name = this.constructor.name;
         this.stack = new Error(this.message).stack;
         this.type = config.type;
@@ -100,7 +100,7 @@ class BindingTarget {
         if (obj === null) {
             return false;
         }
-        if (typeof obj !== 'object' && typeof obj !== 'function') {
+        if (typeof obj !== "object" && typeof obj !== "function") {
             return false;
         }
         return true;
@@ -183,11 +183,11 @@ class ComplexValue {
         if (!changed && !opts.forceEmit) {
             return;
         }
-        this.emitter.emit('beforechange', {
+        this.emitter.emit("beforechange", {
             sender: this
         });
         this.rawValue_ = constrainedValue;
-        this.emitter.emit('change', {
+        this.emitter.emit("change", {
             options: opts,
             previousRawValue: prevValue,
             rawValue: constrainedValue,
@@ -221,11 +221,11 @@ class PrimitiveValue {
         if (prevValue === value && !opts.forceEmit) {
             return;
         }
-        this.emitter.emit('beforechange', {
+        this.emitter.emit("beforechange", {
             sender: this
         });
         this.value_ = value;
-        this.emitter.emit('change', {
+        this.emitter.emit("change", {
             options: opts,
             previousRawValue: prevValue,
             rawValue: this.value_,
@@ -242,12 +242,12 @@ class ReadonlyPrimitiveValue {
         return this.value_.rawValue;
     }
     onValueBeforeChange_(ev) {
-        this.emitter.emit('beforechange', Object.assign(Object.assign({}, ev), {
+        this.emitter.emit("beforechange", Object.assign(Object.assign({}, ev), {
             sender: this
         }));
     }
     onValueChange_(ev) {
-        this.emitter.emit('change', Object.assign(Object.assign({}, ev), {
+        this.emitter.emit("change", Object.assign(Object.assign({}, ev), {
             sender: this
         }));
     }
@@ -256,8 +256,8 @@ class ReadonlyPrimitiveValue {
         this.onValueBeforeChange_ = this.onValueBeforeChange_.bind(this);
         this.onValueChange_ = this.onValueChange_.bind(this);
         this.value_ = value;
-        this.value_.emitter.on('beforechange', this.onValueBeforeChange_);
-        this.value_.emitter.on('change', this.onValueChange_);
+        this.value_.emitter.on("beforechange", this.onValueBeforeChange_);
+        this.value_.emitter.on("change", this.onValueChange_);
     }
 }
 function createValue(initialValue, config) {
@@ -303,8 +303,8 @@ class ValueMap {
         this.valMap_ = valueMap;
         for(const key in this.valMap_){
             const v = this.valMap_[key];
-            v.emitter.on('change', ()=>{
-                this.emitter.emit('change', {
+            v.emitter.on("change", ()=>{
+                this.emitter.emit("change", {
                     key: key,
                     sender: this
                 });
@@ -314,8 +314,8 @@ class ValueMap {
 }
 class DefiniteRangeConstraint {
     constrain(value) {
-        const max = this.values.get('max');
-        const min = this.values.get('min');
+        const max = this.values.get("max");
+        const min = this.values.get("min");
         return Math.min(Math.max(value, min), max);
     }
     constructor(config){
@@ -327,8 +327,8 @@ class DefiniteRangeConstraint {
 }
 class RangeConstraint {
     constrain(value) {
-        const max = this.values.get('max');
-        const min = this.values.get('min');
+        const max = this.values.get("max");
+        const min = this.values.get("min");
         let result = value;
         if (!isEmpty(min)) {
             result = Math.max(result, min);
@@ -368,18 +368,18 @@ class NumberLiteralNode {
     }
 }
 const BINARY_OPERATION_MAP = {
-    '**': (v1, v2)=>Math.pow(v1, v2),
-    '*': (v1, v2)=>v1 * v2,
-    '/': (v1, v2)=>v1 / v2,
-    '%': (v1, v2)=>v1 % v2,
-    '+': (v1, v2)=>v1 + v2,
-    '-': (v1, v2)=>v1 - v2,
-    '<<': (v1, v2)=>v1 << v2,
-    '>>': (v1, v2)=>v1 >> v2,
-    '>>>': (v1, v2)=>v1 >>> v2,
-    '&': (v1, v2)=>v1 & v2,
-    '^': (v1, v2)=>v1 ^ v2,
-    '|': (v1, v2)=>v1 | v2
+    "**": (v1, v2)=>Math.pow(v1, v2),
+    "*": (v1, v2)=>v1 * v2,
+    "/": (v1, v2)=>v1 / v2,
+    "%": (v1, v2)=>v1 % v2,
+    "+": (v1, v2)=>v1 + v2,
+    "-": (v1, v2)=>v1 - v2,
+    "<<": (v1, v2)=>v1 << v2,
+    ">>": (v1, v2)=>v1 >> v2,
+    ">>>": (v1, v2)=>v1 >>> v2,
+    "&": (v1, v2)=>v1 & v2,
+    "^": (v1, v2)=>v1 ^ v2,
+    "|": (v1, v2)=>v1 | v2
 };
 class BinaryOperationNode {
     evaluate() {
@@ -391,12 +391,12 @@ class BinaryOperationNode {
     }
     toString() {
         return [
-            'b(',
+            "b(",
             this.left.toString(),
             this.operator,
             this.right.toString(),
-            ')'
-        ].join(' ');
+            ")"
+        ].join(" ");
     }
     constructor(operator, left, right){
         this.left = left;
@@ -405,9 +405,9 @@ class BinaryOperationNode {
     }
 }
 const UNARY_OPERATION_MAP = {
-    '+': (v)=>v,
-    '-': (v)=>-v,
-    '~': (v)=>~v
+    "+": (v)=>v,
+    "-": (v)=>-v,
+    "~": (v)=>~v
 };
 class UnaryOperationNode {
     evaluate() {
@@ -419,11 +419,11 @@ class UnaryOperationNode {
     }
     toString() {
         return [
-            'u(',
+            "u(",
             this.operator,
             this.expression.toString(),
-            ')'
-        ].join(' ');
+            ")"
+        ].join(" ");
     }
     constructor(operator, expr){
         this.operator = operator;
@@ -434,77 +434,77 @@ function combineReader(parsers) {
     return (text, cursor)=>{
         for(let i = 0; i < parsers.length; i++){
             const result = parsers[i](text, cursor);
-            if (result !== '') {
+            if (result !== "") {
                 return result;
             }
         }
-        return '';
+        return "";
     };
 }
 function readWhitespace(text, cursor) {
     var _a;
     const m = text.substr(cursor).match(/^\s+/);
-    return (_a = m && m[0]) !== null && _a !== void 0 ? _a : '';
+    return (_a = m && m[0]) !== null && _a !== void 0 ? _a : "";
 }
 function readNonZeroDigit(text, cursor) {
     const ch = text.substr(cursor, 1);
-    return ch.match(/^[1-9]$/) ? ch : '';
+    return ch.match(/^[1-9]$/) ? ch : "";
 }
 function readDecimalDigits(text, cursor) {
     var _a;
     const m = text.substr(cursor).match(/^[0-9]+/);
-    return (_a = m && m[0]) !== null && _a !== void 0 ? _a : '';
+    return (_a = m && m[0]) !== null && _a !== void 0 ? _a : "";
 }
 function readSignedInteger(text, cursor) {
     const ds = readDecimalDigits(text, cursor);
-    if (ds !== '') {
+    if (ds !== "") {
         return ds;
     }
     const sign = text.substr(cursor, 1);
     cursor += 1;
-    if (sign !== '-' && sign !== '+') {
-        return '';
+    if (sign !== "-" && sign !== "+") {
+        return "";
     }
     const sds = readDecimalDigits(text, cursor);
-    if (sds === '') {
-        return '';
+    if (sds === "") {
+        return "";
     }
     return sign + sds;
 }
 function readExponentPart(text, cursor) {
     const e = text.substr(cursor, 1);
     cursor += 1;
-    if (e.toLowerCase() !== 'e') {
-        return '';
+    if (e.toLowerCase() !== "e") {
+        return "";
     }
     const si = readSignedInteger(text, cursor);
-    if (si === '') {
-        return '';
+    if (si === "") {
+        return "";
     }
     return e + si;
 }
 function readDecimalIntegerLiteral(text, cursor) {
     const ch = text.substr(cursor, 1);
-    if (ch === '0') {
+    if (ch === "0") {
         return ch;
     }
     const nzd = readNonZeroDigit(text, cursor);
     cursor += nzd.length;
-    if (nzd === '') {
-        return '';
+    if (nzd === "") {
+        return "";
     }
     return nzd + readDecimalDigits(text, cursor);
 }
 function readDecimalLiteral1(text, cursor) {
     const dil = readDecimalIntegerLiteral(text, cursor);
     cursor += dil.length;
-    if (dil === '') {
-        return '';
+    if (dil === "") {
+        return "";
     }
     const dot = text.substr(cursor, 1);
     cursor += dot.length;
-    if (dot !== '.') {
-        return '';
+    if (dot !== ".") {
+        return "";
     }
     const dds = readDecimalDigits(text, cursor);
     cursor += dds.length;
@@ -513,21 +513,21 @@ function readDecimalLiteral1(text, cursor) {
 function readDecimalLiteral2(text, cursor) {
     const dot = text.substr(cursor, 1);
     cursor += dot.length;
-    if (dot !== '.') {
-        return '';
+    if (dot !== ".") {
+        return "";
     }
     const dds = readDecimalDigits(text, cursor);
     cursor += dds.length;
-    if (dds === '') {
-        return '';
+    if (dds === "") {
+        return "";
     }
     return dot + dds + readExponentPart(text, cursor);
 }
 function readDecimalLiteral3(text, cursor) {
     const dil = readDecimalIntegerLiteral(text, cursor);
     cursor += dil.length;
-    if (dil === '') {
-        return '';
+    if (dil === "") {
+        return "";
     }
     return dil + readExponentPart(text, cursor);
 }
@@ -539,51 +539,51 @@ const readDecimalLiteral = combineReader([
 function parseBinaryDigits(text, cursor) {
     var _a;
     const m = text.substr(cursor).match(/^[01]+/);
-    return (_a = m && m[0]) !== null && _a !== void 0 ? _a : '';
+    return (_a = m && m[0]) !== null && _a !== void 0 ? _a : "";
 }
 function readBinaryIntegerLiteral(text, cursor) {
     const prefix = text.substr(cursor, 2);
     cursor += prefix.length;
-    if (prefix.toLowerCase() !== '0b') {
-        return '';
+    if (prefix.toLowerCase() !== "0b") {
+        return "";
     }
     const bds = parseBinaryDigits(text, cursor);
-    if (bds === '') {
-        return '';
+    if (bds === "") {
+        return "";
     }
     return prefix + bds;
 }
 function readOctalDigits(text, cursor) {
     var _a;
     const m = text.substr(cursor).match(/^[0-7]+/);
-    return (_a = m && m[0]) !== null && _a !== void 0 ? _a : '';
+    return (_a = m && m[0]) !== null && _a !== void 0 ? _a : "";
 }
 function readOctalIntegerLiteral(text, cursor) {
     const prefix = text.substr(cursor, 2);
     cursor += prefix.length;
-    if (prefix.toLowerCase() !== '0o') {
-        return '';
+    if (prefix.toLowerCase() !== "0o") {
+        return "";
     }
     const ods = readOctalDigits(text, cursor);
-    if (ods === '') {
-        return '';
+    if (ods === "") {
+        return "";
     }
     return prefix + ods;
 }
 function readHexDigits(text, cursor) {
     var _a;
     const m = text.substr(cursor).match(/^[0-9a-f]+/i);
-    return (_a = m && m[0]) !== null && _a !== void 0 ? _a : '';
+    return (_a = m && m[0]) !== null && _a !== void 0 ? _a : "";
 }
 function readHexIntegerLiteral(text, cursor) {
     const prefix = text.substr(cursor, 2);
     cursor += prefix.length;
-    if (prefix.toLowerCase() !== '0x') {
-        return '';
+    if (prefix.toLowerCase() !== "0x") {
+        return "";
     }
     const hds = readHexDigits(text, cursor);
-    if (hds === '') {
-        return '';
+    if (hds === "") {
+        return "";
     }
     return prefix + hds;
 }
@@ -599,7 +599,7 @@ const readNumericLiteral = combineReader([
 function parseLiteral(text, cursor) {
     const num = readNumericLiteral(text, cursor);
     cursor += num.length;
-    if (num === '') {
+    if (num === "") {
         return null;
     }
     return {
@@ -610,7 +610,7 @@ function parseLiteral(text, cursor) {
 function parseParenthesizedExpression(text, cursor) {
     const op = text.substr(cursor, 1);
     cursor += op.length;
-    if (op !== '(') {
+    if (op !== "(") {
         return null;
     }
     const expr = parseExpression(text, cursor);
@@ -621,7 +621,7 @@ function parseParenthesizedExpression(text, cursor) {
     cursor += readWhitespace(text, cursor).length;
     const cl = text.substr(cursor, 1);
     cursor += cl.length;
-    if (cl !== ')') {
+    if (cl !== ")") {
         return null;
     }
     return {
@@ -640,7 +640,7 @@ function parseUnaryExpression(text, cursor) {
     }
     const op = text.substr(cursor, 1);
     cursor += op.length;
-    if (op !== '+' && op !== '-' && op !== '~') {
+    if (op !== "+" && op !== "-" && op !== "~") {
         return null;
     }
     const num = parseUnaryExpression(text, cursor);
@@ -695,30 +695,30 @@ function createBinaryOperationExpressionParser(exprParser, ops) {
 }
 const parseBinaryOperationExpression = [
     [
-        '**'
+        "**"
     ],
     [
-        '*',
-        '/',
-        '%'
+        "*",
+        "/",
+        "%"
     ],
     [
-        '+',
-        '-'
+        "+",
+        "-"
     ],
     [
-        '<<',
-        '>>>',
-        '>>'
+        "<<",
+        ">>>",
+        ">>"
     ],
     [
-        '&'
+        "&"
     ],
     [
-        '^'
+        "^"
     ],
     [
-        '|'
+        "|"
     ]
 ].reduce((parser, ops)=>{
     return createBinaryOperationExpressionParser(parser, ops);
@@ -744,10 +744,10 @@ function parseNumber(text) {
     return (_a = r === null || r === void 0 ? void 0 : r.evaluate()) !== null && _a !== void 0 ? _a : null;
 }
 function numberFromUnknown(value) {
-    if (typeof value === 'number') {
+    if (typeof value === "number") {
         return value;
     }
-    if (typeof value === 'string') {
+    if (typeof value === "string") {
         const pv = parseNumber(value);
         if (!isEmpty(pv)) {
             return pv;
@@ -769,8 +769,8 @@ function mapRange(value, start1, end1, start2, end2) {
 }
 function getDecimalDigits(value) {
     const text = String(value.toFixed(10));
-    const frac = text.split('.')[1];
-    return frac.replace(/0+$/, '').length;
+    const frac = text.split(".")[1];
+    return frac.replace(/0+$/, "").length;
 }
 function constrainRange(value, min, max) {
     return Math.min(Math.max(value, min), max);
@@ -840,19 +840,19 @@ class BladeApi {
         return this.controller.view.element;
     }
     get disabled() {
-        return this.controller.viewProps.get('disabled');
+        return this.controller.viewProps.get("disabled");
     }
     set disabled(disabled) {
-        this.controller.viewProps.set('disabled', disabled);
+        this.controller.viewProps.set("disabled", disabled);
     }
     get hidden() {
-        return this.controller.viewProps.get('hidden');
+        return this.controller.viewProps.get("hidden");
     }
     set hidden(hidden) {
-        this.controller.viewProps.set('hidden', hidden);
+        this.controller.viewProps.set("hidden", hidden);
     }
     dispose() {
-        this.controller.viewProps.set('disposed', true);
+        this.controller.viewProps.set("disposed", true);
     }
     importState(state) {
         return this.controller.importState(state);
@@ -890,10 +890,10 @@ class TpTabSelectEvent extends TpEvent {
 }
 class BindingApi extends BladeApi {
     get label() {
-        return this.controller.labelController.props.get('label');
+        return this.controller.labelController.props.get("label");
     }
     set label(label) {
-        this.controller.labelController.props.set('label', label);
+        this.controller.labelController.props.set("label", label);
     }
     get key() {
         return this.controller.value.binding.target.key;
@@ -916,13 +916,13 @@ class BindingApi extends BladeApi {
     }
     onValueChange_(ev) {
         const value = this.controller.value;
-        this.emitter_.emit('change', new TpChangeEvent(this, forceCast(value.binding.target.read()), ev.options.last));
+        this.emitter_.emit("change", new TpChangeEvent(this, forceCast(value.binding.target.read()), ev.options.last));
     }
     constructor(controller){
         super(controller);
         this.onValueChange_ = this.onValueChange_.bind(this);
         this.emitter_ = new Emitter();
-        this.controller.value.emitter.on('change', this.onValueChange_);
+        this.controller.value.emitter.on("change", this.onValueChange_);
     }
 }
 class InputBindingValue {
@@ -942,13 +942,13 @@ class InputBindingValue {
         this.binding.write(this.value_.rawValue);
     }
     onValueBeforeChange_(ev) {
-        this.emitter.emit('beforechange', Object.assign(Object.assign({}, ev), {
+        this.emitter.emit("beforechange", Object.assign(Object.assign({}, ev), {
             sender: this
         }));
     }
     onValueChange_(ev) {
         this.push();
-        this.emitter.emit('change', Object.assign(Object.assign({}, ev), {
+        this.emitter.emit("change", Object.assign(Object.assign({}, ev), {
             sender: this
         }));
     }
@@ -957,17 +957,17 @@ class InputBindingValue {
         this.onValueChange_ = this.onValueChange_.bind(this);
         this.binding = binding;
         this.value_ = value;
-        this.value_.emitter.on('beforechange', this.onValueBeforeChange_);
-        this.value_.emitter.on('change', this.onValueChange_);
+        this.value_.emitter.on("beforechange", this.onValueBeforeChange_);
+        this.value_.emitter.on("change", this.onValueChange_);
         this.emitter = new Emitter();
     }
 }
 function isInputBindingValue(v) {
-    if (!('binding' in v)) {
+    if (!("binding" in v)) {
         return false;
     }
-    const b = v['binding'];
-    return isBinding(b) && 'read' in b && 'write' in b;
+    const b = v["binding"];
+    return isBinding(b) && "read" in b && "write" in b;
 }
 function parseObject(value, keyToParserMap) {
     const keys = Object.keys(keyToParserMap);
@@ -1002,7 +1002,7 @@ function isObject(value) {
     if (value === null) {
         return false;
     }
-    return typeof value === 'object';
+    return typeof value === "object";
 }
 function createMicroParserBuilder(parse) {
     return (optional)=>(v)=>{
@@ -1031,10 +1031,10 @@ function createMicroParserBuilder(parse) {
 function createMicroParserBuilders(optional) {
     return {
         custom: (parse)=>createMicroParserBuilder(parse)(optional),
-        boolean: createMicroParserBuilder((v)=>typeof v === 'boolean' ? v : undefined)(optional),
-        number: createMicroParserBuilder((v)=>typeof v === 'number' ? v : undefined)(optional),
-        string: createMicroParserBuilder((v)=>typeof v === 'string' ? v : undefined)(optional),
-        function: createMicroParserBuilder((v)=>typeof v === 'function' ? v : undefined)(optional),
+        boolean: createMicroParserBuilder((v)=>typeof v === "boolean" ? v : undefined)(optional),
+        number: createMicroParserBuilder((v)=>typeof v === "number" ? v : undefined)(optional),
+        string: createMicroParserBuilder((v)=>typeof v === "string" ? v : undefined)(optional),
+        function: createMicroParserBuilder((v)=>typeof v === "function" ? v : undefined)(optional),
         constant: (value)=>createMicroParserBuilder((v)=>v === value ? value : undefined)(optional),
         raw: createMicroParserBuilder((v)=>v)(optional),
         object: (keyToParserMap)=>createMicroParserBuilder((v)=>{
@@ -1072,22 +1072,22 @@ function exportBladeState(superExport, thisState) {
     return deepMerge((_a = superExport === null || superExport === void 0 ? void 0 : superExport()) !== null && _a !== void 0 ? _a : {}, thisState);
 }
 function isValueBladeController(bc) {
-    return 'value' in bc;
+    return "value" in bc;
 }
 function isBindingValue(v) {
-    if (!isObject$1(v) || !('binding' in v)) {
+    if (!isObject$1(v) || !("binding" in v)) {
         return false;
     }
     const b = v.binding;
     return isBinding(b);
 }
-const SVG_NS = 'http://www.w3.org/2000/svg';
+const SVG_NS = "http://www.w3.org/2000/svg";
 function forceReflow(element) {
     element.offsetHeight;
 }
 function disableTransitionTemporarily(element, callback) {
     const t = element.style.transition;
-    element.style.transition = 'none';
+    element.style.transition = "none";
     callback();
     element.style.transition = t;
 }
@@ -1106,8 +1106,8 @@ function getCanvasContext(canvasElement) {
     if (!win) {
         return null;
     }
-    const isBrowser = 'document' in win;
-    return isBrowser ? canvasElement.getContext('2d', {
+    const isBrowser = "document" in win;
+    return isBrowser ? canvasElement.getContext("2d", {
         willReadFrequently: true
     }) : null;
 }
@@ -1117,7 +1117,7 @@ const ICON_ID_TO_INNER_HTML_MAP = {
     p2dpad: '<path d="M8 4v8"/><path d="M4 8h8"/><circle cx="12" cy="12" r="1.2"/>'
 };
 function createSvgIconElement(document, iconId) {
-    const elem = document.createElementNS(SVG_NS, 'svg');
+    const elem = document.createElementNS(SVG_NS, "svg");
     elem.innerHTML = ICON_ID_TO_INNER_HTML_MAP[iconId];
     return elem;
 }
@@ -1143,13 +1143,13 @@ function findNextTarget(ev) {
     if (ev.relatedTarget) {
         return forceCast(ev.relatedTarget);
     }
-    if ('explicitOriginalTarget' in ev) {
+    if ("explicitOriginalTarget" in ev) {
         return ev.explicitOriginalTarget;
     }
     return null;
 }
 function bindValue(value, applyValue) {
-    value.emitter.on('change', (ev)=>{
+    value.emitter.on("change", (ev)=>{
         applyValue(ev.rawValue);
     });
     applyValue(value.rawValue);
@@ -1157,29 +1157,29 @@ function bindValue(value, applyValue) {
 function bindValueMap(valueMap, key, applyValue) {
     bindValue(valueMap.value(key), applyValue);
 }
-const PREFIX = 'tp';
+const PREFIX = "tp";
 function ClassName(viewName) {
     const fn = (opt_elementName, opt_modifier)=>{
         return [
             PREFIX,
-            '-',
+            "-",
             viewName,
-            'v',
-            opt_elementName ? `_${opt_elementName}` : '',
-            opt_modifier ? `-${opt_modifier}` : ''
-        ].join('');
+            "v",
+            opt_elementName ? `_${opt_elementName}` : "",
+            opt_modifier ? `-${opt_modifier}` : ""
+        ].join("");
     };
     return fn;
 }
-const cn$r = ClassName('lbl');
+const cn$r = ClassName("lbl");
 function createLabelNode(doc, label) {
     const frag = doc.createDocumentFragment();
-    const lineNodes = label.split('\n').map((line)=>{
+    const lineNodes = label.split("\n").map((line)=>{
         return doc.createTextNode(line);
     });
     lineNodes.forEach((lineNode, index)=>{
         if (index > 0) {
-            frag.appendChild(doc.createElement('br'));
+            frag.appendChild(doc.createElement("br"));
         }
         frag.appendChild(lineNode);
     });
@@ -1187,24 +1187,24 @@ function createLabelNode(doc, label) {
 }
 class LabelView {
     constructor(doc, config){
-        this.element = doc.createElement('div');
+        this.element = doc.createElement("div");
         this.element.classList.add(cn$r());
         config.viewProps.bindClassModifiers(this.element);
-        const labelElem = doc.createElement('div');
-        labelElem.classList.add(cn$r('l'));
-        bindValueMap(config.props, 'label', (value)=>{
+        const labelElem = doc.createElement("div");
+        labelElem.classList.add(cn$r("l"));
+        bindValueMap(config.props, "label", (value)=>{
             if (isEmpty(value)) {
-                this.element.classList.add(cn$r(undefined, 'nol'));
+                this.element.classList.add(cn$r(undefined, "nol"));
             } else {
-                this.element.classList.remove(cn$r(undefined, 'nol'));
+                this.element.classList.remove(cn$r(undefined, "nol"));
                 removeChildNodes(labelElem);
                 labelElem.appendChild(createLabelNode(doc, value));
             }
         });
         this.element.appendChild(labelElem);
         this.labelElement = labelElem;
-        const valueElem = doc.createElement('div');
-        valueElem.classList.add(cn$r('v'));
+        const valueElem = doc.createElement("div");
+        valueElem.classList.add(cn$r("v"));
         this.element.appendChild(valueElem);
         this.valueElement = valueElem;
     }
@@ -1214,13 +1214,13 @@ class LabelController {
         return importBladeState(state, null, (p)=>({
                 label: p.optional.string
             }), (result)=>{
-            this.props.set('label', result.label);
+            this.props.set("label", result.label);
             return true;
         });
     }
     exportProps() {
         return exportBladeState(null, {
-            label: this.props.get('label')
+            label: this.props.get("label")
         });
     }
     constructor(doc, config){
@@ -1236,18 +1236,18 @@ class LabelController {
 }
 function getAllBladePositions() {
     return [
-        'veryfirst',
-        'first',
-        'last',
-        'verylast'
+        "veryfirst",
+        "first",
+        "last",
+        "verylast"
     ];
 }
-const cn$q = ClassName('');
+const cn$q = ClassName("");
 const POS_TO_CLASS_NAME_MAP = {
-    veryfirst: 'vfst',
-    first: 'fst',
-    last: 'lst',
-    verylast: 'vlst'
+    veryfirst: "vfst",
+    first: "fst",
+    last: "lst",
+    verylast: "vlst"
 };
 class BladeController {
     get parent() {
@@ -1255,7 +1255,7 @@ class BladeController {
     }
     set parent(parent) {
         this.parent_ = parent;
-        this.viewProps.set('parent', this.parent_ ? this.parent_.viewProps : null);
+        this.viewProps.set("parent", this.parent_ ? this.parent_.viewProps : null);
     }
     importState(state) {
         return importBladeState(state, null, (p)=>({
@@ -1275,11 +1275,11 @@ class BladeController {
         this.view = config.view;
         this.viewProps = config.viewProps;
         const elem = this.view.element;
-        this.blade.value('positions').emitter.on('change', ()=>{
+        this.blade.value("positions").emitter.on("change", ()=>{
             getAllBladePositions().forEach((pos)=>{
                 elem.classList.remove(cn$q(undefined, POS_TO_CLASS_NAME_MAP[pos]));
             });
-            this.blade.get('positions').forEach((pos)=>{
+            this.blade.get("positions").forEach((pos)=>{
                 elem.classList.add(cn$q(undefined, POS_TO_CLASS_NAME_MAP[pos]));
             });
         });
@@ -1421,12 +1421,12 @@ class MonitorBindingValue {
         this.fetch();
     }
     onValueBeforeChange_(ev) {
-        this.emitter.emit('beforechange', Object.assign(Object.assign({}, ev), {
+        this.emitter.emit("beforechange", Object.assign(Object.assign({}, ev), {
             sender: this
         }));
     }
     onValueChange_(ev) {
-        this.emitter.emit('change', Object.assign(Object.assign({}, ev), {
+        this.emitter.emit("change", Object.assign(Object.assign({}, ev), {
             sender: this
         }));
     }
@@ -1437,19 +1437,19 @@ class MonitorBindingValue {
         this.onValueChange_ = this.onValueChange_.bind(this);
         this.binding = config.binding;
         this.value_ = createValue(initializeBuffer(config.bufferSize));
-        this.value_.emitter.on('beforechange', this.onValueBeforeChange_);
-        this.value_.emitter.on('change', this.onValueChange_);
+        this.value_.emitter.on("beforechange", this.onValueBeforeChange_);
+        this.value_.emitter.on("change", this.onValueChange_);
         this.ticker = config.ticker;
-        this.ticker.emitter.on('tick', this.onTick_);
+        this.ticker.emitter.on("tick", this.onTick_);
         this.fetch();
     }
 }
 function isMonitorBindingValue(v) {
-    if (!('binding' in v)) {
+    if (!("binding" in v)) {
         return false;
     }
-    const b = v['binding'];
-    return isBinding(b) && 'read' in b && !('write' in b);
+    const b = v["binding"];
+    return isBinding(b) && "read" in b && !("write" in b);
 }
 class MonitorBindingController extends BindingController {
     exportState() {
@@ -1465,17 +1465,17 @@ function isMonitorBindingController(bc) {
 }
 class ButtonApi extends BladeApi {
     get label() {
-        return this.controller.labelController.props.get('label');
+        return this.controller.labelController.props.get("label");
     }
     set label(label) {
-        this.controller.labelController.props.set('label', label);
+        this.controller.labelController.props.set("label", label);
     }
     get title() {
         var _a;
-        return (_a = this.controller.buttonController.props.get('title')) !== null && _a !== void 0 ? _a : '';
+        return (_a = this.controller.buttonController.props.get("title")) !== null && _a !== void 0 ? _a : "";
     }
     set title(title) {
-        this.controller.buttonController.props.set('title', title);
+        this.controller.buttonController.props.set("title", title);
     }
     on(eventName, handler) {
         const bh = handler.bind(this);
@@ -1500,23 +1500,23 @@ function valueToClassName(elem, className) {
 }
 function bindValueToTextContent(value, elem) {
     bindValue(value, (text)=>{
-        elem.textContent = text !== null && text !== void 0 ? text : '';
+        elem.textContent = text !== null && text !== void 0 ? text : "";
     });
 }
-const cn$p = ClassName('btn');
+const cn$p = ClassName("btn");
 class ButtonView {
     constructor(doc, config){
-        this.element = doc.createElement('div');
+        this.element = doc.createElement("div");
         this.element.classList.add(cn$p());
         config.viewProps.bindClassModifiers(this.element);
-        const buttonElem = doc.createElement('button');
-        buttonElem.classList.add(cn$p('b'));
+        const buttonElem = doc.createElement("button");
+        buttonElem.classList.add(cn$p("b"));
         config.viewProps.bindDisabled(buttonElem);
         this.element.appendChild(buttonElem);
         this.buttonElement = buttonElem;
-        const titleElem = doc.createElement('div');
-        titleElem.classList.add(cn$p('t'));
-        bindValueToTextContent(config.props.value('title'), titleElem);
+        const titleElem = doc.createElement("div");
+        titleElem.classList.add(cn$p("t"));
+        bindValueToTextContent(config.props.value("title"), titleElem);
         this.buttonElement.appendChild(titleElem);
     }
 }
@@ -1525,17 +1525,17 @@ class ButtonController {
         return importBladeState(state, null, (p)=>({
                 title: p.optional.string
             }), (result)=>{
-            this.props.set('title', result.title);
+            this.props.set("title", result.title);
             return true;
         });
     }
     exportProps() {
         return exportBladeState(null, {
-            title: this.props.get('title')
+            title: this.props.get("title")
         });
     }
     onClick_() {
-        this.emitter.emit('click', {
+        this.emitter.emit("click", {
             sender: this
         });
     }
@@ -1548,7 +1548,7 @@ class ButtonController {
             props: this.props,
             viewProps: this.viewProps
         });
-        this.view.buttonElement.addEventListener('click', this.onClick_);
+        this.view.buttonElement.addEventListener("click", this.onClick_);
     }
 }
 class ButtonBladeController extends BladeController {
@@ -1583,34 +1583,34 @@ class Semver {
             this.major,
             this.minor,
             this.patch
-        ].join('.');
+        ].join(".");
         return this.prerelease !== null ? [
             core,
             this.prerelease
-        ].join('-') : core;
+        ].join("-") : core;
     }
     constructor(text){
-        const [core, prerelease] = text.split('-');
-        const coreComps = core.split('.');
+        const [core, prerelease] = text.split("-");
+        const coreComps = core.split(".");
         this.major = parseInt(coreComps[0], 10);
         this.minor = parseInt(coreComps[1], 10);
         this.patch = parseInt(coreComps[2], 10);
         this.prerelease = prerelease !== null && prerelease !== void 0 ? prerelease : null;
     }
 }
-const VERSION$1 = new Semver('2.0.1');
+const VERSION$1 = new Semver("2.0.1");
 function createPlugin(plugin) {
     return Object.assign({
         core: VERSION$1
     }, plugin);
 }
 const ButtonBladePlugin = createPlugin({
-    id: 'button',
-    type: 'blade',
+    id: "button",
+    type: "blade",
     accept (params) {
         const result = parseRecord(params, (p)=>({
                 title: p.required.string,
-                view: p.required.constant('button'),
+                view: p.required.constant("button"),
                 label: p.optional.string
             }));
         return result ? {
@@ -1638,24 +1638,24 @@ const ButtonBladePlugin = createPlugin({
 });
 function addButtonAsBlade(api, params) {
     return api.addBlade(Object.assign(Object.assign({}, params), {
-        view: 'button'
+        view: "button"
     }));
 }
 function addFolderAsBlade(api, params) {
     return api.addBlade(Object.assign(Object.assign({}, params), {
-        view: 'folder'
+        view: "folder"
     }));
 }
 function addTabAsBlade(api, params) {
     return api.addBlade(Object.assign(Object.assign({}, params), {
-        view: 'tab'
+        view: "tab"
     }));
 }
 function isRefreshable(value) {
     if (!isObject$1(value)) {
         return false;
     }
-    return 'refresh' in value && typeof value.refresh === 'function';
+    return "refresh" in value && typeof value.refresh === "function";
 }
 function createBindingTarget(obj, key) {
     if (!BindingTarget.isBindable(obj)) {
@@ -1715,7 +1715,7 @@ class RackApi {
         const bc = ev.bladeController;
         const api = this.pool_.createApi(bc);
         const binding = isBindingValue(bc.value) ? bc.value.binding : null;
-        this.emitter_.emit('change', new TpChangeEvent(api, binding ? binding.target.read() : bc.value.rawValue, ev.options.last));
+        this.emitter_.emit("change", new TpChangeEvent(api, binding ? binding.target.read() : bc.value.rawValue, ev.options.last));
     }
     constructor(controller, pool){
         this.onRackValueChange_ = this.onRackValueChange_.bind(this);
@@ -1723,7 +1723,7 @@ class RackApi {
         this.emitter_ = new Emitter();
         this.pool_ = pool;
         const rack = this.controller_.rack;
-        rack.emitter.on('valuechange', this.onRackValueChange_);
+        rack.emitter.on("valuechange", this.onRackValueChange_);
     }
 }
 class ContainerBladeApi extends BladeApi {
@@ -1760,7 +1760,7 @@ class ContainerBladeController extends BladeController {
     }
 }
 function isContainerBladeController(bc) {
-    return 'rackController' in bc;
+    return "rackController" in bc;
 }
 class NestedOrderedSet {
     get items() {
@@ -1789,13 +1789,13 @@ class NestedOrderedSet {
         this.cache_.add(item);
         const subList = this.extract_(item);
         if (subList) {
-            subList.emitter.on('add', this.onSubListAdd_);
-            subList.emitter.on('remove', this.onSubListRemove_);
+            subList.emitter.on("add", this.onSubListAdd_);
+            subList.emitter.on("remove", this.onSubListRemove_);
             subList.allItems().forEach((i)=>{
                 this.cache_.add(i);
             });
         }
-        this.emitter.emit('add', {
+        this.emitter.emit("add", {
             index: index,
             item: item,
             root: this,
@@ -1814,10 +1814,10 @@ class NestedOrderedSet {
             subList.allItems().forEach((i)=>{
                 this.cache_.delete(i);
             });
-            subList.emitter.off('add', this.onSubListAdd_);
-            subList.emitter.off('remove', this.onSubListRemove_);
+            subList.emitter.off("add", this.onSubListAdd_);
+            subList.emitter.off("remove", this.onSubListRemove_);
         }
-        this.emitter.emit('remove', {
+        this.emitter.emit("remove", {
             index: index,
             item: item,
             root: this,
@@ -1826,7 +1826,7 @@ class NestedOrderedSet {
     }
     onSubListAdd_(ev) {
         this.cache_.add(ev.item);
-        this.emitter.emit('add', {
+        this.emitter.emit("add", {
             index: ev.index,
             item: ev.item,
             root: this,
@@ -1835,7 +1835,7 @@ class NestedOrderedSet {
     }
     onSubListRemove_(ev) {
         this.cache_.delete(ev.item);
-        this.emitter.emit('remove', {
+        this.emitter.emit("remove", {
             index: ev.index,
             item: ev.item,
             root: this,
@@ -1861,7 +1861,7 @@ function findValueBladeController(bcs, v) {
     return null;
 }
 function findSubBladeControllerSet(bc) {
-    return isContainerBladeController(bc) ? bc.rackController.rack['bcSet_'] : null;
+    return isContainerBladeController(bc) ? bc.rackController.rack["bcSet_"] : null;
 }
 class Rack {
     get children() {
@@ -1883,7 +1883,7 @@ class Rack {
     onSetAdd_(ev) {
         this.updatePositions_();
         const root = ev.target === ev.root;
-        this.emitter.emit('add', {
+        this.emitter.emit("add", {
             bladeController: ev.item,
             index: ev.index,
             root: root,
@@ -1893,24 +1893,24 @@ class Rack {
             return;
         }
         const bc = ev.item;
-        bc.viewProps.emitter.on('change', this.onChildViewPropsChange_);
-        bc.blade.value('positions').emitter.on('change', this.onChildPositionsChange_);
+        bc.viewProps.emitter.on("change", this.onChildViewPropsChange_);
+        bc.blade.value("positions").emitter.on("change", this.onChildPositionsChange_);
         bc.viewProps.handleDispose(this.onChildDispose_);
         if (isValueBladeController(bc)) {
-            bc.value.emitter.on('change', this.onChildValueChange_);
+            bc.value.emitter.on("change", this.onChildValueChange_);
         } else if (isContainerBladeController(bc)) {
             const rack = bc.rackController.rack;
             if (rack) {
                 const emitter = rack.emitter;
-                emitter.on('layout', this.onRackLayout_);
-                emitter.on('valuechange', this.onRackValueChange_);
+                emitter.on("layout", this.onRackLayout_);
+                emitter.on("valuechange", this.onRackValueChange_);
             }
         }
     }
     onSetRemove_(ev) {
         this.updatePositions_();
         const root = ev.target === ev.root;
-        this.emitter.emit('remove', {
+        this.emitter.emit("remove", {
             bladeController: ev.item,
             root: root,
             sender: this
@@ -1920,52 +1920,52 @@ class Rack {
         }
         const bc = ev.item;
         if (isValueBladeController(bc)) {
-            bc.value.emitter.off('change', this.onChildValueChange_);
+            bc.value.emitter.off("change", this.onChildValueChange_);
         } else if (isContainerBladeController(bc)) {
             const rack = bc.rackController.rack;
             if (rack) {
                 const emitter = rack.emitter;
-                emitter.off('layout', this.onRackLayout_);
-                emitter.off('valuechange', this.onRackValueChange_);
+                emitter.off("layout", this.onRackLayout_);
+                emitter.off("valuechange", this.onRackValueChange_);
             }
         }
     }
     updatePositions_() {
-        const visibleItems = this.bcSet_.items.filter((bc)=>!bc.viewProps.get('hidden'));
+        const visibleItems = this.bcSet_.items.filter((bc)=>!bc.viewProps.get("hidden"));
         const firstVisibleItem = visibleItems[0];
         const lastVisibleItem = visibleItems[visibleItems.length - 1];
         this.bcSet_.items.forEach((bc)=>{
             const ps = [];
             if (bc === firstVisibleItem) {
-                ps.push('first');
-                if (!this.blade_ || this.blade_.get('positions').includes('veryfirst')) {
-                    ps.push('veryfirst');
+                ps.push("first");
+                if (!this.blade_ || this.blade_.get("positions").includes("veryfirst")) {
+                    ps.push("veryfirst");
                 }
             }
             if (bc === lastVisibleItem) {
-                ps.push('last');
-                if (!this.blade_ || this.blade_.get('positions').includes('verylast')) {
-                    ps.push('verylast');
+                ps.push("last");
+                if (!this.blade_ || this.blade_.get("positions").includes("verylast")) {
+                    ps.push("verylast");
                 }
             }
-            bc.blade.set('positions', ps);
+            bc.blade.set("positions", ps);
         });
     }
     onChildPositionsChange_() {
         this.updatePositions_();
-        this.emitter.emit('layout', {
+        this.emitter.emit("layout", {
             sender: this
         });
     }
     onChildViewPropsChange_(_ev) {
         this.updatePositions_();
-        this.emitter.emit('layout', {
+        this.emitter.emit("layout", {
             sender: this
         });
     }
     onChildDispose_() {
         const disposedUcs = this.bcSet_.items.filter((bc)=>{
-            return bc.viewProps.get('disposed');
+            return bc.viewProps.get("disposed");
         });
         disposedUcs.forEach((bc)=>{
             this.bcSet_.remove(bc);
@@ -1976,7 +1976,7 @@ class Rack {
         if (!bc) {
             throw TpError.alreadyDisposed();
         }
-        this.emitter.emit('valuechange', {
+        this.emitter.emit("valuechange", {
             bladeController: bc,
             options: ev.options,
             sender: this
@@ -1984,12 +1984,12 @@ class Rack {
     }
     onRackLayout_(_) {
         this.updatePositions_();
-        this.emitter.emit('layout', {
+        this.emitter.emit("layout", {
             sender: this
         });
     }
     onRackValueChange_(ev) {
-        this.emitter.emit('valuechange', {
+        this.emitter.emit("valuechange", {
             bladeController: ev.bladeController,
             options: ev.options,
             sender: this
@@ -2011,11 +2011,11 @@ class Rack {
         this.onRackLayout_ = this.onRackLayout_.bind(this);
         this.onRackValueChange_ = this.onRackValueChange_.bind(this);
         this.blade_ = (_a = config.blade) !== null && _a !== void 0 ? _a : null;
-        (_b = this.blade_) === null || _b === void 0 ? void 0 : _b.value('positions').emitter.on('change', this.onBladePositionsChange_);
+        (_b = this.blade_) === null || _b === void 0 ? void 0 : _b.value("positions").emitter.on("change", this.onBladePositionsChange_);
         this.viewProps = config.viewProps;
         this.bcSet_ = new NestedOrderedSet(findSubBladeControllerSet);
-        this.bcSet_.emitter.on('add', this.onSetAdd_);
-        this.bcSet_.emitter.on('remove', this.onSetRemove_);
+        this.bcSet_.emitter.on("add", this.onSetAdd_);
+        this.bcSet_.emitter.on("remove", this.onSetRemove_);
     }
 }
 class RackController {
@@ -2040,13 +2040,13 @@ class RackController {
             blade: config.root ? undefined : config.blade,
             viewProps: config.viewProps
         });
-        rack.emitter.on('add', this.onRackAdd_);
-        rack.emitter.on('remove', this.onRackRemove_);
+        rack.emitter.on("add", this.onRackAdd_);
+        rack.emitter.on("remove", this.onRackRemove_);
         this.rack = rack;
         this.viewProps.handleDispose(()=>{
             for(let i = this.rack.children.length - 1; i >= 0; i--){
                 const bc = this.rack.children[i];
-                bc.viewProps.set('disposed', true);
+                bc.viewProps.set("disposed", true);
             }
         });
     }
@@ -2072,17 +2072,17 @@ class Foldable extends ValueMap {
     }
     get styleExpanded() {
         var _a;
-        return (_a = this.get('temporaryExpanded')) !== null && _a !== void 0 ? _a : this.get('expanded');
+        return (_a = this.get("temporaryExpanded")) !== null && _a !== void 0 ? _a : this.get("expanded");
     }
     get styleHeight() {
         if (!this.styleExpanded) {
-            return '0';
+            return "0";
         }
-        const exHeight = this.get('expandedHeight');
-        if (this.get('shouldFixHeight') && !isEmpty(exHeight)) {
+        const exHeight = this.get("expandedHeight");
+        if (this.get("shouldFixHeight") && !isEmpty(exHeight)) {
             return `${exHeight}px`;
         }
-        return 'auto';
+        return "auto";
     }
     bindExpandedClass(elem, expandedClassName) {
         const onExpand = ()=>{
@@ -2093,13 +2093,13 @@ class Foldable extends ValueMap {
                 elem.classList.remove(expandedClassName);
             }
         };
-        bindValueMap(this, 'expanded', onExpand);
-        bindValueMap(this, 'temporaryExpanded', onExpand);
+        bindValueMap(this, "expanded", onExpand);
+        bindValueMap(this, "temporaryExpanded", onExpand);
     }
     cleanUpTransition() {
-        this.set('shouldFixHeight', false);
-        this.set('expandedHeight', null);
-        this.set('completed', true);
+        this.set("shouldFixHeight", false);
+        this.set("expandedHeight", null);
+        this.set("completed", true);
     }
     constructor(valueMap){
         super(valueMap);
@@ -2108,11 +2108,11 @@ class Foldable extends ValueMap {
 function computeExpandedFolderHeight(folder, containerElement) {
     let height = 0;
     disableTransitionTemporarily(containerElement, ()=>{
-        folder.set('expandedHeight', null);
-        folder.set('temporaryExpanded', true);
+        folder.set("expandedHeight", null);
+        folder.set("temporaryExpanded", true);
         forceReflow(containerElement);
         height = containerElement.clientHeight;
-        folder.set('temporaryExpanded', null);
+        folder.set("temporaryExpanded", null);
         forceReflow(containerElement);
     });
     return height;
@@ -2121,23 +2121,23 @@ function applyHeight(foldable, elem) {
     elem.style.height = foldable.styleHeight;
 }
 function bindFoldable(foldable, elem) {
-    foldable.value('expanded').emitter.on('beforechange', ()=>{
-        foldable.set('completed', false);
-        if (isEmpty(foldable.get('expandedHeight'))) {
+    foldable.value("expanded").emitter.on("beforechange", ()=>{
+        foldable.set("completed", false);
+        if (isEmpty(foldable.get("expandedHeight"))) {
             const h = computeExpandedFolderHeight(foldable, elem);
             if (h > 0) {
-                foldable.set('expandedHeight', h);
+                foldable.set("expandedHeight", h);
             }
         }
-        foldable.set('shouldFixHeight', true);
+        foldable.set("shouldFixHeight", true);
         forceReflow(elem);
     });
-    foldable.emitter.on('change', ()=>{
+    foldable.emitter.on("change", ()=>{
         applyHeight(foldable, elem);
     });
     applyHeight(foldable, elem);
-    elem.addEventListener('transitionend', (ev)=>{
-        if (ev.propertyName !== 'height') {
+    elem.addEventListener("transitionend", (ev)=>{
+        if (ev.propertyName !== "height") {
             return;
         }
         foldable.cleanUpTransition();
@@ -2145,16 +2145,16 @@ function bindFoldable(foldable, elem) {
 }
 class FolderApi extends ContainerBladeApi {
     get expanded() {
-        return this.controller.foldable.get('expanded');
+        return this.controller.foldable.get("expanded");
     }
     set expanded(expanded) {
-        this.controller.foldable.set('expanded', expanded);
+        this.controller.foldable.set("expanded", expanded);
     }
     get title() {
-        return this.controller.props.get('title');
+        return this.controller.props.get("title");
     }
     set title(title) {
-        this.controller.props.set('title', title);
+        this.controller.props.set("title", title);
     }
     get children() {
         return this.rackApi_.children;
@@ -2190,50 +2190,50 @@ class FolderApi extends ContainerBladeApi {
     constructor(controller, pool){
         super(controller, pool);
         this.emitter_ = new Emitter();
-        this.controller.foldable.value('expanded').emitter.on('change', (ev)=>{
-            this.emitter_.emit('fold', new TpFoldEvent(this, ev.sender.rawValue));
+        this.controller.foldable.value("expanded").emitter.on("change", (ev)=>{
+            this.emitter_.emit("fold", new TpFoldEvent(this, ev.sender.rawValue));
         });
-        this.rackApi_.on('change', (ev)=>{
-            this.emitter_.emit('change', ev);
+        this.rackApi_.on("change", (ev)=>{
+            this.emitter_.emit("change", ev);
         });
     }
 }
-const bladeContainerClassName = ClassName('cnt');
+const bladeContainerClassName = ClassName("cnt");
 class FolderView {
     constructor(doc, config){
         var _a;
-        this.className_ = ClassName((_a = config.viewName) !== null && _a !== void 0 ? _a : 'fld');
-        this.element = doc.createElement('div');
+        this.className_ = ClassName((_a = config.viewName) !== null && _a !== void 0 ? _a : "fld");
+        this.element = doc.createElement("div");
         this.element.classList.add(this.className_(), bladeContainerClassName());
         config.viewProps.bindClassModifiers(this.element);
         this.foldable_ = config.foldable;
-        this.foldable_.bindExpandedClass(this.element, this.className_(undefined, 'expanded'));
-        bindValueMap(this.foldable_, 'completed', valueToClassName(this.element, this.className_(undefined, 'cpl')));
-        const buttonElem = doc.createElement('button');
-        buttonElem.classList.add(this.className_('b'));
-        bindValueMap(config.props, 'title', (title)=>{
+        this.foldable_.bindExpandedClass(this.element, this.className_(undefined, "expanded"));
+        bindValueMap(this.foldable_, "completed", valueToClassName(this.element, this.className_(undefined, "cpl")));
+        const buttonElem = doc.createElement("button");
+        buttonElem.classList.add(this.className_("b"));
+        bindValueMap(config.props, "title", (title)=>{
             if (isEmpty(title)) {
-                this.element.classList.add(this.className_(undefined, 'not'));
+                this.element.classList.add(this.className_(undefined, "not"));
             } else {
-                this.element.classList.remove(this.className_(undefined, 'not'));
+                this.element.classList.remove(this.className_(undefined, "not"));
             }
         });
         config.viewProps.bindDisabled(buttonElem);
         this.element.appendChild(buttonElem);
         this.buttonElement = buttonElem;
-        const indentElem = doc.createElement('div');
-        indentElem.classList.add(this.className_('i'));
+        const indentElem = doc.createElement("div");
+        indentElem.classList.add(this.className_("i"));
         this.element.appendChild(indentElem);
-        const titleElem = doc.createElement('div');
-        titleElem.classList.add(this.className_('t'));
-        bindValueToTextContent(config.props.value('title'), titleElem);
+        const titleElem = doc.createElement("div");
+        titleElem.classList.add(this.className_("t"));
+        bindValueToTextContent(config.props.value("title"), titleElem);
         this.buttonElement.appendChild(titleElem);
         this.titleElement = titleElem;
-        const markElem = doc.createElement('div');
-        markElem.classList.add(this.className_('m'));
+        const markElem = doc.createElement("div");
+        markElem.classList.add(this.className_("m"));
         this.buttonElement.appendChild(markElem);
-        const containerElem = doc.createElement('div');
-        containerElem.classList.add(this.className_('c'));
+        const containerElem = doc.createElement("div");
+        containerElem.classList.add(this.className_("c"));
         this.element.appendChild(containerElem);
         this.containerElement = containerElem;
     }
@@ -2247,19 +2247,19 @@ class FolderController extends ContainerBladeController {
                 expanded: p.required.boolean,
                 title: p.optional.string
             }), (result)=>{
-            this.foldable.set('expanded', result.expanded);
-            this.props.set('title', result.title);
+            this.foldable.set("expanded", result.expanded);
+            this.props.set("title", result.title);
             return true;
         });
     }
     exportState() {
         return exportBladeState(()=>super.exportState(), {
-            expanded: this.foldable.get('expanded'),
-            title: this.props.get('title')
+            expanded: this.foldable.get("expanded"),
+            title: this.props.get("title")
         });
     }
     onTitleClick_() {
-        this.foldable.set('expanded', !this.foldable.get('expanded'));
+        this.foldable.set("expanded", !this.foldable.get("expanded"));
     }
     constructor(doc, config){
         var _a;
@@ -2267,7 +2267,7 @@ class FolderController extends ContainerBladeController {
         const view = new FolderView(doc, {
             foldable: foldable,
             props: config.props,
-            viewName: config.root ? 'rot' : undefined,
+            viewName: config.root ? "rot" : undefined,
             viewProps: config.viewProps
         });
         super(Object.assign(Object.assign({}, config), {
@@ -2283,22 +2283,22 @@ class FolderController extends ContainerBladeController {
         this.props = config.props;
         this.foldable = foldable;
         bindFoldable(this.foldable, this.view.containerElement);
-        this.rackController.rack.emitter.on('add', ()=>{
+        this.rackController.rack.emitter.on("add", ()=>{
             this.foldable.cleanUpTransition();
         });
-        this.rackController.rack.emitter.on('remove', ()=>{
+        this.rackController.rack.emitter.on("remove", ()=>{
             this.foldable.cleanUpTransition();
         });
-        this.view.buttonElement.addEventListener('click', this.onTitleClick_);
+        this.view.buttonElement.addEventListener("click", this.onTitleClick_);
     }
 }
 const FolderBladePlugin = createPlugin({
-    id: 'folder',
-    type: 'blade',
+    id: "folder",
+    type: "blade",
     accept (params) {
         const result = parseRecord(params, (p)=>({
                 title: p.required.string,
-                view: p.required.constant('folder'),
+                view: p.required.constant("folder"),
                 expanded: p.optional.boolean
             }));
         return result ? {
@@ -2322,7 +2322,7 @@ const FolderBladePlugin = createPlugin({
         return new FolderApi(args.controller, args.pool);
     }
 });
-const cn$o = ClassName('');
+const cn$o = ClassName("");
 function valueToModifier(elem, modifier) {
     return valueToClassName(elem, cn$o(undefined, modifier));
 }
@@ -2341,8 +2341,8 @@ class ViewProps extends ValueMap {
         return this.globalDisabled_;
     }
     bindClassModifiers(elem) {
-        bindValue(this.globalDisabled_, valueToModifier(elem, 'disabled'));
-        bindValueMap(this, 'hidden', valueToModifier(elem, 'hidden'));
+        bindValue(this.globalDisabled_, valueToModifier(elem, "disabled"));
+        bindValueMap(this, "hidden", valueToModifier(elem, "hidden"));
     }
     bindDisabled(target) {
         bindValue(this.globalDisabled_, (disabled)=>{
@@ -2355,26 +2355,26 @@ class ViewProps extends ValueMap {
         });
     }
     handleDispose(callback) {
-        this.value('disposed').emitter.on('change', (disposed)=>{
+        this.value("disposed").emitter.on("change", (disposed)=>{
             if (disposed) {
                 callback();
             }
         });
     }
     importState(state) {
-        this.set('disabled', state.disabled);
-        this.set('hidden', state.hidden);
+        this.set("disabled", state.disabled);
+        this.set("hidden", state.hidden);
     }
     exportState() {
         return {
-            disabled: this.get('disabled'),
-            hidden: this.get('hidden')
+            disabled: this.get("disabled"),
+            hidden: this.get("hidden")
         };
     }
     getGlobalDisabled_() {
-        const parent = this.get('parent');
+        const parent = this.get("parent");
         const parentDisabled = parent ? parent.globalDisabled.rawValue : false;
-        return parentDisabled || this.get('disabled');
+        return parentDisabled || this.get("disabled");
     }
     updateGlobalDisabled_() {
         this.setGlobalDisabled_(this.getGlobalDisabled_());
@@ -2388,8 +2388,8 @@ class ViewProps extends ValueMap {
     onParentChange_(ev) {
         var _a;
         const prevParent = ev.previousRawValue;
-        prevParent === null || prevParent === void 0 ? void 0 : prevParent.globalDisabled.emitter.off('change', this.onParentGlobalDisabledChange_);
-        (_a = this.get('parent')) === null || _a === void 0 ? void 0 : _a.globalDisabled.emitter.on('change', this.onParentGlobalDisabledChange_);
+        prevParent === null || prevParent === void 0 ? void 0 : prevParent.globalDisabled.emitter.off("change", this.onParentGlobalDisabledChange_);
+        (_a = this.get("parent")) === null || _a === void 0 ? void 0 : _a.globalDisabled.emitter.on("change", this.onParentGlobalDisabledChange_);
         this.updateGlobalDisabled_();
     }
     constructor(valueMap){
@@ -2399,51 +2399,51 @@ class ViewProps extends ValueMap {
         this.onParentChange_ = this.onParentChange_.bind(this);
         this.onParentGlobalDisabledChange_ = this.onParentGlobalDisabledChange_.bind(this);
         [this.globalDisabled_, this.setGlobalDisabled_] = createReadonlyValue(createValue(this.getGlobalDisabled_()));
-        this.value('disabled').emitter.on('change', this.onDisabledChange_);
-        this.value('parent').emitter.on('change', this.onParentChange_);
-        (_a = this.get('parent')) === null || _a === void 0 ? void 0 : _a.globalDisabled.emitter.on('change', this.onParentGlobalDisabledChange_);
+        this.value("disabled").emitter.on("change", this.onDisabledChange_);
+        this.value("parent").emitter.on("change", this.onParentChange_);
+        (_a = this.get("parent")) === null || _a === void 0 ? void 0 : _a.globalDisabled.emitter.on("change", this.onParentGlobalDisabledChange_);
     }
 }
-const cn$n = ClassName('tbp');
+const cn$n = ClassName("tbp");
 class TabPageView {
     constructor(doc, config){
-        this.element = doc.createElement('div');
+        this.element = doc.createElement("div");
         this.element.classList.add(cn$n());
         config.viewProps.bindClassModifiers(this.element);
-        const containerElem = doc.createElement('div');
-        containerElem.classList.add(cn$n('c'));
+        const containerElem = doc.createElement("div");
+        containerElem.classList.add(cn$n("c"));
         this.element.appendChild(containerElem);
         this.containerElement = containerElem;
     }
 }
-const cn$m = ClassName('tbi');
+const cn$m = ClassName("tbi");
 class TabItemView {
     constructor(doc, config){
-        this.element = doc.createElement('div');
+        this.element = doc.createElement("div");
         this.element.classList.add(cn$m());
         config.viewProps.bindClassModifiers(this.element);
-        bindValueMap(config.props, 'selected', (selected)=>{
+        bindValueMap(config.props, "selected", (selected)=>{
             if (selected) {
-                this.element.classList.add(cn$m(undefined, 'sel'));
+                this.element.classList.add(cn$m(undefined, "sel"));
             } else {
-                this.element.classList.remove(cn$m(undefined, 'sel'));
+                this.element.classList.remove(cn$m(undefined, "sel"));
             }
         });
-        const buttonElem = doc.createElement('button');
-        buttonElem.classList.add(cn$m('b'));
+        const buttonElem = doc.createElement("button");
+        buttonElem.classList.add(cn$m("b"));
         config.viewProps.bindDisabled(buttonElem);
         this.element.appendChild(buttonElem);
         this.buttonElement = buttonElem;
-        const titleElem = doc.createElement('div');
-        titleElem.classList.add(cn$m('t'));
-        bindValueToTextContent(config.props.value('title'), titleElem);
+        const titleElem = doc.createElement("div");
+        titleElem.classList.add(cn$m("t"));
+        bindValueToTextContent(config.props.value("title"), titleElem);
         this.buttonElement.appendChild(titleElem);
         this.titleElement = titleElem;
     }
 }
 class TabItemController {
     onClick_() {
-        this.emitter.emit('click', {
+        this.emitter.emit("click", {
             sender: this
         });
     }
@@ -2456,7 +2456,7 @@ class TabItemController {
             props: config.props,
             viewProps: config.viewProps
         });
-        this.view.buttonElement.addEventListener('click', this.onClick_);
+        this.view.buttonElement.addEventListener("click", this.onClick_);
     }
 }
 class TabPageController extends ContainerBladeController {
@@ -2468,19 +2468,19 @@ class TabPageController extends ContainerBladeController {
                 selected: p.required.boolean,
                 title: p.required.string
             }), (result)=>{
-            this.ic_.props.set('selected', result.selected);
-            this.ic_.props.set('title', result.title);
+            this.ic_.props.set("selected", result.selected);
+            this.ic_.props.set("title", result.title);
             return true;
         });
     }
     exportState() {
         return exportBladeState(()=>super.exportState(), {
-            selected: this.ic_.props.get('selected'),
-            title: this.ic_.props.get('title')
+            selected: this.ic_.props.get("selected"),
+            title: this.ic_.props.get("title")
         });
     }
     onItemClick_() {
-        this.props.set('selected', true);
+        this.props.set("selected", true);
     }
     constructor(doc, config){
         const view = new TabPageView(doc, {
@@ -2499,11 +2499,11 @@ class TabPageController extends ContainerBladeController {
             props: config.itemProps,
             viewProps: ViewProps.create()
         });
-        this.ic_.emitter.on('click', this.onItemClick_);
+        this.ic_.emitter.on("click", this.onItemClick_);
         this.props = config.props;
-        bindValueMap(this.props, 'selected', (selected)=>{
-            this.itemController.props.set('selected', selected);
-            this.viewProps.set('hidden', !selected);
+        bindValueMap(this.props, "selected", (selected)=>{
+            this.itemController.props.set("selected", selected);
+            this.viewProps.set("hidden", !selected);
         });
     }
 }
@@ -2538,32 +2538,32 @@ class TabApi extends ContainerBladeApi {
         return this;
     }
     onSelect_(ev) {
-        this.emitter_.emit('select', new TpTabSelectEvent(this, ev.rawValue));
+        this.emitter_.emit("select", new TpTabSelectEvent(this, ev.rawValue));
     }
     constructor(controller, pool){
         super(controller, pool);
         this.emitter_ = new Emitter();
         this.onSelect_ = this.onSelect_.bind(this);
         this.pool_ = pool;
-        this.rackApi_.on('change', (ev)=>{
-            this.emitter_.emit('change', ev);
+        this.rackApi_.on("change", (ev)=>{
+            this.emitter_.emit("change", ev);
         });
-        this.controller.tab.selectedIndex.emitter.on('change', this.onSelect_);
+        this.controller.tab.selectedIndex.emitter.on("change", this.onSelect_);
     }
 }
 class TabPageApi extends ContainerBladeApi {
     get title() {
         var _a;
-        return (_a = this.controller.itemController.props.get('title')) !== null && _a !== void 0 ? _a : '';
+        return (_a = this.controller.itemController.props.get("title")) !== null && _a !== void 0 ? _a : "";
     }
     set title(title) {
-        this.controller.itemController.props.set('title', title);
+        this.controller.itemController.props.set("title", title);
     }
     get selected() {
-        return this.controller.props.get('selected');
+        return this.controller.props.get("selected");
     }
     set selected(selected) {
-        this.controller.props.set('selected', selected);
+        this.controller.props.set("selected", selected);
     }
     get children() {
         return this.rackApi_.children;
@@ -2595,7 +2595,7 @@ class Tab {
     add(item, opt_index) {
         const index = opt_index !== null && opt_index !== void 0 ? opt_index : this.items_.length;
         this.items_.splice(index, 0, item);
-        item.emitter.on('change', this.onItemSelectedChange_);
+        item.emitter.on("change", this.onItemSelectedChange_);
         this.keepSelection_();
     }
     remove(item) {
@@ -2604,7 +2604,7 @@ class Tab {
             return;
         }
         this.items_.splice(index, 1);
-        item.emitter.off('change', this.onItemSelectedChange_);
+        item.emitter.off("change", this.onItemSelectedChange_);
         this.keepSelection_();
     }
     keepSelection_() {
@@ -2645,22 +2645,22 @@ class Tab {
         this.items_ = [];
     }
 }
-const cn$l = ClassName('tab');
+const cn$l = ClassName("tab");
 class TabView {
     constructor(doc, config){
-        this.element = doc.createElement('div');
+        this.element = doc.createElement("div");
         this.element.classList.add(cn$l(), bladeContainerClassName());
         config.viewProps.bindClassModifiers(this.element);
-        bindValue(config.empty, valueToClassName(this.element, cn$l(undefined, 'nop')));
-        const titleElem = doc.createElement('div');
-        titleElem.classList.add(cn$l('t'));
+        bindValue(config.empty, valueToClassName(this.element, cn$l(undefined, "nop")));
+        const titleElem = doc.createElement("div");
+        titleElem.classList.add(cn$l("t"));
         this.element.appendChild(titleElem);
         this.itemsElement = titleElem;
-        const indentElem = doc.createElement('div');
-        indentElem.classList.add(cn$l('i'));
+        const indentElem = doc.createElement("div");
+        indentElem.classList.add(cn$l("i"));
         this.element.appendChild(indentElem);
-        const contentsElem = doc.createElement('div');
-        contentsElem.classList.add(cn$l('c'));
+        const contentsElem = doc.createElement("div");
+        contentsElem.classList.add(cn$l("c"));
         this.element.appendChild(contentsElem);
         this.contentsElement = contentsElem;
     }
@@ -2678,8 +2678,8 @@ class TabController extends ContainerBladeController {
         }
         const pc = ev.bladeController;
         insertElementAt(this.view.itemsElement, pc.itemController.view.element, ev.index);
-        pc.itemController.viewProps.set('parent', this.viewProps);
-        this.tab.add(pc.props.value('selected'));
+        pc.itemController.viewProps.set("parent", this.viewProps);
+        this.tab.add(pc.props.value("selected"));
     }
     onRackRemove_(ev) {
         if (!ev.root) {
@@ -2687,8 +2687,8 @@ class TabController extends ContainerBladeController {
         }
         const pc = ev.bladeController;
         removeElement(pc.itemController.view.element);
-        pc.itemController.viewProps.set('parent', null);
-        this.tab.remove(pc.props.value('selected'));
+        pc.itemController.viewProps.set("parent", null);
+        this.tab.remove(pc.props.value("selected"));
     }
     constructor(doc, config){
         const tab = new Tab();
@@ -2708,20 +2708,20 @@ class TabController extends ContainerBladeController {
         this.onRackAdd_ = this.onRackAdd_.bind(this);
         this.onRackRemove_ = this.onRackRemove_.bind(this);
         const rack = this.rackController.rack;
-        rack.emitter.on('add', this.onRackAdd_);
-        rack.emitter.on('remove', this.onRackRemove_);
+        rack.emitter.on("add", this.onRackAdd_);
+        rack.emitter.on("remove", this.onRackRemove_);
         this.tab = tab;
     }
 }
 const TabBladePlugin = createPlugin({
-    id: 'tab',
-    type: 'blade',
+    id: "tab",
+    type: "blade",
     accept (params) {
         const result = parseRecord(params, (p)=>({
                 pages: p.required.array(p.required.object({
                     title: p.required.string
                 })),
-                view: p.required.constant('tab')
+                view: p.required.constant("tab")
             }));
         if (!result || result.pages.length === 0) {
             return null;
@@ -2785,10 +2785,10 @@ function createBladeController(plugin, args) {
 }
 class ListInputBindingApi extends BindingApi {
     get options() {
-        return this.controller.valueController.props.get('options');
+        return this.controller.valueController.props.get("options");
     }
     set options(options) {
-        this.controller.valueController.props.set('options', options);
+        this.controller.valueController.props.set("options", options);
     }
 }
 class ManualTicker {
@@ -2797,7 +2797,7 @@ class ManualTicker {
         if (this.disabled) {
             return;
         }
-        this.emitter.emit('tick', {
+        this.emitter.emit("tick", {
             sender: this
         });
     }
@@ -2845,7 +2845,7 @@ class IntervalTicker {
         if (this.disabled_) {
             return;
         }
-        this.emitter.emit('tick', {
+        this.emitter.emit("tick", {
             sender: this
         });
     }
@@ -2888,7 +2888,7 @@ function findConstraint(c, constraintClass) {
 }
 class ListConstraint {
     constrain(value) {
-        const opts = this.values.get('options');
+        const opts = this.values.get("options");
         if (opts.length === 0) {
             return value;
         }
@@ -2916,7 +2916,7 @@ function parseListOptions(value) {
                 }))
             }))) === null || _a === void 0 ? void 0 : _a.items;
     }
-    if (typeof value === 'object') {
+    if (typeof value === "object") {
         return p.required.raw(value).value;
     }
     return undefined;
@@ -2937,10 +2937,10 @@ function normalizeListOptions(options) {
 function createListConstraint(options) {
     return !isEmpty(options) ? new ListConstraint(normalizeListOptions(forceCast(options))) : null;
 }
-const cn$k = ClassName('lst');
+const cn$k = ClassName("lst");
 class ListView {
     update_() {
-        const values = this.props_.get('options').map((o)=>o.value);
+        const values = this.props_.get("options").map((o)=>o.value);
         this.selectElement.selectedIndex = values.indexOf(this.value_.rawValue);
     }
     onValueChange_() {
@@ -2949,24 +2949,24 @@ class ListView {
     constructor(doc, config){
         this.onValueChange_ = this.onValueChange_.bind(this);
         this.props_ = config.props;
-        this.element = doc.createElement('div');
+        this.element = doc.createElement("div");
         this.element.classList.add(cn$k());
         config.viewProps.bindClassModifiers(this.element);
-        const selectElem = doc.createElement('select');
-        selectElem.classList.add(cn$k('s'));
+        const selectElem = doc.createElement("select");
+        selectElem.classList.add(cn$k("s"));
         config.viewProps.bindDisabled(selectElem);
         this.element.appendChild(selectElem);
         this.selectElement = selectElem;
-        const markElem = doc.createElement('div');
-        markElem.classList.add(cn$k('m'));
-        markElem.appendChild(createSvgIconElement(doc, 'dropdown'));
+        const markElem = doc.createElement("div");
+        markElem.classList.add(cn$k("m"));
+        markElem.appendChild(createSvgIconElement(doc, "dropdown"));
         this.element.appendChild(markElem);
-        config.value.emitter.on('change', this.onValueChange_);
+        config.value.emitter.on("change", this.onValueChange_);
         this.value_ = config.value;
-        bindValueMap(this.props_, 'options', (opts)=>{
+        bindValueMap(this.props_, "options", (opts)=>{
             removeChildElements(this.selectElement);
             opts.forEach((item)=>{
-                const optionElem = doc.createElement('option');
+                const optionElem = doc.createElement("option");
                 optionElem.textContent = item.text;
                 this.selectElement.appendChild(optionElem);
             });
@@ -2977,19 +2977,19 @@ class ListView {
 class ListController {
     onSelectChange_(e) {
         const selectElem = forceCast(e.currentTarget);
-        this.value.rawValue = this.props.get('options')[selectElem.selectedIndex].value;
+        this.value.rawValue = this.props.get("options")[selectElem.selectedIndex].value;
     }
     importProps(state) {
         return importBladeState(state, null, (p)=>({
                 options: p.required.custom(parseListOptions)
             }), (result)=>{
-            this.props.set('options', normalizeListOptions(result.options));
+            this.props.set("options", normalizeListOptions(result.options));
             return true;
         });
     }
     exportProps() {
         return exportBladeState(null, {
-            options: this.props.get('options')
+            options: this.props.get("options")
         });
     }
     constructor(doc, config){
@@ -3002,16 +3002,16 @@ class ListController {
             value: this.value,
             viewProps: this.viewProps
         });
-        this.view.selectElement.addEventListener('change', this.onSelectChange_);
+        this.view.selectElement.addEventListener("change", this.onSelectChange_);
     }
 }
-const cn$j = ClassName('pop');
+const cn$j = ClassName("pop");
 class PopupView {
     constructor(doc, config){
-        this.element = doc.createElement('div');
+        this.element = doc.createElement("div");
         this.element.classList.add(cn$j());
         config.viewProps.bindClassModifiers(this.element);
-        bindValue(config.shows, valueToClassName(this.element, cn$j(undefined, 'v')));
+        bindValue(config.shows, valueToClassName(this.element, cn$j(undefined, "v")));
     }
 }
 class PopupController {
@@ -3024,10 +3024,10 @@ class PopupController {
         });
     }
 }
-const cn$i = ClassName('txt');
+const cn$i = ClassName("txt");
 class TextView {
     refresh() {
-        const formatter = this.props_.get('formatter');
+        const formatter = this.props_.get("formatter");
         this.inputElement.value = formatter(this.value_.rawValue);
     }
     onChange_() {
@@ -3035,18 +3035,18 @@ class TextView {
     }
     constructor(doc, config){
         this.onChange_ = this.onChange_.bind(this);
-        this.element = doc.createElement('div');
+        this.element = doc.createElement("div");
         this.element.classList.add(cn$i());
         config.viewProps.bindClassModifiers(this.element);
         this.props_ = config.props;
-        this.props_.emitter.on('change', this.onChange_);
-        const inputElem = doc.createElement('input');
-        inputElem.classList.add(cn$i('i'));
-        inputElem.type = 'text';
+        this.props_.emitter.on("change", this.onChange_);
+        const inputElem = doc.createElement("input");
+        inputElem.classList.add(cn$i("i"));
+        inputElem.type = "text";
         config.viewProps.bindDisabled(inputElem);
         this.element.appendChild(inputElem);
         this.inputElement = inputElem;
-        config.value.emitter.on('change', this.onChange_);
+        config.value.emitter.on("change", this.onChange_);
         this.value_ = config.value;
         this.refresh();
     }
@@ -3072,14 +3072,14 @@ class TextController {
             value: this.value,
             viewProps: this.viewProps
         });
-        this.view.inputElement.addEventListener('change', this.onInputChange_);
+        this.view.inputElement.addEventListener("change", this.onInputChange_);
     }
 }
 function boolToString(value) {
     return String(value);
 }
 function boolFromUnknown(value) {
-    if (value === 'false') {
+    if (value === "false") {
         return false;
     }
     return !!value;
@@ -3099,7 +3099,7 @@ function composeParsers(parsers) {
 }
 const innerFormatter = createNumberFormatter(0);
 function formatPercentage(value) {
-    return innerFormatter(value) + '%';
+    return innerFormatter(value) + "%";
 }
 function stringFromUnknown(value) {
     return String(value);
@@ -3118,12 +3118,12 @@ function connectValues(param) {
         callback();
         changing = false;
     }
-    primary.emitter.on('change', (ev)=>{
+    primary.emitter.on("change", (ev)=>{
         preventFeedback(()=>{
             secondary.setRawValue(forward(primary.rawValue, secondary.rawValue), ev.options);
         });
     });
-    secondary.emitter.on('change', (ev)=>{
+    secondary.emitter.on("change", (ev)=>{
         preventFeedback(()=>{
             primary.setRawValue(backward(primary.rawValue, secondary.rawValue), ev.options);
         });
@@ -3150,24 +3150,24 @@ function getStepForKey(keyScale, keys) {
 function getVerticalStepKeys(ev) {
     return {
         altKey: ev.altKey,
-        downKey: ev.key === 'ArrowDown',
+        downKey: ev.key === "ArrowDown",
         shiftKey: ev.shiftKey,
-        upKey: ev.key === 'ArrowUp'
+        upKey: ev.key === "ArrowUp"
     };
 }
 function getHorizontalStepKeys(ev) {
     return {
         altKey: ev.altKey,
-        downKey: ev.key === 'ArrowLeft',
+        downKey: ev.key === "ArrowLeft",
         shiftKey: ev.shiftKey,
-        upKey: ev.key === 'ArrowRight'
+        upKey: ev.key === "ArrowRight"
     };
 }
 function isVerticalArrowKey(key) {
-    return key === 'ArrowUp' || key === 'ArrowDown';
+    return key === "ArrowUp" || key === "ArrowDown";
 }
 function isArrowKey(key) {
-    return isVerticalArrowKey(key) || key === 'ArrowLeft' || key === 'ArrowRight';
+    return isVerticalArrowKey(key) || key === "ArrowLeft" || key === "ArrowRight";
 }
 function computeOffset$1(ev, elem) {
     var _a, _b;
@@ -3197,9 +3197,9 @@ class PointerHandler {
         ev.preventDefault();
         (_a = ev.currentTarget) === null || _a === void 0 ? void 0 : _a.focus();
         const doc = this.elem_.ownerDocument;
-        doc.addEventListener('mousemove', this.onDocumentMouseMove_);
-        doc.addEventListener('mouseup', this.onDocumentMouseUp_);
-        this.emitter.emit('down', {
+        doc.addEventListener("mousemove", this.onDocumentMouseMove_);
+        doc.addEventListener("mouseup", this.onDocumentMouseUp_);
+        this.emitter.emit("down", {
             altKey: ev.altKey,
             data: this.computePosition_(computeOffset$1(ev, this.elem_)),
             sender: this,
@@ -3207,7 +3207,7 @@ class PointerHandler {
         });
     }
     onDocumentMouseMove_(ev) {
-        this.emitter.emit('move', {
+        this.emitter.emit("move", {
             altKey: ev.altKey,
             data: this.computePosition_(computeOffset$1(ev, this.elem_)),
             sender: this,
@@ -3216,9 +3216,9 @@ class PointerHandler {
     }
     onDocumentMouseUp_(ev) {
         const doc = this.elem_.ownerDocument;
-        doc.removeEventListener('mousemove', this.onDocumentMouseMove_);
-        doc.removeEventListener('mouseup', this.onDocumentMouseUp_);
-        this.emitter.emit('up', {
+        doc.removeEventListener("mousemove", this.onDocumentMouseMove_);
+        doc.removeEventListener("mouseup", this.onDocumentMouseUp_);
+        this.emitter.emit("up", {
             altKey: ev.altKey,
             data: this.computePosition_(computeOffset$1(ev, this.elem_)),
             sender: this,
@@ -3229,7 +3229,7 @@ class PointerHandler {
         ev.preventDefault();
         const touch = ev.targetTouches.item(0);
         const rect = this.elem_.getBoundingClientRect();
-        this.emitter.emit('down', {
+        this.emitter.emit("down", {
             altKey: ev.altKey,
             data: this.computePosition_(touch ? {
                 x: touch.clientX - rect.left,
@@ -3243,7 +3243,7 @@ class PointerHandler {
     onTouchMove_(ev) {
         const touch = ev.targetTouches.item(0);
         const rect = this.elem_.getBoundingClientRect();
-        this.emitter.emit('move', {
+        this.emitter.emit("move", {
             altKey: ev.altKey,
             data: this.computePosition_(touch ? {
                 x: touch.clientX - rect.left,
@@ -3258,7 +3258,7 @@ class PointerHandler {
         var _a;
         const touch = (_a = ev.targetTouches.item(0)) !== null && _a !== void 0 ? _a : this.lastTouch_;
         const rect = this.elem_.getBoundingClientRect();
-        this.emitter.emit('up', {
+        this.emitter.emit("up", {
             altKey: ev.altKey,
             data: this.computePosition_(touch ? {
                 x: touch.clientX - rect.left,
@@ -3278,38 +3278,38 @@ class PointerHandler {
         this.onTouchStart_ = this.onTouchStart_.bind(this);
         this.elem_ = element;
         this.emitter = new Emitter();
-        element.addEventListener('touchstart', this.onTouchStart_, {
+        element.addEventListener("touchstart", this.onTouchStart_, {
             passive: false
         });
-        element.addEventListener('touchmove', this.onTouchMove_, {
+        element.addEventListener("touchmove", this.onTouchMove_, {
             passive: true
         });
-        element.addEventListener('touchend', this.onTouchEnd_);
-        element.addEventListener('mousedown', this.onMouseDown_);
+        element.addEventListener("touchend", this.onTouchEnd_);
+        element.addEventListener("mousedown", this.onMouseDown_);
     }
 }
-const cn$h = ClassName('txt');
+const cn$h = ClassName("txt");
 class NumberTextView {
     onDraggingChange_(ev) {
         if (ev.rawValue === null) {
-            this.element.classList.remove(cn$h(undefined, 'drg'));
+            this.element.classList.remove(cn$h(undefined, "drg"));
             return;
         }
-        this.element.classList.add(cn$h(undefined, 'drg'));
-        const x = ev.rawValue / this.props_.get('pointerScale');
+        this.element.classList.add(cn$h(undefined, "drg"));
+        const x = ev.rawValue / this.props_.get("pointerScale");
         const aox = x + (x > 0 ? -1 : x < 0 ? +1 : 0);
         const adx = constrainRange(-aox, -4, +4);
-        this.guideHeadElem_.setAttributeNS(null, 'd', [
+        this.guideHeadElem_.setAttributeNS(null, "d", [
             `M ${aox + adx},0 L${aox},4 L${aox + adx},8`,
             `M ${x},-1 L${x},9`
-        ].join(' '));
-        this.guideBodyElem_.setAttributeNS(null, 'd', `M 0,4 L${x},4`);
-        const formatter = this.props_.get('formatter');
+        ].join(" "));
+        this.guideBodyElem_.setAttributeNS(null, "d", `M 0,4 L${x},4`);
+        const formatter = this.props_.get("formatter");
         this.tooltipElem_.textContent = formatter(this.value.rawValue);
         this.tooltipElem_.style.left = `${x}px`;
     }
     refresh() {
-        const formatter = this.props_.get('formatter');
+        const formatter = this.props_.get("formatter");
         this.inputElement.value = formatter(this.value.rawValue);
     }
     onChange_() {
@@ -3318,44 +3318,44 @@ class NumberTextView {
     constructor(doc, config){
         this.onChange_ = this.onChange_.bind(this);
         this.props_ = config.props;
-        this.props_.emitter.on('change', this.onChange_);
-        this.element = doc.createElement('div');
-        this.element.classList.add(cn$h(), cn$h(undefined, 'num'));
+        this.props_.emitter.on("change", this.onChange_);
+        this.element = doc.createElement("div");
+        this.element.classList.add(cn$h(), cn$h(undefined, "num"));
         if (config.arrayPosition) {
             this.element.classList.add(cn$h(undefined, config.arrayPosition));
         }
         config.viewProps.bindClassModifiers(this.element);
-        const inputElem = doc.createElement('input');
-        inputElem.classList.add(cn$h('i'));
-        inputElem.type = 'text';
+        const inputElem = doc.createElement("input");
+        inputElem.classList.add(cn$h("i"));
+        inputElem.type = "text";
         config.viewProps.bindDisabled(inputElem);
         this.element.appendChild(inputElem);
         this.inputElement = inputElem;
         this.onDraggingChange_ = this.onDraggingChange_.bind(this);
         this.dragging_ = config.dragging;
-        this.dragging_.emitter.on('change', this.onDraggingChange_);
+        this.dragging_.emitter.on("change", this.onDraggingChange_);
         this.element.classList.add(cn$h());
-        this.inputElement.classList.add(cn$h('i'));
-        const knobElem = doc.createElement('div');
-        knobElem.classList.add(cn$h('k'));
+        this.inputElement.classList.add(cn$h("i"));
+        const knobElem = doc.createElement("div");
+        knobElem.classList.add(cn$h("k"));
         this.element.appendChild(knobElem);
         this.knobElement = knobElem;
-        const guideElem = doc.createElementNS(SVG_NS, 'svg');
-        guideElem.classList.add(cn$h('g'));
+        const guideElem = doc.createElementNS(SVG_NS, "svg");
+        guideElem.classList.add(cn$h("g"));
         this.knobElement.appendChild(guideElem);
-        const bodyElem = doc.createElementNS(SVG_NS, 'path');
-        bodyElem.classList.add(cn$h('gb'));
+        const bodyElem = doc.createElementNS(SVG_NS, "path");
+        bodyElem.classList.add(cn$h("gb"));
         guideElem.appendChild(bodyElem);
         this.guideBodyElem_ = bodyElem;
-        const headElem = doc.createElementNS(SVG_NS, 'path');
-        headElem.classList.add(cn$h('gh'));
+        const headElem = doc.createElementNS(SVG_NS, "path");
+        headElem.classList.add(cn$h("gh"));
         guideElem.appendChild(headElem);
         this.guideHeadElem_ = headElem;
-        const tooltipElem = doc.createElement('div');
-        tooltipElem.classList.add(ClassName('tt')());
+        const tooltipElem = doc.createElement("div");
+        tooltipElem.classList.add(ClassName("tt")());
         this.knobElement.appendChild(tooltipElem);
         this.tooltipElem_ = tooltipElem;
-        config.value.emitter.on('change', this.onChange_);
+        config.value.emitter.on("change", this.onChange_);
         this.value = config.value;
         this.refresh();
     }
@@ -3363,8 +3363,8 @@ class NumberTextView {
 class NumberTextController {
     constrainValue_(value) {
         var _a, _b;
-        const min = (_a = this.sliderProps_) === null || _a === void 0 ? void 0 : _a.get('min');
-        const max = (_b = this.sliderProps_) === null || _b === void 0 ? void 0 : _b.get('max');
+        const min = (_a = this.sliderProps_) === null || _a === void 0 ? void 0 : _a.get("min");
+        const max = (_b = this.sliderProps_) === null || _b === void 0 ? void 0 : _b.get("max");
         let v = value;
         if (min !== undefined) {
             v = Math.max(v, min);
@@ -3384,7 +3384,7 @@ class NumberTextController {
         this.view.refresh();
     }
     onInputKeyDown_(ev) {
-        const step = getStepForKey(this.props.get('keyScale'), getVerticalStepKeys(ev));
+        const step = getStepForKey(this.props.get("keyScale"), getVerticalStepKeys(ev));
         if (step === 0) {
             return;
         }
@@ -3394,7 +3394,7 @@ class NumberTextController {
         });
     }
     onInputKeyUp_(ev) {
-        const step = getStepForKey(this.props.get('keyScale'), getVerticalStepKeys(ev));
+        const step = getStepForKey(this.props.get("keyScale"), getVerticalStepKeys(ev));
         if (step === 0) {
             return;
         }
@@ -3412,7 +3412,7 @@ class NumberTextController {
             return null;
         }
         const dx = data.point.x - data.bounds.width / 2;
-        return this.constrainValue_(this.originRawValue_ + dx * this.props.get('pointerScale'));
+        return this.constrainValue_(this.originRawValue_ + dx * this.props.get("pointerScale"));
     }
     onPointerMove_(ev) {
         const v = this.computeDraggingValue_(ev.data);
@@ -3458,19 +3458,19 @@ class NumberTextController {
             value: this.value,
             viewProps: this.viewProps
         });
-        this.view.inputElement.addEventListener('change', this.onInputChange_);
-        this.view.inputElement.addEventListener('keydown', this.onInputKeyDown_);
-        this.view.inputElement.addEventListener('keyup', this.onInputKeyUp_);
+        this.view.inputElement.addEventListener("change", this.onInputChange_);
+        this.view.inputElement.addEventListener("keydown", this.onInputKeyDown_);
+        this.view.inputElement.addEventListener("keyup", this.onInputKeyUp_);
         const ph = new PointerHandler(this.view.knobElement);
-        ph.emitter.on('down', this.onPointerDown_);
-        ph.emitter.on('move', this.onPointerMove_);
-        ph.emitter.on('up', this.onPointerUp_);
+        ph.emitter.on("down", this.onPointerDown_);
+        ph.emitter.on("move", this.onPointerMove_);
+        ph.emitter.on("up", this.onPointerUp_);
     }
 }
-const cn$g = ClassName('sld');
+const cn$g = ClassName("sld");
 class SliderView {
     update_() {
-        const p = constrainRange(mapRange(this.value.rawValue, this.props_.get('min'), this.props_.get('max'), 0, 100), 0, 100);
+        const p = constrainRange(mapRange(this.value.rawValue, this.props_.get("min"), this.props_.get("max"), 0, 100), 0, 100);
         this.knobElement.style.width = `${p}%`;
     }
     onChange_() {
@@ -3479,20 +3479,20 @@ class SliderView {
     constructor(doc, config){
         this.onChange_ = this.onChange_.bind(this);
         this.props_ = config.props;
-        this.props_.emitter.on('change', this.onChange_);
-        this.element = doc.createElement('div');
+        this.props_.emitter.on("change", this.onChange_);
+        this.element = doc.createElement("div");
         this.element.classList.add(cn$g());
         config.viewProps.bindClassModifiers(this.element);
-        const trackElem = doc.createElement('div');
-        trackElem.classList.add(cn$g('t'));
+        const trackElem = doc.createElement("div");
+        trackElem.classList.add(cn$g("t"));
         config.viewProps.bindTabIndex(trackElem);
         this.element.appendChild(trackElem);
         this.trackElement = trackElem;
-        const knobElem = doc.createElement('div');
-        knobElem.classList.add(cn$g('k'));
+        const knobElem = doc.createElement("div");
+        knobElem.classList.add(cn$g("k"));
         this.trackElement.appendChild(knobElem);
         this.knobElement = knobElem;
-        config.value.emitter.on('change', this.onChange_);
+        config.value.emitter.on("change", this.onChange_);
         this.value = config.value;
         this.update_();
     }
@@ -3502,7 +3502,7 @@ class SliderController {
         if (!d.point) {
             return;
         }
-        this.value.setRawValue(mapRange(constrainRange(d.point.x, 0, d.bounds.width), 0, d.bounds.width, this.props.get('min'), this.props.get('max')), opts);
+        this.value.setRawValue(mapRange(constrainRange(d.point.x, 0, d.bounds.width), 0, d.bounds.width, this.props.get("min"), this.props.get("max")), opts);
     }
     onPointerDownOrMove_(ev) {
         this.handlePointerEvent_(ev.data, {
@@ -3517,7 +3517,7 @@ class SliderController {
         });
     }
     onKeyDown_(ev) {
-        const step = getStepForKey(this.props.get('keyScale'), getHorizontalStepKeys(ev));
+        const step = getStepForKey(this.props.get("keyScale"), getHorizontalStepKeys(ev));
         if (step === 0) {
             return;
         }
@@ -3527,7 +3527,7 @@ class SliderController {
         });
     }
     onKeyUp_(ev) {
-        const step = getStepForKey(this.props.get('keyScale'), getHorizontalStepKeys(ev));
+        const step = getStepForKey(this.props.get("keyScale"), getHorizontalStepKeys(ev));
         if (step === 0) {
             return;
         }
@@ -3550,25 +3550,25 @@ class SliderController {
             viewProps: this.viewProps
         });
         this.ptHandler_ = new PointerHandler(this.view.trackElement);
-        this.ptHandler_.emitter.on('down', this.onPointerDownOrMove_);
-        this.ptHandler_.emitter.on('move', this.onPointerDownOrMove_);
-        this.ptHandler_.emitter.on('up', this.onPointerUp_);
-        this.view.trackElement.addEventListener('keydown', this.onKeyDown_);
-        this.view.trackElement.addEventListener('keyup', this.onKeyUp_);
+        this.ptHandler_.emitter.on("down", this.onPointerDownOrMove_);
+        this.ptHandler_.emitter.on("move", this.onPointerDownOrMove_);
+        this.ptHandler_.emitter.on("up", this.onPointerUp_);
+        this.view.trackElement.addEventListener("keydown", this.onKeyDown_);
+        this.view.trackElement.addEventListener("keyup", this.onKeyUp_);
     }
 }
-const cn$f = ClassName('sldtxt');
+const cn$f = ClassName("sldtxt");
 class SliderTextView {
     constructor(doc, config){
-        this.element = doc.createElement('div');
+        this.element = doc.createElement("div");
         this.element.classList.add(cn$f());
-        const sliderElem = doc.createElement('div');
-        sliderElem.classList.add(cn$f('s'));
+        const sliderElem = doc.createElement("div");
+        sliderElem.classList.add(cn$f("s"));
         this.sliderView_ = config.sliderView;
         sliderElem.appendChild(this.sliderView_.element);
         this.element.appendChild(sliderElem);
-        const textElem = doc.createElement('div');
-        textElem.classList.add(cn$f('t'));
+        const textElem = doc.createElement("div");
+        textElem.classList.add(cn$f("t"));
         this.textView_ = config.textView;
         textElem.appendChild(this.textView_.element);
         this.element.appendChild(textElem);
@@ -3587,16 +3587,16 @@ class SliderTextController {
                 min: p.required.number
             }), (result)=>{
             const sliderProps = this.sliderC_.props;
-            sliderProps.set('max', result.max);
-            sliderProps.set('min', result.min);
+            sliderProps.set("max", result.max);
+            sliderProps.set("min", result.min);
             return true;
         });
     }
     exportProps() {
         const sliderProps = this.sliderC_.props;
         return exportBladeState(null, {
-            max: sliderProps.get('max'),
-            min: sliderProps.get('min')
+            max: sliderProps.get("max"),
+            min: sliderProps.get("min")
         });
     }
     constructor(doc, config){
@@ -3635,7 +3635,7 @@ function createSliderTextProps(config) {
     };
 }
 const CSS_VAR_MAP = {
-    containerUnitSize: 'cnt-usz'
+    containerUnitSize: "cnt-usz"
 };
 function getCssVar(key) {
     return `--${CSS_VAR_MAP[key]}`;
@@ -3671,7 +3671,7 @@ function isCompatible(ver) {
     return ver.major === VERSION$1.major;
 }
 function parsePickerLayout(value) {
-    if (value === 'inline' || value === 'popup') {
+    if (value === "inline" || value === "popup") {
         return value;
     }
     return undefined;
@@ -3679,7 +3679,7 @@ function parsePickerLayout(value) {
 function writePrimitive(target, value) {
     target.write(value);
 }
-const cn$e = ClassName('ckb');
+const cn$e = ClassName("ckb");
 class CheckboxView {
     update_() {
         this.inputElement.checked = this.value.rawValue;
@@ -3689,24 +3689,24 @@ class CheckboxView {
     }
     constructor(doc, config){
         this.onValueChange_ = this.onValueChange_.bind(this);
-        this.element = doc.createElement('div');
+        this.element = doc.createElement("div");
         this.element.classList.add(cn$e());
         config.viewProps.bindClassModifiers(this.element);
-        const labelElem = doc.createElement('label');
-        labelElem.classList.add(cn$e('l'));
+        const labelElem = doc.createElement("label");
+        labelElem.classList.add(cn$e("l"));
         this.element.appendChild(labelElem);
-        const inputElem = doc.createElement('input');
-        inputElem.classList.add(cn$e('i'));
-        inputElem.type = 'checkbox';
+        const inputElem = doc.createElement("input");
+        inputElem.classList.add(cn$e("i"));
+        inputElem.type = "checkbox";
         labelElem.appendChild(inputElem);
         this.inputElement = inputElem;
         config.viewProps.bindDisabled(this.inputElement);
-        const wrapperElem = doc.createElement('div');
-        wrapperElem.classList.add(cn$e('w'));
+        const wrapperElem = doc.createElement("div");
+        wrapperElem.classList.add(cn$e("w"));
         labelElem.appendChild(wrapperElem);
-        const markElem = createSvgIconElement(doc, 'check');
+        const markElem = createSvgIconElement(doc, "check");
         wrapperElem.appendChild(markElem);
-        config.value.emitter.on('change', this.onValueChange_);
+        config.value.emitter.on("change", this.onValueChange_);
         this.value = config.value;
         this.update_();
     }
@@ -3724,7 +3724,7 @@ class CheckboxController {
             value: this.value,
             viewProps: this.viewProps
         });
-        this.view.inputElement.addEventListener('change', this.onInputChange_);
+        this.view.inputElement.addEventListener("change", this.onInputChange_);
     }
 }
 function createConstraint$6(params) {
@@ -3736,10 +3736,10 @@ function createConstraint$6(params) {
     return new CompositeConstraint(constraints);
 }
 const BooleanInputPlugin = createPlugin({
-    id: 'input-bool',
-    type: 'input',
+    id: "input-bool",
+    type: "input",
     accept: (value, params)=>{
-        if (typeof value !== 'boolean') {
+        if (typeof value !== "boolean") {
             return null;
         }
         const result = parseRecord(params, (p)=>({
@@ -3764,7 +3764,7 @@ const BooleanInputPlugin = createPlugin({
         if (lc) {
             return new ListController(doc, {
                 props: new ValueMap({
-                    options: lc.values.value('options')
+                    options: lc.values.value("options")
                 }),
                 value: value,
                 viewProps: args.viewProps
@@ -3776,7 +3776,7 @@ const BooleanInputPlugin = createPlugin({
         });
     },
     api (args) {
-        if (typeof args.controller.value.rawValue !== 'boolean') {
+        if (typeof args.controller.value.rawValue !== "boolean") {
             return null;
         }
         if (args.controller.valueController instanceof ListController) {
@@ -3785,27 +3785,27 @@ const BooleanInputPlugin = createPlugin({
         return null;
     }
 });
-const cn$d = ClassName('col');
+const cn$d = ClassName("col");
 class ColorView {
     constructor(doc, config){
-        this.element = doc.createElement('div');
+        this.element = doc.createElement("div");
         this.element.classList.add(cn$d());
-        config.foldable.bindExpandedClass(this.element, cn$d(undefined, 'expanded'));
-        bindValueMap(config.foldable, 'completed', valueToClassName(this.element, cn$d(undefined, 'cpl')));
-        const headElem = doc.createElement('div');
-        headElem.classList.add(cn$d('h'));
+        config.foldable.bindExpandedClass(this.element, cn$d(undefined, "expanded"));
+        bindValueMap(config.foldable, "completed", valueToClassName(this.element, cn$d(undefined, "cpl")));
+        const headElem = doc.createElement("div");
+        headElem.classList.add(cn$d("h"));
         this.element.appendChild(headElem);
-        const swatchElem = doc.createElement('div');
-        swatchElem.classList.add(cn$d('s'));
+        const swatchElem = doc.createElement("div");
+        swatchElem.classList.add(cn$d("s"));
         headElem.appendChild(swatchElem);
         this.swatchElement = swatchElem;
-        const textElem = doc.createElement('div');
-        textElem.classList.add(cn$d('t'));
+        const textElem = doc.createElement("div");
+        textElem.classList.add(cn$d("t"));
         headElem.appendChild(textElem);
         this.textElement = textElem;
-        if (config.pickerLayout === 'inline') {
-            const pickerElem = doc.createElement('div');
-            pickerElem.classList.add(cn$d('p'));
+        if (config.pickerLayout === "inline") {
+            const pickerElem = doc.createElement("div");
+            pickerElem.classList.add(cn$d("p"));
             this.element.appendChild(pickerElem);
             this.pickerElement = pickerElem;
         } else {
@@ -4029,9 +4029,9 @@ const MODE_CONVERTER_MAP = {
 };
 function getColorMaxComponents(mode, type) {
     return [
-        type === 'float' ? 1 : mode === 'rgb' ? 255 : 360,
-        type === 'float' ? 1 : mode === 'rgb' ? 255 : 100,
-        type === 'float' ? 1 : mode === 'rgb' ? 255 : 100
+        type === "float" ? 1 : mode === "rgb" ? 255 : 360,
+        type === "float" ? 1 : mode === "rgb" ? 255 : 100,
+        type === "float" ? 1 : mode === "rgb" ? 255 : 100
     ];
 }
 function loopHueRange(hue, max) {
@@ -4041,7 +4041,7 @@ function constrainColorComponents(components, mode, type) {
     var _a;
     const ms = getColorMaxComponents(mode, type);
     return [
-        mode === 'rgb' ? constrainRange(components[0], 0, ms[0]) : loopHueRange(components[0], ms[0]),
+        mode === "rgb" ? constrainRange(components[0], 0, ms[0]) : loopHueRange(components[0], ms[0]),
         constrainRange(components[1], 0, ms[1]),
         constrainRange(components[2], 0, ms[2]),
         constrainRange((_a = components[3]) !== null && _a !== void 0 ? _a : 1, 0, 1)
@@ -4053,9 +4053,9 @@ function convertColorType(comps, mode, from, to) {
     return comps.map((c, index)=>c / fms[index] * tms[index]);
 }
 function convertColor(components, from, to) {
-    const intComps = convertColorType(components, from.mode, from.type, 'int');
+    const intComps = convertColorType(components, from.mode, from.type, "int");
     const result = MODE_CONVERTER_MAP[from.mode][to.mode](...intComps);
-    return convertColorType(result, to.mode, 'int', to.type);
+    return convertColorType(result, to.mode, "int", to.type);
 }
 class IntColor {
     static black() {
@@ -4063,7 +4063,7 @@ class IntColor {
             0,
             0,
             0
-        ], 'rgb');
+        ], "rgb");
     }
     getComponents(opt_mode) {
         return appendAlphaComponent(convertColor(removeAlphaComponent(this.comps_), {
@@ -4075,7 +4075,7 @@ class IntColor {
         }), this.comps_[3]);
     }
     toRgbaObject() {
-        const rgbComps = this.getComponents('rgb');
+        const rgbComps = this.getComponents("rgb");
         return {
             r: rgbComps[0],
             g: rgbComps[1],
@@ -4084,12 +4084,12 @@ class IntColor {
         };
     }
     constructor(comps, mode){
-        this.type = 'int';
+        this.type = "int";
         this.mode = mode;
         this.comps_ = constrainColorComponents(comps, mode, this.type);
     }
 }
-const cn$c = ClassName('colp');
+const cn$c = ClassName("colp");
 class ColorPickerView {
     get allFocusableElements() {
         const elems = [
@@ -4105,24 +4105,24 @@ class ColorPickerView {
     }
     constructor(doc, config){
         this.alphaViews_ = null;
-        this.element = doc.createElement('div');
+        this.element = doc.createElement("div");
         this.element.classList.add(cn$c());
         config.viewProps.bindClassModifiers(this.element);
-        const hsvElem = doc.createElement('div');
-        hsvElem.classList.add(cn$c('hsv'));
-        const svElem = doc.createElement('div');
-        svElem.classList.add(cn$c('sv'));
+        const hsvElem = doc.createElement("div");
+        hsvElem.classList.add(cn$c("hsv"));
+        const svElem = doc.createElement("div");
+        svElem.classList.add(cn$c("sv"));
         this.svPaletteView_ = config.svPaletteView;
         svElem.appendChild(this.svPaletteView_.element);
         hsvElem.appendChild(svElem);
-        const hElem = doc.createElement('div');
-        hElem.classList.add(cn$c('h'));
+        const hElem = doc.createElement("div");
+        hElem.classList.add(cn$c("h"));
         this.hPaletteView_ = config.hPaletteView;
         hElem.appendChild(this.hPaletteView_.element);
         hsvElem.appendChild(hElem);
         this.element.appendChild(hsvElem);
-        const rgbElem = doc.createElement('div');
-        rgbElem.classList.add(cn$c('rgb'));
+        const rgbElem = doc.createElement("div");
+        rgbElem.classList.add(cn$c("rgb"));
         this.textsView_ = config.textsView;
         rgbElem.appendChild(this.textsView_.element);
         this.element.appendChild(rgbElem);
@@ -4131,14 +4131,14 @@ class ColorPickerView {
                 palette: config.alphaViews.palette,
                 text: config.alphaViews.text
             };
-            const aElem = doc.createElement('div');
-            aElem.classList.add(cn$c('a'));
-            const apElem = doc.createElement('div');
-            apElem.classList.add(cn$c('ap'));
+            const aElem = doc.createElement("div");
+            aElem.classList.add(cn$c("a"));
+            const apElem = doc.createElement("div");
+            apElem.classList.add(cn$c("ap"));
             apElem.appendChild(this.alphaViews_.palette.element);
             aElem.appendChild(apElem);
-            const atElem = doc.createElement('div');
-            atElem.classList.add(cn$c('at'));
+            const atElem = doc.createElement("div");
+            atElem.classList.add(cn$c("at"));
             atElem.appendChild(this.alphaViews_.text.element);
             aElem.appendChild(atElem);
             this.element.appendChild(aElem);
@@ -4146,7 +4146,7 @@ class ColorPickerView {
     }
 }
 function parseColorType(value) {
-    return value === 'int' ? 'int' : value === 'float' ? 'float' : undefined;
+    return value === "int" ? "int" : value === "float" ? "float" : undefined;
 }
 function parseColorInputParams(params) {
     return parseRecord(params, (p)=>({
@@ -4177,7 +4177,7 @@ class FloatColor {
         }), this.comps_[3]);
     }
     toRgbaObject() {
-        const rgbComps = this.getComponents('rgb');
+        const rgbComps = this.getComponents("rgb");
         return {
             r: rgbComps[0],
             g: rgbComps[1],
@@ -4186,7 +4186,7 @@ class FloatColor {
         };
     }
     constructor(comps, mode){
-        this.type = 'float';
+        this.type = "float";
         this.mode = mode;
         this.comps_ = constrainColorComponents(comps, mode, this.type);
     }
@@ -4199,14 +4199,14 @@ function createColor(comps, mode, type) {
     return TYPE_TO_CONSTRUCTOR_MAP[type](comps, mode);
 }
 function isFloatColor(c) {
-    return c.type === 'float';
+    return c.type === "float";
 }
 function isIntColor(c) {
-    return c.type === 'int';
+    return c.type === "int";
 }
 function convertFloatToInt(cf) {
     const comps = cf.getComponents();
-    const ms = getColorMaxComponents(cf.mode, 'int');
+    const ms = getColorMaxComponents(cf.mode, "int");
     return new IntColor([
         Math.round(mapRange(comps[0], 0, 1, 0, ms[0])),
         Math.round(mapRange(comps[1], 0, 1, 0, ms[1])),
@@ -4216,7 +4216,7 @@ function convertFloatToInt(cf) {
 }
 function convertIntToFloat(ci) {
     const comps = ci.getComponents();
-    const ms = getColorMaxComponents(ci.mode, 'int');
+    const ms = getColorMaxComponents(ci.mode, "int");
     return new FloatColor([
         mapRange(comps[0], 0, ms[0], 0, 1),
         mapRange(comps[1], 0, ms[1], 0, 1),
@@ -4228,10 +4228,10 @@ function mapColorType(c, type) {
     if (c.type === type) {
         return c;
     }
-    if (isIntColor(c) && type === 'float') {
+    if (isIntColor(c) && type === "float") {
         return convertIntToFloat(c);
     }
-    if (isFloatColor(c) && type === 'int') {
+    if (isFloatColor(c) && type === "int") {
         return convertFloatToInt(c);
     }
     throw TpError.shouldNeverHappen();
@@ -4278,7 +4278,7 @@ function parseFunctionalRgbColorComponents(text) {
 }
 function parseFunctionalRgbColor(text) {
     const comps = parseFunctionalRgbColorComponents(text);
-    return comps ? new IntColor(comps, 'rgb') : null;
+    return comps ? new IntColor(comps, "rgb") : null;
 }
 function parseFunctionalRgbaColorComponents(text) {
     const m = text.match(/^rgba\(\s*([0-9A-Fa-f.]+%?)\s*,\s*([0-9A-Fa-f.]+%?)\s*,\s*([0-9A-Fa-f.]+%?)\s*,\s*([0-9A-Fa-f.]+%?)\s*\)$/);
@@ -4298,7 +4298,7 @@ function parseFunctionalRgbaColorComponents(text) {
 }
 function parseFunctionalRgbaColor(text) {
     const comps = parseFunctionalRgbaColorComponents(text);
-    return comps ? new IntColor(comps, 'rgb') : null;
+    return comps ? new IntColor(comps, "rgb") : null;
 }
 function parseFunctionalHslColorComponents(text) {
     const m = text.match(/^hsl\(\s*([0-9A-Fa-f.]+(?:deg|grad|rad|turn)?)\s*,\s*([0-9A-Fa-f.]+%?)\s*,\s*([0-9A-Fa-f.]+%?)\s*\)$/);
@@ -4317,7 +4317,7 @@ function parseFunctionalHslColorComponents(text) {
 }
 function parseFunctionalHslColor(text) {
     const comps = parseFunctionalHslColorComponents(text);
-    return comps ? new IntColor(comps, 'hsl') : null;
+    return comps ? new IntColor(comps, "hsl") : null;
 }
 function parseHslaColorComponents(text) {
     const m = text.match(/^hsla\(\s*([0-9A-Fa-f.]+(?:deg|grad|rad|turn)?)\s*,\s*([0-9A-Fa-f.]+%?)\s*,\s*([0-9A-Fa-f.]+%?)\s*,\s*([0-9A-Fa-f.]+%?)\s*\)$/);
@@ -4337,7 +4337,7 @@ function parseHslaColorComponents(text) {
 }
 function parseFunctionalHslaColor(text) {
     const comps = parseHslaColorComponents(text);
-    return comps ? new IntColor(comps, 'hsl') : null;
+    return comps ? new IntColor(comps, "hsl") : null;
 }
 function parseHexRgbColorComponents(text) {
     const mRgb = text.match(/^#([0-9A-Fa-f])([0-9A-Fa-f])([0-9A-Fa-f])$/);
@@ -4360,7 +4360,7 @@ function parseHexRgbColorComponents(text) {
 }
 function parseHexRgbColor(text) {
     const comps = parseHexRgbColorComponents(text);
-    return comps ? new IntColor(comps, 'rgb') : null;
+    return comps ? new IntColor(comps, "rgb") : null;
 }
 function parseHexRgbaColorComponents(text) {
     const mRgb = text.match(/^#?([0-9A-Fa-f])([0-9A-Fa-f])([0-9A-Fa-f])([0-9A-Fa-f])$/);
@@ -4385,7 +4385,7 @@ function parseHexRgbaColorComponents(text) {
 }
 function parseHexRgbaColor(text) {
     const comps = parseHexRgbaColorComponents(text);
-    return comps ? new IntColor(comps, 'rgb') : null;
+    return comps ? new IntColor(comps, "rgb") : null;
 }
 function parseObjectRgbColorComponents(text) {
     const m = text.match(/^\{\s*r\s*:\s*([0-9A-Fa-f.]+%?)\s*,\s*g\s*:\s*([0-9A-Fa-f.]+%?)\s*,\s*b\s*:\s*([0-9A-Fa-f.]+%?)\s*\}$/);
@@ -4405,7 +4405,7 @@ function parseObjectRgbColorComponents(text) {
 function createObjectRgbColorParser(type) {
     return (text)=>{
         const comps = parseObjectRgbColorComponents(text);
-        return comps ? createColor(comps, 'rgb', type) : null;
+        return comps ? createColor(comps, "rgb", type) : null;
     };
 }
 function parseObjectRgbaColorComponents(text) {
@@ -4427,7 +4427,7 @@ function parseObjectRgbaColorComponents(text) {
 function createObjectRgbaColorParser(type) {
     return (text)=>{
         const comps = parseObjectRgbaColorComponents(text);
-        return comps ? createColor(comps, 'rgb', type) : null;
+        return comps ? createColor(comps, "rgb", type) : null;
     };
 }
 const PARSER_AND_RESULT = [
@@ -4435,64 +4435,64 @@ const PARSER_AND_RESULT = [
         parser: parseHexRgbColorComponents,
         result: {
             alpha: false,
-            mode: 'rgb',
-            notation: 'hex'
+            mode: "rgb",
+            notation: "hex"
         }
     },
     {
         parser: parseHexRgbaColorComponents,
         result: {
             alpha: true,
-            mode: 'rgb',
-            notation: 'hex'
+            mode: "rgb",
+            notation: "hex"
         }
     },
     {
         parser: parseFunctionalRgbColorComponents,
         result: {
             alpha: false,
-            mode: 'rgb',
-            notation: 'func'
+            mode: "rgb",
+            notation: "func"
         }
     },
     {
         parser: parseFunctionalRgbaColorComponents,
         result: {
             alpha: true,
-            mode: 'rgb',
-            notation: 'func'
+            mode: "rgb",
+            notation: "func"
         }
     },
     {
         parser: parseFunctionalHslColorComponents,
         result: {
             alpha: false,
-            mode: 'hsl',
-            notation: 'func'
+            mode: "hsl",
+            notation: "func"
         }
     },
     {
         parser: parseHslaColorComponents,
         result: {
             alpha: true,
-            mode: 'hsl',
-            notation: 'func'
+            mode: "hsl",
+            notation: "func"
         }
     },
     {
         parser: parseObjectRgbColorComponents,
         result: {
             alpha: false,
-            mode: 'rgb',
-            notation: 'object'
+            mode: "rgb",
+            notation: "object"
         }
     },
     {
         parser: parseObjectRgbaColorComponents,
         result: {
             alpha: true,
-            mode: 'rgb',
-            notation: 'object'
+            mode: "rgb",
+            notation: "object"
         }
     }
 ];
@@ -4506,17 +4506,17 @@ function detectStringColor(text) {
     }, null);
 }
 function detectStringColorFormat(text, type) {
-    if (type === void 0) type = 'int';
+    if (type === void 0) type = "int";
     const r = detectStringColor(text);
     if (!r) {
         return null;
     }
-    if (r.notation === 'hex' && type !== 'float') {
+    if (r.notation === "hex" && type !== "float") {
         return Object.assign(Object.assign({}, r), {
-            type: 'int'
+            type: "int"
         });
     }
-    if (r.notation === 'func') {
+    if (r.notation === "func") {
         return Object.assign(Object.assign({}, r), {
             type: type
         });
@@ -4532,11 +4532,11 @@ function createColorStringParser(type) {
         parseFunctionalHslColor,
         parseFunctionalHslaColor
     ];
-    if (type === 'int') {
-        parsers.push(createObjectRgbColorParser('int'), createObjectRgbaColorParser('int'));
+    if (type === "int") {
+        parsers.push(createObjectRgbColorParser("int"), createObjectRgbaColorParser("int"));
     }
-    if (type === 'float') {
-        parsers.push(createObjectRgbColorParser('float'), createObjectRgbaColorParser('float'));
+    if (type === "float") {
+        parsers.push(createObjectRgbColorParser("float"), createObjectRgbaColorParser("float"));
     }
     const parser = composeParsers(parsers);
     return (text)=>{
@@ -4545,8 +4545,8 @@ function createColorStringParser(type) {
     };
 }
 function readIntColorString(value) {
-    const parser = createColorStringParser('int');
-    if (typeof value !== 'string') {
+    const parser = createColorStringParser("int");
+    if (typeof value !== "string") {
         return IntColor.black();
     }
     const result = parser(value);
@@ -4557,36 +4557,36 @@ function zerofill(comp) {
     return hex.length === 1 ? `0${hex}` : hex;
 }
 function colorToHexRgbString(value, prefix) {
-    if (prefix === void 0) prefix = '#';
-    const hexes = removeAlphaComponent(value.getComponents('rgb')).map(zerofill).join('');
+    if (prefix === void 0) prefix = "#";
+    const hexes = removeAlphaComponent(value.getComponents("rgb")).map(zerofill).join("");
     return `${prefix}${hexes}`;
 }
 function colorToHexRgbaString(value, prefix) {
-    if (prefix === void 0) prefix = '#';
-    const rgbaComps = value.getComponents('rgb');
+    if (prefix === void 0) prefix = "#";
+    const rgbaComps = value.getComponents("rgb");
     const hexes = [
         rgbaComps[0],
         rgbaComps[1],
         rgbaComps[2],
         rgbaComps[3] * 255
-    ].map(zerofill).join('');
+    ].map(zerofill).join("");
     return `${prefix}${hexes}`;
 }
 function colorToFunctionalRgbString(value) {
     const formatter = createNumberFormatter(0);
-    const ci = mapColorType(value, 'int');
-    const comps = removeAlphaComponent(ci.getComponents('rgb')).map((comp)=>formatter(comp));
-    return `rgb(${comps.join(', ')})`;
+    const ci = mapColorType(value, "int");
+    const comps = removeAlphaComponent(ci.getComponents("rgb")).map((comp)=>formatter(comp));
+    return `rgb(${comps.join(", ")})`;
 }
 function colorToFunctionalRgbaString(value) {
     const aFormatter = createNumberFormatter(2);
     const rgbFormatter = createNumberFormatter(0);
-    const ci = mapColorType(value, 'int');
-    const comps = ci.getComponents('rgb').map((comp, index)=>{
+    const ci = mapColorType(value, "int");
+    const comps = ci.getComponents("rgb").map((comp, index)=>{
         const formatter = index === 3 ? aFormatter : rgbFormatter;
         return formatter(comp);
     });
-    return `rgba(${comps.join(', ')})`;
+    return `rgba(${comps.join(", ")})`;
 }
 function colorToFunctionalHslString(value) {
     const formatters = [
@@ -4594,9 +4594,9 @@ function colorToFunctionalHslString(value) {
         formatPercentage,
         formatPercentage
     ];
-    const ci = mapColorType(value, 'int');
-    const comps = removeAlphaComponent(ci.getComponents('hsl')).map((comp, index)=>formatters[index](comp));
-    return `hsl(${comps.join(', ')})`;
+    const ci = mapColorType(value, "int");
+    const comps = removeAlphaComponent(ci.getComponents("hsl")).map((comp, index)=>formatters[index](comp));
+    return `hsl(${comps.join(", ")})`;
 }
 function colorToFunctionalHslaString(value) {
     const formatters = [
@@ -4605,39 +4605,39 @@ function colorToFunctionalHslaString(value) {
         formatPercentage,
         createNumberFormatter(2)
     ];
-    const ci = mapColorType(value, 'int');
-    const comps = ci.getComponents('hsl').map((comp, index)=>formatters[index](comp));
-    return `hsla(${comps.join(', ')})`;
+    const ci = mapColorType(value, "int");
+    const comps = ci.getComponents("hsl").map((comp, index)=>formatters[index](comp));
+    return `hsla(${comps.join(", ")})`;
 }
 function colorToObjectRgbString(value, type) {
-    const formatter = createNumberFormatter(type === 'float' ? 2 : 0);
+    const formatter = createNumberFormatter(type === "float" ? 2 : 0);
     const names = [
-        'r',
-        'g',
-        'b'
+        "r",
+        "g",
+        "b"
     ];
     const cc = mapColorType(value, type);
-    const comps = removeAlphaComponent(cc.getComponents('rgb')).map((comp, index)=>`${names[index]}: ${formatter(comp)}`);
-    return `{${comps.join(', ')}}`;
+    const comps = removeAlphaComponent(cc.getComponents("rgb")).map((comp, index)=>`${names[index]}: ${formatter(comp)}`);
+    return `{${comps.join(", ")}}`;
 }
 function createObjectRgbColorFormatter(type) {
     return (value)=>colorToObjectRgbString(value, type);
 }
 function colorToObjectRgbaString(value, type) {
     const aFormatter = createNumberFormatter(2);
-    const rgbFormatter = createNumberFormatter(type === 'float' ? 2 : 0);
+    const rgbFormatter = createNumberFormatter(type === "float" ? 2 : 0);
     const names = [
-        'r',
-        'g',
-        'b',
-        'a'
+        "r",
+        "g",
+        "b",
+        "a"
     ];
     const cc = mapColorType(value, type);
-    const comps = cc.getComponents('rgb').map((comp, index)=>{
+    const comps = cc.getComponents("rgb").map((comp, index)=>{
         const formatter = index === 3 ? aFormatter : rgbFormatter;
         return `${names[index]}: ${formatter(comp)}`;
     });
-    return `{${comps.join(', ')}}`;
+    return `{${comps.join(", ")}}`;
 }
 function createObjectRgbaColorFormatter(type) {
     return (value)=>colorToObjectRgbaString(value, type);
@@ -4646,68 +4646,68 @@ const FORMAT_AND_STRINGIFIERS = [
     {
         format: {
             alpha: false,
-            mode: 'rgb',
-            notation: 'hex',
-            type: 'int'
+            mode: "rgb",
+            notation: "hex",
+            type: "int"
         },
         stringifier: colorToHexRgbString
     },
     {
         format: {
             alpha: true,
-            mode: 'rgb',
-            notation: 'hex',
-            type: 'int'
+            mode: "rgb",
+            notation: "hex",
+            type: "int"
         },
         stringifier: colorToHexRgbaString
     },
     {
         format: {
             alpha: false,
-            mode: 'rgb',
-            notation: 'func',
-            type: 'int'
+            mode: "rgb",
+            notation: "func",
+            type: "int"
         },
         stringifier: colorToFunctionalRgbString
     },
     {
         format: {
             alpha: true,
-            mode: 'rgb',
-            notation: 'func',
-            type: 'int'
+            mode: "rgb",
+            notation: "func",
+            type: "int"
         },
         stringifier: colorToFunctionalRgbaString
     },
     {
         format: {
             alpha: false,
-            mode: 'hsl',
-            notation: 'func',
-            type: 'int'
+            mode: "hsl",
+            notation: "func",
+            type: "int"
         },
         stringifier: colorToFunctionalHslString
     },
     {
         format: {
             alpha: true,
-            mode: 'hsl',
-            notation: 'func',
-            type: 'int'
+            mode: "hsl",
+            notation: "func",
+            type: "int"
         },
         stringifier: colorToFunctionalHslaString
     },
     ...[
-        'int',
-        'float'
+        "int",
+        "float"
     ].reduce((prev, type)=>{
         return [
             ...prev,
             {
                 format: {
                     alpha: false,
-                    mode: 'rgb',
-                    notation: 'object',
+                    mode: "rgb",
+                    notation: "object",
                     type: type
                 },
                 stringifier: createObjectRgbColorFormatter(type)
@@ -4715,8 +4715,8 @@ const FORMAT_AND_STRINGIFIERS = [
             {
                 format: {
                     alpha: true,
-                    mode: 'rgb',
-                    notation: 'object',
+                    mode: "rgb",
+                    notation: "object",
                     type: type
                 },
                 stringifier: createObjectRgbaColorFormatter(type)
@@ -4732,29 +4732,29 @@ function findColorStringifier(format) {
         return equalsStringColorFormat(fas.format, format) ? fas.stringifier : null;
     }, null);
 }
-const cn$b = ClassName('apl');
+const cn$b = ClassName("apl");
 class APaletteView {
     update_() {
         const c = this.value.rawValue;
-        const rgbaComps = c.getComponents('rgb');
+        const rgbaComps = c.getComponents("rgb");
         const leftColor = new IntColor([
             rgbaComps[0],
             rgbaComps[1],
             rgbaComps[2],
             0
-        ], 'rgb');
+        ], "rgb");
         const rightColor = new IntColor([
             rgbaComps[0],
             rgbaComps[1],
             rgbaComps[2],
             255
-        ], 'rgb');
+        ], "rgb");
         const gradientComps = [
-            'to right',
+            "to right",
             colorToFunctionalRgbaString(leftColor),
             colorToFunctionalRgbaString(rightColor)
         ];
-        this.colorElem_.style.background = `linear-gradient(${gradientComps.join(',')})`;
+        this.colorElem_.style.background = `linear-gradient(${gradientComps.join(",")})`;
         this.previewElem_.style.backgroundColor = colorToFunctionalRgbaString(c);
         const left = mapRange(rgbaComps[3], 0, 1, 0, 100);
         this.markerElem_.style.left = `${left}%`;
@@ -4765,24 +4765,24 @@ class APaletteView {
     constructor(doc, config){
         this.onValueChange_ = this.onValueChange_.bind(this);
         this.value = config.value;
-        this.value.emitter.on('change', this.onValueChange_);
-        this.element = doc.createElement('div');
+        this.value.emitter.on("change", this.onValueChange_);
+        this.element = doc.createElement("div");
         this.element.classList.add(cn$b());
         config.viewProps.bindClassModifiers(this.element);
         config.viewProps.bindTabIndex(this.element);
-        const barElem = doc.createElement('div');
-        barElem.classList.add(cn$b('b'));
+        const barElem = doc.createElement("div");
+        barElem.classList.add(cn$b("b"));
         this.element.appendChild(barElem);
-        const colorElem = doc.createElement('div');
-        colorElem.classList.add(cn$b('c'));
+        const colorElem = doc.createElement("div");
+        colorElem.classList.add(cn$b("c"));
         barElem.appendChild(colorElem);
         this.colorElem_ = colorElem;
-        const markerElem = doc.createElement('div');
-        markerElem.classList.add(cn$b('m'));
+        const markerElem = doc.createElement("div");
+        markerElem.classList.add(cn$b("m"));
         this.element.appendChild(markerElem);
         this.markerElem_ = markerElem;
-        const previewElem = doc.createElement('div');
-        previewElem.classList.add(cn$b('p'));
+        const previewElem = doc.createElement("div");
+        previewElem.classList.add(cn$b("p"));
         this.markerElem_.appendChild(previewElem);
         this.previewElem_ = previewElem;
         this.update_();
@@ -4795,13 +4795,13 @@ class APaletteController {
         }
         const alpha = d.point.x / d.bounds.width;
         const c = this.value.rawValue;
-        const [h, s, v] = c.getComponents('hsv');
+        const [h, s, v] = c.getComponents("hsv");
         this.value.setRawValue(new IntColor([
             h,
             s,
             v,
             alpha
-        ], 'hsv'), opts);
+        ], "hsv"), opts);
     }
     onPointerDown_(ev) {
         this.handlePointerEvent_(ev.data, {
@@ -4827,13 +4827,13 @@ class APaletteController {
             return;
         }
         const c = this.value.rawValue;
-        const [h, s, v, a] = c.getComponents('hsv');
+        const [h, s, v, a] = c.getComponents("hsv");
         this.value.setRawValue(new IntColor([
             h,
             s,
             v,
             a + step
-        ], 'hsv'), {
+        ], "hsv"), {
             forceEmit: false,
             last: false
         });
@@ -4861,36 +4861,36 @@ class APaletteController {
             viewProps: this.viewProps
         });
         this.ptHandler_ = new PointerHandler(this.view.element);
-        this.ptHandler_.emitter.on('down', this.onPointerDown_);
-        this.ptHandler_.emitter.on('move', this.onPointerMove_);
-        this.ptHandler_.emitter.on('up', this.onPointerUp_);
-        this.view.element.addEventListener('keydown', this.onKeyDown_);
-        this.view.element.addEventListener('keyup', this.onKeyUp_);
+        this.ptHandler_.emitter.on("down", this.onPointerDown_);
+        this.ptHandler_.emitter.on("move", this.onPointerMove_);
+        this.ptHandler_.emitter.on("up", this.onPointerUp_);
+        this.view.element.addEventListener("keydown", this.onKeyDown_);
+        this.view.element.addEventListener("keyup", this.onKeyUp_);
     }
 }
-const cn$a = ClassName('coltxt');
+const cn$a = ClassName("coltxt");
 function createModeSelectElement(doc) {
-    const selectElem = doc.createElement('select');
+    const selectElem = doc.createElement("select");
     const items = [
         {
-            text: 'RGB',
-            value: 'rgb'
+            text: "RGB",
+            value: "rgb"
         },
         {
-            text: 'HSL',
-            value: 'hsl'
+            text: "HSL",
+            value: "hsl"
         },
         {
-            text: 'HSV',
-            value: 'hsv'
+            text: "HSV",
+            value: "hsv"
         },
         {
-            text: 'HEX',
-            value: 'hex'
+            text: "HEX",
+            value: "hex"
         }
     ];
     selectElem.appendChild(items.reduce((frag, item)=>{
-        const optElem = doc.createElement('option');
+        const optElem = doc.createElement("option");
         optElem.textContent = item.text;
         optElem.value = item.value;
         frag.appendChild(optElem);
@@ -4913,29 +4913,29 @@ class ColorTextsView {
         removeChildElements(this.inputsElem_);
         const doc = this.element.ownerDocument;
         this.inputViews_.forEach((v)=>{
-            const compElem = doc.createElement('div');
-            compElem.classList.add(cn$a('c'));
+            const compElem = doc.createElement("div");
+            compElem.classList.add(cn$a("c"));
             compElem.appendChild(v.element);
             this.inputsElem_.appendChild(compElem);
         });
     }
     constructor(doc, config){
-        this.element = doc.createElement('div');
+        this.element = doc.createElement("div");
         this.element.classList.add(cn$a());
         config.viewProps.bindClassModifiers(this.element);
-        const modeElem = doc.createElement('div');
-        modeElem.classList.add(cn$a('m'));
+        const modeElem = doc.createElement("div");
+        modeElem.classList.add(cn$a("m"));
         this.modeElem_ = createModeSelectElement(doc);
-        this.modeElem_.classList.add(cn$a('ms'));
+        this.modeElem_.classList.add(cn$a("ms"));
         modeElem.appendChild(this.modeSelectElement);
         config.viewProps.bindDisabled(this.modeElem_);
-        const modeMarkerElem = doc.createElement('div');
-        modeMarkerElem.classList.add(cn$a('mm'));
-        modeMarkerElem.appendChild(createSvgIconElement(doc, 'dropdown'));
+        const modeMarkerElem = doc.createElement("div");
+        modeMarkerElem.classList.add(cn$a("mm"));
+        modeMarkerElem.appendChild(createSvgIconElement(doc, "dropdown"));
         modeElem.appendChild(modeMarkerElem);
         this.element.appendChild(modeElem);
-        const inputsElem = doc.createElement('div');
-        inputsElem.classList.add(cn$a('w'));
+        const inputsElem = doc.createElement("div");
+        inputsElem.classList.add(cn$a("w"));
         this.element.appendChild(inputsElem);
         this.inputsElem_ = inputsElem;
         this.inputViews_ = config.inputViews;
@@ -4946,7 +4946,7 @@ class ColorTextsView {
     }
 }
 function createFormatter$2(type) {
-    return createNumberFormatter(type === 'float' ? 2 : 0);
+    return createNumberFormatter(type === "float" ? 2 : 0);
 }
 function createConstraint$5(mode, type, index) {
     const max = getColorMaxComponents(mode, type)[index];
@@ -4957,12 +4957,12 @@ function createConstraint$5(mode, type, index) {
 }
 function createComponentController(doc, config, index) {
     return new NumberTextController(doc, {
-        arrayPosition: index === 0 ? 'fst' : index === 3 - 1 ? 'lst' : 'mid',
+        arrayPosition: index === 0 ? "fst" : index === 3 - 1 ? "lst" : "mid",
         parser: config.parser,
         props: ValueMap.fromObject({
             formatter: createFormatter$2(config.colorType),
             keyScale: getKeyScaleForColor(false),
-            pointerScale: config.colorType === 'float' ? 0.01 : 1
+            pointerScale: config.colorType === "float" ? 0.01 : 1
         }),
         value: createValue(0, {
             constraint: createConstraint$5(config.colorMode, config.colorType, index)
@@ -4996,7 +4996,7 @@ function createComponentControllers(doc, config) {
                 const comps = mc.getComponents(pickedMode);
                 comps[i] = s;
                 const c = createColor(appendAlphaComponent(removeAlphaComponent(comps), comps[3]), pickedMode, config.colorType);
-                return mapColorType(c, 'int');
+                return mapColorType(c, "int");
             }
         });
         return c;
@@ -5004,7 +5004,7 @@ function createComponentControllers(doc, config) {
 }
 function createHexController(doc, config) {
     const c = new TextController(doc, {
-        parser: createColorStringParser('int'),
+        parser: createColorStringParser("int"),
         props: ValueMap.fromObject({
             formatter: colorToHexRgbString
         }),
@@ -5022,7 +5022,7 @@ function createHexController(doc, config) {
     ];
 }
 function isColorMode(mode) {
-    return mode !== 'hex';
+    return mode !== "hex";
 }
 class ColorTextsController {
     createComponentControllers_(doc) {
@@ -5062,19 +5062,19 @@ class ColorTextsController {
             ],
             viewProps: this.viewProps
         });
-        this.view.modeSelectElement.addEventListener('change', this.onModeSelectChange_);
+        this.view.modeSelectElement.addEventListener("change", this.onModeSelectChange_);
     }
 }
-const cn$9 = ClassName('hpl');
+const cn$9 = ClassName("hpl");
 class HPaletteView {
     update_() {
         const c = this.value.rawValue;
-        const [h] = c.getComponents('hsv');
+        const [h] = c.getComponents("hsv");
         this.markerElem_.style.backgroundColor = colorToFunctionalRgbString(new IntColor([
             h,
             100,
             100
-        ], 'hsv'));
+        ], "hsv"));
         const left = mapRange(h, 0, 360, 0, 100);
         this.markerElem_.style.left = `${left}%`;
     }
@@ -5084,16 +5084,16 @@ class HPaletteView {
     constructor(doc, config){
         this.onValueChange_ = this.onValueChange_.bind(this);
         this.value = config.value;
-        this.value.emitter.on('change', this.onValueChange_);
-        this.element = doc.createElement('div');
+        this.value.emitter.on("change", this.onValueChange_);
+        this.element = doc.createElement("div");
         this.element.classList.add(cn$9());
         config.viewProps.bindClassModifiers(this.element);
         config.viewProps.bindTabIndex(this.element);
-        const colorElem = doc.createElement('div');
-        colorElem.classList.add(cn$9('c'));
+        const colorElem = doc.createElement("div");
+        colorElem.classList.add(cn$9("c"));
         this.element.appendChild(colorElem);
-        const markerElem = doc.createElement('div');
-        markerElem.classList.add(cn$9('m'));
+        const markerElem = doc.createElement("div");
+        markerElem.classList.add(cn$9("m"));
         this.element.appendChild(markerElem);
         this.markerElem_ = markerElem;
         this.update_();
@@ -5106,13 +5106,13 @@ class HPaletteController {
         }
         const hue = mapRange(constrainRange(d.point.x, 0, d.bounds.width), 0, d.bounds.width, 0, 360);
         const c = this.value.rawValue;
-        const [, s, v, a] = c.getComponents('hsv');
+        const [, s, v, a] = c.getComponents("hsv");
         this.value.setRawValue(new IntColor([
             hue,
             s,
             v,
             a
-        ], 'hsv'), opts);
+        ], "hsv"), opts);
     }
     onPointerDown_(ev) {
         this.handlePointerEvent_(ev.data, {
@@ -5138,13 +5138,13 @@ class HPaletteController {
             return;
         }
         const c = this.value.rawValue;
-        const [h, s, v, a] = c.getComponents('hsv');
+        const [h, s, v, a] = c.getComponents("hsv");
         this.value.setRawValue(new IntColor([
             h + step,
             s,
             v,
             a
-        ], 'hsv'), {
+        ], "hsv"), {
             forceEmit: false,
             last: false
         });
@@ -5172,14 +5172,14 @@ class HPaletteController {
             viewProps: this.viewProps
         });
         this.ptHandler_ = new PointerHandler(this.view.element);
-        this.ptHandler_.emitter.on('down', this.onPointerDown_);
-        this.ptHandler_.emitter.on('move', this.onPointerMove_);
-        this.ptHandler_.emitter.on('up', this.onPointerUp_);
-        this.view.element.addEventListener('keydown', this.onKeyDown_);
-        this.view.element.addEventListener('keyup', this.onKeyUp_);
+        this.ptHandler_.emitter.on("down", this.onPointerDown_);
+        this.ptHandler_.emitter.on("move", this.onPointerMove_);
+        this.ptHandler_.emitter.on("up", this.onPointerUp_);
+        this.view.element.addEventListener("keydown", this.onKeyDown_);
+        this.view.element.addEventListener("keyup", this.onKeyUp_);
     }
 }
-const cn$8 = ClassName('svp');
+const cn$8 = ClassName("svp");
 const CANVAS_RESOL = 64;
 class SvPaletteView {
     update_() {
@@ -5188,7 +5188,7 @@ class SvPaletteView {
             return;
         }
         const c = this.value.rawValue;
-        const hsvComps = c.getComponents('hsv');
+        const hsvComps = c.getComponents("hsv");
         const width = this.canvasElement.width;
         const height = this.canvasElement.height;
         const imgData = ctx.getImageData(0, 0, width, height);
@@ -5217,19 +5217,19 @@ class SvPaletteView {
     constructor(doc, config){
         this.onValueChange_ = this.onValueChange_.bind(this);
         this.value = config.value;
-        this.value.emitter.on('change', this.onValueChange_);
-        this.element = doc.createElement('div');
+        this.value.emitter.on("change", this.onValueChange_);
+        this.element = doc.createElement("div");
         this.element.classList.add(cn$8());
         config.viewProps.bindClassModifiers(this.element);
         config.viewProps.bindTabIndex(this.element);
-        const canvasElem = doc.createElement('canvas');
+        const canvasElem = doc.createElement("canvas");
         canvasElem.height = CANVAS_RESOL;
         canvasElem.width = CANVAS_RESOL;
-        canvasElem.classList.add(cn$8('c'));
+        canvasElem.classList.add(cn$8("c"));
         this.element.appendChild(canvasElem);
         this.canvasElement = canvasElem;
-        const markerElem = doc.createElement('div');
-        markerElem.classList.add(cn$8('m'));
+        const markerElem = doc.createElement("div");
+        markerElem.classList.add(cn$8("m"));
         this.element.appendChild(markerElem);
         this.markerElem_ = markerElem;
         this.update_();
@@ -5242,13 +5242,13 @@ class SvPaletteController {
         }
         const saturation = mapRange(d.point.x, 0, d.bounds.width, 0, 100);
         const value = mapRange(d.point.y, 0, d.bounds.height, 100, 0);
-        const [h, , , a] = this.value.rawValue.getComponents('hsv');
+        const [h, , , a] = this.value.rawValue.getComponents("hsv");
         this.value.setRawValue(new IntColor([
             h,
             saturation,
             value,
             a
-        ], 'hsv'), opts);
+        ], "hsv"), opts);
     }
     onPointerDown_(ev) {
         this.handlePointerEvent_(ev.data, {
@@ -5272,7 +5272,7 @@ class SvPaletteController {
         if (isArrowKey(ev.key)) {
             ev.preventDefault();
         }
-        const [h, s, v, a] = this.value.rawValue.getComponents('hsv');
+        const [h, s, v, a] = this.value.rawValue.getComponents("hsv");
         const keyScale = getKeyScaleForColor(false);
         const ds = getStepForKey(keyScale, getHorizontalStepKeys(ev));
         const dv = getStepForKey(keyScale, getVerticalStepKeys(ev));
@@ -5284,7 +5284,7 @@ class SvPaletteController {
             s + ds,
             v + dv,
             a
-        ], 'hsv'), {
+        ], "hsv"), {
             forceEmit: false,
             last: false
         });
@@ -5314,11 +5314,11 @@ class SvPaletteController {
             viewProps: this.viewProps
         });
         this.ptHandler_ = new PointerHandler(this.view.element);
-        this.ptHandler_.emitter.on('down', this.onPointerDown_);
-        this.ptHandler_.emitter.on('move', this.onPointerMove_);
-        this.ptHandler_.emitter.on('up', this.onPointerUp_);
-        this.view.element.addEventListener('keydown', this.onKeyDown_);
-        this.view.element.addEventListener('keyup', this.onKeyUp_);
+        this.ptHandler_.emitter.on("down", this.onPointerDown_);
+        this.ptHandler_.emitter.on("move", this.onPointerMove_);
+        this.ptHandler_.emitter.on("up", this.onPointerUp_);
+        this.view.element.addEventListener("keydown", this.onKeyDown_);
+        this.view.element.addEventListener("keyup", this.onKeyUp_);
     }
 }
 class ColorPickerController {
@@ -5387,7 +5387,7 @@ class ColorPickerController {
         });
     }
 }
-const cn$7 = ClassName('colsw');
+const cn$7 = ClassName("colsw");
 class ColorSwatchView {
     update_() {
         const value = this.value.rawValue;
@@ -5398,17 +5398,17 @@ class ColorSwatchView {
     }
     constructor(doc, config){
         this.onValueChange_ = this.onValueChange_.bind(this);
-        config.value.emitter.on('change', this.onValueChange_);
+        config.value.emitter.on("change", this.onValueChange_);
         this.value = config.value;
-        this.element = doc.createElement('div');
+        this.element = doc.createElement("div");
         this.element.classList.add(cn$7());
         config.viewProps.bindClassModifiers(this.element);
-        const swatchElem = doc.createElement('div');
-        swatchElem.classList.add(cn$7('sw'));
+        const swatchElem = doc.createElement("div");
+        swatchElem.classList.add(cn$7("sw"));
         this.element.appendChild(swatchElem);
         this.swatchElem_ = swatchElem;
-        const buttonElem = doc.createElement('button');
-        buttonElem.classList.add(cn$7('b'));
+        const buttonElem = doc.createElement("button");
+        buttonElem.classList.add(cn$7("b"));
         config.viewProps.bindDisabled(buttonElem);
         this.element.appendChild(buttonElem);
         this.buttonElement = buttonElem;
@@ -5440,8 +5440,8 @@ class ColorController {
         }
     }
     onButtonClick_() {
-        this.foldable_.set('expanded', !this.foldable_.get('expanded'));
-        if (this.foldable_.get('expanded')) {
+        this.foldable_.set("expanded", !this.foldable_.get("expanded"));
+        if (this.foldable_.get("expanded")) {
             this.pickerC_.view.allFocusableElements[0].focus();
         }
     }
@@ -5461,11 +5461,11 @@ class ColorController {
     }
     onPopupChildKeydown_(ev) {
         if (this.popC_) {
-            if (ev.key === 'Escape') {
+            if (ev.key === "Escape") {
                 this.popC_.shows.rawValue = false;
             }
         } else if (this.view.pickerElement) {
-            if (ev.key === 'Escape') {
+            if (ev.key === "Escape") {
                 this.swatchC_.view.buttonElement.focus();
             }
         }
@@ -5483,8 +5483,8 @@ class ColorController {
             viewProps: this.viewProps
         });
         const buttonElem = this.swatchC_.view.buttonElement;
-        buttonElem.addEventListener('blur', this.onButtonBlur_);
-        buttonElem.addEventListener('click', this.onButtonClick_);
+        buttonElem.addEventListener("blur", this.onButtonBlur_);
+        buttonElem.addEventListener("click", this.onButtonClick_);
         this.textC_ = new TextController(doc, {
             parser: config.parser,
             props: ValueMap.fromObject({
@@ -5499,7 +5499,7 @@ class ColorController {
         });
         this.view.swatchElement.appendChild(this.swatchC_.view.element);
         this.view.textElement.appendChild(this.textC_.view.element);
-        this.popC_ = config.pickerLayout === 'popup' ? new PopupController(doc, {
+        this.popC_ = config.pickerLayout === "popup" ? new PopupController(doc, {
             viewProps: this.viewProps
         }) : null;
         const pickerC = new ColorPickerController(doc, {
@@ -5509,15 +5509,15 @@ class ColorController {
             viewProps: this.viewProps
         });
         pickerC.view.allFocusableElements.forEach((elem)=>{
-            elem.addEventListener('blur', this.onPopupChildBlur_);
-            elem.addEventListener('keydown', this.onPopupChildKeydown_);
+            elem.addEventListener("blur", this.onPopupChildBlur_);
+            elem.addEventListener("keydown", this.onPopupChildKeydown_);
         });
         this.pickerC_ = pickerC;
         if (this.popC_) {
             this.view.element.appendChild(this.popC_.view.element);
             this.popC_.view.element.appendChild(pickerC.view.element);
             connectValues({
-                primary: this.foldable_.value('expanded'),
+                primary: this.foldable_.value("expanded"),
                 secondary: this.popC_.shows,
                 forward: (p)=>p,
                 backward: (_, s)=>s
@@ -5529,12 +5529,12 @@ class ColorController {
     }
 }
 function colorToRgbNumber(value) {
-    return removeAlphaComponent(value.getComponents('rgb')).reduce((result, comp)=>{
+    return removeAlphaComponent(value.getComponents("rgb")).reduce((result, comp)=>{
         return result << 8 | Math.floor(comp) & 0xff;
     }, 0);
 }
 function colorToRgbaNumber(value) {
-    return value.getComponents('rgb').reduce((result, comp, index)=>{
+    return value.getComponents("rgb").reduce((result, comp, index)=>{
         const hex = Math.floor(index === 3 ? comp * 255 : comp) & 0xff;
         return result << 8 | hex;
     }, 0) >>> 0;
@@ -5544,7 +5544,7 @@ function numberToRgbColor(num) {
         num >> 16 & 0xff,
         num >> 8 & 0xff,
         num & 0xff
-    ], 'rgb');
+    ], "rgb");
 }
 function numberToRgbaColor(num) {
     return new IntColor([
@@ -5552,31 +5552,31 @@ function numberToRgbaColor(num) {
         num >> 16 & 0xff,
         num >> 8 & 0xff,
         mapRange(num & 0xff, 0, 255, 0, 1)
-    ], 'rgb');
+    ], "rgb");
 }
 function colorFromRgbNumber(value) {
-    if (typeof value !== 'number') {
+    if (typeof value !== "number") {
         return IntColor.black();
     }
     return numberToRgbColor(value);
 }
 function colorFromRgbaNumber(value) {
-    if (typeof value !== 'number') {
+    if (typeof value !== "number") {
         return IntColor.black();
     }
     return numberToRgbaColor(value);
 }
 function isRgbColorComponent(obj, key) {
-    if (typeof obj !== 'object' || isEmpty(obj)) {
+    if (typeof obj !== "object" || isEmpty(obj)) {
         return false;
     }
-    return key in obj && typeof obj[key] === 'number';
+    return key in obj && typeof obj[key] === "number";
 }
 function isRgbColorObject(obj) {
-    return isRgbColorComponent(obj, 'r') && isRgbColorComponent(obj, 'g') && isRgbColorComponent(obj, 'b');
+    return isRgbColorComponent(obj, "r") && isRgbColorComponent(obj, "g") && isRgbColorComponent(obj, "b");
 }
 function isRgbaColorObject(obj) {
-    return isRgbColorObject(obj) && isRgbColorComponent(obj, 'a');
+    return isRgbColorObject(obj) && isRgbColorComponent(obj, "a");
 }
 function isColorObject(obj) {
     return isRgbColorObject(obj);
@@ -5598,7 +5598,7 @@ function equalsColor(v1, v2) {
     return true;
 }
 function createColorComponentsFromRgbObject(obj) {
-    return 'a' in obj ? [
+    return "a" in obj ? [
         obj.r,
         obj.g,
         obj.b,
@@ -5624,17 +5624,17 @@ function createColorNumberWriter(supportsAlpha) {
 function writeRgbaColorObject(target, value, type) {
     const cc = mapColorType(value, type);
     const obj = cc.toRgbaObject();
-    target.writeProperty('r', obj.r);
-    target.writeProperty('g', obj.g);
-    target.writeProperty('b', obj.b);
-    target.writeProperty('a', obj.a);
+    target.writeProperty("r", obj.r);
+    target.writeProperty("g", obj.g);
+    target.writeProperty("b", obj.b);
+    target.writeProperty("a", obj.a);
 }
 function writeRgbColorObject(target, value, type) {
     const cc = mapColorType(value, type);
     const obj = cc.toRgbaObject();
-    target.writeProperty('r', obj.r);
-    target.writeProperty('g', obj.g);
-    target.writeProperty('b', obj.b);
+    target.writeProperty("r", obj.r);
+    target.writeProperty("g", obj.g);
+    target.writeProperty("b", obj.b);
 }
 function createColorObjectWriter(supportsAlpha, type) {
     return (target, inValue)=>{
@@ -5653,22 +5653,22 @@ function shouldSupportAlpha$1(inputParams) {
     return false;
 }
 function createFormatter$1(supportsAlpha) {
-    return supportsAlpha ? (v)=>colorToHexRgbaString(v, '0x') : (v)=>colorToHexRgbString(v, '0x');
+    return supportsAlpha ? (v)=>colorToHexRgbaString(v, "0x") : (v)=>colorToHexRgbString(v, "0x");
 }
 function isForColor(params) {
-    if ('color' in params) {
+    if ("color" in params) {
         return true;
     }
-    if (params.view === 'color') {
+    if (params.view === "color") {
         return true;
     }
     return false;
 }
 const NumberColorInputPlugin = createPlugin({
-    id: 'input-color-number',
-    type: 'input',
+    id: "input-color-number",
+    type: "input",
     accept: (value, params)=>{
-        if (typeof value !== 'number') {
+        if (typeof value !== "number") {
             return null;
         }
         if (!isForColor(params)) {
@@ -5694,11 +5694,11 @@ const NumberColorInputPlugin = createPlugin({
     controller: (args)=>{
         var _a, _b;
         return new ColorController(args.document, {
-            colorType: 'int',
+            colorType: "int",
             expanded: (_a = args.params.expanded) !== null && _a !== void 0 ? _a : false,
             formatter: createFormatter$1(args.params.supportsAlpha),
-            parser: createColorStringParser('int'),
-            pickerLayout: (_b = args.params.picker) !== null && _b !== void 0 ? _b : 'popup',
+            parser: createColorStringParser("int"),
+            pickerLayout: (_b = args.params.picker) !== null && _b !== void 0 ? _b : "popup",
             supportsAlpha: args.params.supportsAlpha,
             value: args.value,
             viewProps: args.viewProps
@@ -5709,15 +5709,15 @@ function colorFromObject(value, type) {
     if (!isColorObject(value)) {
         return mapColorType(IntColor.black(), type);
     }
-    if (type === 'int') {
+    if (type === "int") {
         const comps = createColorComponentsFromRgbObject(value);
-        return new IntColor(comps, 'rgb');
+        return new IntColor(comps, "rgb");
     }
-    if (type === 'float') {
+    if (type === "float") {
         const comps = createColorComponentsFromRgbObject(value);
-        return new FloatColor(comps, 'rgb');
+        return new FloatColor(comps, "rgb");
     }
-    return mapColorType(IntColor.black(), 'int');
+    return mapColorType(IntColor.black(), "int");
 }
 function shouldSupportAlpha(initialValue) {
     return isRgbaColorObject(initialValue);
@@ -5725,7 +5725,7 @@ function shouldSupportAlpha(initialValue) {
 function createColorObjectBindingReader(type) {
     return (value)=>{
         const c = colorFromObject(value, type);
-        return mapColorType(c, 'int');
+        return mapColorType(c, "int");
     };
 }
 function createColorObjectFormatter(supportsAlpha, type) {
@@ -5737,8 +5737,8 @@ function createColorObjectFormatter(supportsAlpha, type) {
     };
 }
 const ObjectColorInputPlugin = createPlugin({
-    id: 'input-color-object',
-    type: 'input',
+    id: "input-color-object",
+    type: "input",
     accept: (value, params)=>{
         var _a;
         if (!isColorObject(value)) {
@@ -5748,7 +5748,7 @@ const ObjectColorInputPlugin = createPlugin({
         return result ? {
             initialValue: value,
             params: Object.assign(Object.assign({}, result), {
-                colorType: (_a = extractColorType(params)) !== null && _a !== void 0 ? _a : 'int'
+                colorType: (_a = extractColorType(params)) !== null && _a !== void 0 ? _a : "int"
             })
         } : null;
     },
@@ -5764,8 +5764,8 @@ const ObjectColorInputPlugin = createPlugin({
             colorType: args.params.colorType,
             expanded: (_a = args.params.expanded) !== null && _a !== void 0 ? _a : false,
             formatter: createColorObjectFormatter(supportsAlpha, args.params.colorType),
-            parser: createColorStringParser('int'),
-            pickerLayout: (_b = args.params.picker) !== null && _b !== void 0 ? _b : 'popup',
+            parser: createColorStringParser("int"),
+            pickerLayout: (_b = args.params.picker) !== null && _b !== void 0 ? _b : "popup",
             supportsAlpha: supportsAlpha,
             value: args.value,
             viewProps: args.viewProps
@@ -5773,13 +5773,13 @@ const ObjectColorInputPlugin = createPlugin({
     }
 });
 const StringColorInputPlugin = createPlugin({
-    id: 'input-color-string',
-    type: 'input',
+    id: "input-color-string",
+    type: "input",
     accept: (value, params)=>{
-        if (typeof value !== 'string') {
+        if (typeof value !== "string") {
             return null;
         }
-        if (params.view === 'text') {
+        if (params.view === "text") {
             return null;
         }
         const format = detectStringColorFormat(value, extractColorType(params));
@@ -5816,8 +5816,8 @@ const StringColorInputPlugin = createPlugin({
             colorType: args.params.format.type,
             expanded: (_a = args.params.expanded) !== null && _a !== void 0 ? _a : false,
             formatter: args.params.stringifier,
-            parser: createColorStringParser('int'),
-            pickerLayout: (_b = args.params.picker) !== null && _b !== void 0 ? _b : 'popup',
+            parser: createColorStringParser("int"),
+            pickerLayout: (_b = args.params.picker) !== null && _b !== void 0 ? _b : "popup",
             supportsAlpha: args.params.format.alpha,
             value: args.value,
             viewProps: args.viewProps
@@ -5837,15 +5837,15 @@ class PointNdConstraint {
         this.asm_ = config.assembly;
     }
 }
-const cn$6 = ClassName('pndtxt');
+const cn$6 = ClassName("pndtxt");
 class PointNdTextView {
     constructor(doc, config){
         this.textViews = config.textViews;
-        this.element = doc.createElement('div');
+        this.element = doc.createElement("div");
         this.element.classList.add(cn$6());
         this.textViews.forEach((v)=>{
-            const axisElem = doc.createElement('div');
-            axisElem.classList.add(cn$6('a'));
+            const axisElem = doc.createElement("div");
+            axisElem.classList.add(cn$6("a"));
             axisElem.appendChild(v.element);
             this.element.appendChild(axisElem);
         });
@@ -5853,7 +5853,7 @@ class PointNdTextView {
 }
 function createAxisController(doc, config, index) {
     return new NumberTextController(doc, {
-        arrayPosition: index === 0 ? 'fst' : index === config.axes.length - 1 ? 'lst' : 'mid',
+        arrayPosition: index === 0 ? "fst" : index === config.axes.length - 1 ? "lst" : "mid",
         parser: config.parser,
         props: config.axes[index].textProps,
         value: createValue(0, {
@@ -5889,16 +5889,16 @@ class PointNdTextController {
 }
 class SliderInputBindingApi extends BindingApi {
     get max() {
-        return this.controller.valueController.sliderController.props.get('max');
+        return this.controller.valueController.sliderController.props.get("max");
     }
     set max(max) {
-        this.controller.valueController.sliderController.props.set('max', max);
+        this.controller.valueController.sliderController.props.set("max", max);
     }
     get min() {
-        return this.controller.valueController.sliderController.props.get('min');
+        return this.controller.valueController.sliderController.props.get("min");
     }
     set min(max) {
-        this.controller.valueController.sliderController.props.set('min', max);
+        this.controller.valueController.sliderController.props.set("min", max);
     }
 }
 function createConstraint$4(params, initialValue) {
@@ -5918,10 +5918,10 @@ function createConstraint$4(params, initialValue) {
     return new CompositeConstraint(constraints);
 }
 const NumberInputPlugin = createPlugin({
-    id: 'input-number',
-    type: 'input',
+    id: "input-number",
+    type: "input",
     accept: (value, params)=>{
-        if (typeof value !== 'number') {
+        if (typeof value !== "number") {
             return null;
         }
         const result = parseRecord(params, (p)=>Object.assign(Object.assign({}, createNumberTextInputParamsParser(p)), {
@@ -5945,7 +5945,7 @@ const NumberInputPlugin = createPlugin({
         if (lc) {
             return new ListController(args.document, {
                 props: new ValueMap({
-                    options: lc.values.value('options')
+                    options: lc.values.value("options")
                 }),
                 value: value,
                 viewProps: args.viewProps
@@ -5956,8 +5956,8 @@ const NumberInputPlugin = createPlugin({
         if (drc) {
             return new SliderTextController(args.document, Object.assign(Object.assign({}, createSliderTextProps(Object.assign(Object.assign({}, textPropsObj), {
                 keyScale: createValue(textPropsObj.keyScale),
-                max: drc.values.value('max'),
-                min: drc.values.value('min')
+                max: drc.values.value("max"),
+                min: drc.values.value("min")
             }))), {
                 parser: parseNumber,
                 value: value,
@@ -5972,7 +5972,7 @@ const NumberInputPlugin = createPlugin({
         });
     },
     api (args) {
-        if (typeof args.controller.value.rawValue !== 'number') {
+        if (typeof args.controller.value.rawValue !== "number") {
             return null;
         }
         if (args.controller.valueController instanceof SliderTextController) {
@@ -5997,7 +5997,7 @@ class Point2d {
         }
         const x = obj.x;
         const y = obj.y;
-        if (typeof x !== 'number' || typeof y !== 'number') {
+        if (typeof x !== "number" || typeof y !== "number") {
             return false;
         }
         return true;
@@ -6020,29 +6020,29 @@ const Point2dAssembly = {
     toComponents: (p)=>p.getComponents(),
     fromComponents: (comps)=>new Point2d(...comps)
 };
-const cn$5 = ClassName('p2d');
+const cn$5 = ClassName("p2d");
 class Point2dView {
     constructor(doc, config){
-        this.element = doc.createElement('div');
+        this.element = doc.createElement("div");
         this.element.classList.add(cn$5());
         config.viewProps.bindClassModifiers(this.element);
-        bindValue(config.expanded, valueToClassName(this.element, cn$5(undefined, 'expanded')));
-        const headElem = doc.createElement('div');
-        headElem.classList.add(cn$5('h'));
+        bindValue(config.expanded, valueToClassName(this.element, cn$5(undefined, "expanded")));
+        const headElem = doc.createElement("div");
+        headElem.classList.add(cn$5("h"));
         this.element.appendChild(headElem);
-        const buttonElem = doc.createElement('button');
-        buttonElem.classList.add(cn$5('b'));
-        buttonElem.appendChild(createSvgIconElement(doc, 'p2dpad'));
+        const buttonElem = doc.createElement("button");
+        buttonElem.classList.add(cn$5("b"));
+        buttonElem.appendChild(createSvgIconElement(doc, "p2dpad"));
         config.viewProps.bindDisabled(buttonElem);
         headElem.appendChild(buttonElem);
         this.buttonElement = buttonElem;
-        const textElem = doc.createElement('div');
-        textElem.classList.add(cn$5('t'));
+        const textElem = doc.createElement("div");
+        textElem.classList.add(cn$5("t"));
         headElem.appendChild(textElem);
         this.textElement = textElem;
-        if (config.pickerLayout === 'inline') {
-            const pickerElem = doc.createElement('div');
-            pickerElem.classList.add(cn$5('p'));
+        if (config.pickerLayout === "inline") {
+            const pickerElem = doc.createElement("div");
+            pickerElem.classList.add(cn$5("p"));
             this.element.appendChild(pickerElem);
             this.pickerElement = pickerElem;
         } else {
@@ -6050,7 +6050,7 @@ class Point2dView {
         }
     }
 }
-const cn$4 = ClassName('p2dp');
+const cn$4 = ClassName("p2dp");
 class Point2dPickerView {
     get allFocusableElements() {
         return [
@@ -6059,12 +6059,12 @@ class Point2dPickerView {
     }
     update_() {
         const [x, y] = this.value.rawValue.getComponents();
-        const max = this.props_.get('max');
+        const max = this.props_.get("max");
         const px = mapRange(x, -max, +max, 0, 100);
         const py = mapRange(y, -max, +max, 0, 100);
-        const ipy = this.props_.get('invertsY') ? 100 - py : py;
-        this.lineElem_.setAttributeNS(null, 'x2', `${px}%`);
-        this.lineElem_.setAttributeNS(null, 'y2', `${ipy}%`);
+        const ipy = this.props_.get("invertsY") ? 100 - py : py;
+        this.lineElem_.setAttributeNS(null, "x2", `${px}%`);
+        this.lineElem_.setAttributeNS(null, "y2", `${ipy}%`);
         this.markerElem_.style.left = `${px}%`;
         this.markerElem_.style.top = `${ipy}%`;
     }
@@ -6082,47 +6082,47 @@ class Point2dPickerView {
         this.onPropsChange_ = this.onPropsChange_.bind(this);
         this.onValueChange_ = this.onValueChange_.bind(this);
         this.props_ = config.props;
-        this.props_.emitter.on('change', this.onPropsChange_);
-        this.element = doc.createElement('div');
+        this.props_.emitter.on("change", this.onPropsChange_);
+        this.element = doc.createElement("div");
         this.element.classList.add(cn$4());
-        if (config.layout === 'popup') {
-            this.element.classList.add(cn$4(undefined, 'p'));
+        if (config.layout === "popup") {
+            this.element.classList.add(cn$4(undefined, "p"));
         }
         config.viewProps.bindClassModifiers(this.element);
-        const padElem = doc.createElement('div');
-        padElem.classList.add(cn$4('p'));
+        const padElem = doc.createElement("div");
+        padElem.classList.add(cn$4("p"));
         config.viewProps.bindTabIndex(padElem);
         this.element.appendChild(padElem);
         this.padElement = padElem;
-        const svgElem = doc.createElementNS(SVG_NS, 'svg');
-        svgElem.classList.add(cn$4('g'));
+        const svgElem = doc.createElementNS(SVG_NS, "svg");
+        svgElem.classList.add(cn$4("g"));
         this.padElement.appendChild(svgElem);
         this.svgElem_ = svgElem;
-        const xAxisElem = doc.createElementNS(SVG_NS, 'line');
-        xAxisElem.classList.add(cn$4('ax'));
-        xAxisElem.setAttributeNS(null, 'x1', '0');
-        xAxisElem.setAttributeNS(null, 'y1', '50%');
-        xAxisElem.setAttributeNS(null, 'x2', '100%');
-        xAxisElem.setAttributeNS(null, 'y2', '50%');
+        const xAxisElem = doc.createElementNS(SVG_NS, "line");
+        xAxisElem.classList.add(cn$4("ax"));
+        xAxisElem.setAttributeNS(null, "x1", "0");
+        xAxisElem.setAttributeNS(null, "y1", "50%");
+        xAxisElem.setAttributeNS(null, "x2", "100%");
+        xAxisElem.setAttributeNS(null, "y2", "50%");
         this.svgElem_.appendChild(xAxisElem);
-        const yAxisElem = doc.createElementNS(SVG_NS, 'line');
-        yAxisElem.classList.add(cn$4('ax'));
-        yAxisElem.setAttributeNS(null, 'x1', '50%');
-        yAxisElem.setAttributeNS(null, 'y1', '0');
-        yAxisElem.setAttributeNS(null, 'x2', '50%');
-        yAxisElem.setAttributeNS(null, 'y2', '100%');
+        const yAxisElem = doc.createElementNS(SVG_NS, "line");
+        yAxisElem.classList.add(cn$4("ax"));
+        yAxisElem.setAttributeNS(null, "x1", "50%");
+        yAxisElem.setAttributeNS(null, "y1", "0");
+        yAxisElem.setAttributeNS(null, "x2", "50%");
+        yAxisElem.setAttributeNS(null, "y2", "100%");
         this.svgElem_.appendChild(yAxisElem);
-        const lineElem = doc.createElementNS(SVG_NS, 'line');
-        lineElem.classList.add(cn$4('l'));
-        lineElem.setAttributeNS(null, 'x1', '50%');
-        lineElem.setAttributeNS(null, 'y1', '50%');
+        const lineElem = doc.createElementNS(SVG_NS, "line");
+        lineElem.classList.add(cn$4("l"));
+        lineElem.setAttributeNS(null, "x1", "50%");
+        lineElem.setAttributeNS(null, "y1", "50%");
         this.svgElem_.appendChild(lineElem);
         this.lineElem_ = lineElem;
-        const markerElem = doc.createElement('div');
-        markerElem.classList.add(cn$4('m'));
+        const markerElem = doc.createElement("div");
+        markerElem.classList.add(cn$4("m"));
         this.padElement.appendChild(markerElem);
         this.markerElem_ = markerElem;
-        config.value.emitter.on('change', this.onValueChange_);
+        config.value.emitter.on("change", this.onValueChange_);
         this.value = config.value;
         this.update_();
     }
@@ -6138,9 +6138,9 @@ class Point2dPickerController {
         if (!d.point) {
             return;
         }
-        const max = this.props.get('max');
+        const max = this.props.get("max");
         const px = mapRange(d.point.x, 0, d.bounds.width, -max, +max);
-        const py = mapRange(this.props.get('invertsY') ? d.bounds.height - d.point.y : d.point.y, 0, d.bounds.height, -max, +max);
+        const py = mapRange(this.props.get("invertsY") ? d.bounds.height - d.point.y : d.point.y, 0, d.bounds.height, -max, +max);
         this.value.setRawValue(new Point2d(px, py), opts);
     }
     onPointerDown_(ev) {
@@ -6166,9 +6166,9 @@ class Point2dPickerController {
             ev.preventDefault();
         }
         const [dx, dy] = computeOffset(ev, [
-            this.props.get('xKeyScale'),
-            this.props.get('yKeyScale')
-        ], this.props.get('invertsY'));
+            this.props.get("xKeyScale"),
+            this.props.get("yKeyScale")
+        ], this.props.get("invertsY"));
         if (dx === 0 && dy === 0) {
             return;
         }
@@ -6179,9 +6179,9 @@ class Point2dPickerController {
     }
     onPadKeyUp_(ev) {
         const [dx, dy] = computeOffset(ev, [
-            this.props.get('xKeyScale'),
-            this.props.get('yKeyScale')
-        ], this.props.get('invertsY'));
+            this.props.get("xKeyScale"),
+            this.props.get("yKeyScale")
+        ], this.props.get("invertsY"));
         if (dx === 0 && dy === 0) {
             return;
         }
@@ -6206,11 +6206,11 @@ class Point2dPickerController {
             viewProps: this.viewProps
         });
         this.ptHandler_ = new PointerHandler(this.view.padElement);
-        this.ptHandler_.emitter.on('down', this.onPointerDown_);
-        this.ptHandler_.emitter.on('move', this.onPointerMove_);
-        this.ptHandler_.emitter.on('up', this.onPointerUp_);
-        this.view.padElement.addEventListener('keydown', this.onPadKeyDown_);
-        this.view.padElement.addEventListener('keyup', this.onPadKeyUp_);
+        this.ptHandler_.emitter.on("down", this.onPointerDown_);
+        this.ptHandler_.emitter.on("move", this.onPointerMove_);
+        this.ptHandler_.emitter.on("up", this.onPointerUp_);
+        this.view.padElement.addEventListener("keydown", this.onPadKeyDown_);
+        this.view.padElement.addEventListener("keyup", this.onPadKeyUp_);
     }
 }
 class Point2dController {
@@ -6228,8 +6228,8 @@ class Point2dController {
         }
     }
     onPadButtonClick_() {
-        this.foldable_.set('expanded', !this.foldable_.get('expanded'));
-        if (this.foldable_.get('expanded')) {
+        this.foldable_.set("expanded", !this.foldable_.get("expanded"));
+        if (this.foldable_.get("expanded")) {
             this.pickerC_.view.allFocusableElements[0].focus();
         }
     }
@@ -6249,11 +6249,11 @@ class Point2dController {
     }
     onPopupChildKeydown_(ev) {
         if (this.popC_) {
-            if (ev.key === 'Escape') {
+            if (ev.key === "Escape") {
                 this.popC_.shows.rawValue = false;
             }
         } else if (this.view.pickerElement) {
-            if (ev.key === 'Escape') {
+            if (ev.key === "Escape") {
                 this.view.buttonElement.focus();
             }
         }
@@ -6267,7 +6267,7 @@ class Point2dController {
         this.value = config.value;
         this.viewProps = config.viewProps;
         this.foldable_ = Foldable.create(config.expanded);
-        this.popC_ = config.pickerLayout === 'popup' ? new PopupController(doc, {
+        this.popC_ = config.pickerLayout === "popup" ? new PopupController(doc, {
             viewProps: this.viewProps
         }) : null;
         const padC = new Point2dPickerController(doc, {
@@ -6275,15 +6275,15 @@ class Point2dController {
             props: new ValueMap({
                 invertsY: createValue(config.invertsY),
                 max: createValue(config.max),
-                xKeyScale: config.axes[0].textProps.value('keyScale'),
-                yKeyScale: config.axes[1].textProps.value('keyScale')
+                xKeyScale: config.axes[0].textProps.value("keyScale"),
+                yKeyScale: config.axes[1].textProps.value("keyScale")
             }),
             value: this.value,
             viewProps: this.viewProps
         });
         padC.view.allFocusableElements.forEach((elem)=>{
-            elem.addEventListener('blur', this.onPopupChildBlur_);
-            elem.addEventListener('keydown', this.onPopupChildKeydown_);
+            elem.addEventListener("blur", this.onPopupChildBlur_);
+            elem.addEventListener("keydown", this.onPopupChildKeydown_);
         });
         this.pickerC_ = padC;
         this.textC_ = new PointNdTextController(doc, {
@@ -6294,18 +6294,18 @@ class Point2dController {
             viewProps: this.viewProps
         });
         this.view = new Point2dView(doc, {
-            expanded: this.foldable_.value('expanded'),
+            expanded: this.foldable_.value("expanded"),
             pickerLayout: config.pickerLayout,
             viewProps: this.viewProps
         });
         this.view.textElement.appendChild(this.textC_.view.element);
-        (_a = this.view.buttonElement) === null || _a === void 0 ? void 0 : _a.addEventListener('blur', this.onPadButtonBlur_);
-        (_b = this.view.buttonElement) === null || _b === void 0 ? void 0 : _b.addEventListener('click', this.onPadButtonClick_);
+        (_a = this.view.buttonElement) === null || _a === void 0 ? void 0 : _a.addEventListener("blur", this.onPadButtonBlur_);
+        (_b = this.view.buttonElement) === null || _b === void 0 ? void 0 : _b.addEventListener("click", this.onPadButtonClick_);
         if (this.popC_) {
             this.view.element.appendChild(this.popC_.view.element);
             this.popC_.view.element.appendChild(this.pickerC_.view.element);
             connectValues({
-                primary: this.foldable_.value('expanded'),
+                primary: this.foldable_.value("expanded"),
                 secondary: this.popC_.shows,
                 forward: (p)=>p,
                 backward: (_, s)=>s
@@ -6320,8 +6320,8 @@ function point2dFromUnknown(value) {
     return Point2d.isObject(value) ? new Point2d(value.x, value.y) : new Point2d();
 }
 function writePoint2d(target, value) {
-    target.writeProperty('x', value.x);
-    target.writeProperty('y', value.y);
+    target.writeProperty("x", value.x);
+    target.writeProperty("y", value.y);
 }
 function createConstraint$3(params, initialValue) {
     return new PointNdConstraint({
@@ -6347,18 +6347,18 @@ function getSuitableMax(params, initialValue) {
     return Math.max(xr, yr);
 }
 function shouldInvertY(params) {
-    if (!('y' in params)) {
+    if (!("y" in params)) {
         return false;
     }
     const yParams = params.y;
     if (!yParams) {
         return false;
     }
-    return 'inverted' in yParams ? !!yParams.inverted : false;
+    return "inverted" in yParams ? !!yParams.inverted : false;
 }
 const Point2dInputPlugin = createPlugin({
-    id: 'input-point2d',
-    type: 'input',
+    id: "input-point2d",
+    type: "input",
     accept: (value, params)=>{
         if (!Point2d.isObject(value)) {
             return null;
@@ -6405,7 +6405,7 @@ const Point2dInputPlugin = createPlugin({
             invertsY: shouldInvertY(args.params),
             max: getSuitableMax(args.params, value.rawValue),
             parser: parseNumber,
-            pickerLayout: (_b = args.params.picker) !== null && _b !== void 0 ? _b : 'popup',
+            pickerLayout: (_b = args.params.picker) !== null && _b !== void 0 ? _b : "popup",
             value: value,
             viewProps: args.viewProps
         });
@@ -6426,7 +6426,7 @@ class Point3d {
         const x = obj.x;
         const y = obj.y;
         const z = obj.z;
-        if (typeof x !== 'number' || typeof y !== 'number' || typeof z !== 'number') {
+        if (typeof x !== "number" || typeof y !== "number" || typeof z !== "number") {
             return false;
         }
         return true;
@@ -6455,9 +6455,9 @@ function point3dFromUnknown(value) {
     return Point3d.isObject(value) ? new Point3d(value.x, value.y, value.z) : new Point3d();
 }
 function writePoint3d(target, value) {
-    target.writeProperty('x', value.x);
-    target.writeProperty('y', value.y);
-    target.writeProperty('z', value.z);
+    target.writeProperty("x", value.x);
+    target.writeProperty("y", value.y);
+    target.writeProperty("z", value.z);
 }
 function createConstraint$2(params, initialValue) {
     return new PointNdConstraint({
@@ -6470,8 +6470,8 @@ function createConstraint$2(params, initialValue) {
     });
 }
 const Point3dInputPlugin = createPlugin({
-    id: 'input-point3d',
-    type: 'input',
+    id: "input-point3d",
+    type: "input",
     accept: (value, params)=>{
         if (!Point3d.isObject(value)) {
             return null;
@@ -6534,7 +6534,7 @@ class Point4d {
         const y = obj.y;
         const z = obj.z;
         const w = obj.w;
-        if (typeof x !== 'number' || typeof y !== 'number' || typeof z !== 'number' || typeof w !== 'number') {
+        if (typeof x !== "number" || typeof y !== "number" || typeof z !== "number" || typeof w !== "number") {
             return false;
         }
         return true;
@@ -6565,10 +6565,10 @@ function point4dFromUnknown(value) {
     return Point4d.isObject(value) ? new Point4d(value.x, value.y, value.z, value.w) : new Point4d();
 }
 function writePoint4d(target, value) {
-    target.writeProperty('x', value.x);
-    target.writeProperty('y', value.y);
-    target.writeProperty('z', value.z);
-    target.writeProperty('w', value.w);
+    target.writeProperty("x", value.x);
+    target.writeProperty("y", value.y);
+    target.writeProperty("z", value.z);
+    target.writeProperty("w", value.w);
 }
 function createConstraint$1(params, initialValue) {
     return new PointNdConstraint({
@@ -6582,8 +6582,8 @@ function createConstraint$1(params, initialValue) {
     });
 }
 const Point4dInputPlugin = createPlugin({
-    id: 'input-point4d',
-    type: 'input',
+    id: "input-point4d",
+    type: "input",
     accept: (value, params)=>{
         if (!Point4d.isObject(value)) {
             return null;
@@ -6640,10 +6640,10 @@ function createConstraint(params) {
     return new CompositeConstraint(constraints);
 }
 const StringInputPlugin = createPlugin({
-    id: 'input-string',
-    type: 'input',
+    id: "input-string",
+    type: "input",
     accept: (value, params)=>{
-        if (typeof value !== 'string') {
+        if (typeof value !== "string") {
             return null;
         }
         const result = parseRecord(params, (p)=>({
@@ -6668,7 +6668,7 @@ const StringInputPlugin = createPlugin({
         if (lc) {
             return new ListController(doc, {
                 props: new ValueMap({
-                    options: lc.values.value('options')
+                    options: lc.values.value("options")
                 }),
                 value: value,
                 viewProps: args.viewProps
@@ -6684,7 +6684,7 @@ const StringInputPlugin = createPlugin({
         });
     },
     api (args) {
-        if (typeof args.controller.value.rawValue !== 'string') {
+        if (typeof args.controller.value.rawValue !== "string") {
             return null;
         }
         if (args.controller.valueController instanceof ListController) {
@@ -6699,7 +6699,7 @@ const Constants = {
         defaultRows: 3
     }
 };
-const cn$3 = ClassName('mll');
+const cn$3 = ClassName("mll");
 class MultiLogView {
     update_() {
         const elem = this.textareaElem_;
@@ -6710,7 +6710,7 @@ class MultiLogView {
                 lines.push(this.formatter_(value));
             }
         });
-        elem.textContent = lines.join('\n');
+        elem.textContent = lines.join("\n");
         if (shouldScroll) {
             elem.scrollTop = elem.scrollHeight;
         }
@@ -6721,17 +6721,17 @@ class MultiLogView {
     constructor(doc, config){
         this.onValueUpdate_ = this.onValueUpdate_.bind(this);
         this.formatter_ = config.formatter;
-        this.element = doc.createElement('div');
+        this.element = doc.createElement("div");
         this.element.classList.add(cn$3());
         config.viewProps.bindClassModifiers(this.element);
-        const textareaElem = doc.createElement('textarea');
-        textareaElem.classList.add(cn$3('i'));
-        textareaElem.style.height = `calc(var(${getCssVar('containerUnitSize')}) * ${config.rows})`;
+        const textareaElem = doc.createElement("textarea");
+        textareaElem.classList.add(cn$3("i"));
+        textareaElem.style.height = `calc(var(${getCssVar("containerUnitSize")}) * ${config.rows})`;
         textareaElem.readOnly = true;
         config.viewProps.bindDisabled(textareaElem);
         this.element.appendChild(textareaElem);
         this.textareaElem_ = textareaElem;
-        config.value.emitter.on('change', this.onValueUpdate_);
+        config.value.emitter.on("change", this.onValueUpdate_);
         this.value = config.value;
         this.update_();
     }
@@ -6748,12 +6748,12 @@ class MultiLogController {
         });
     }
 }
-const cn$2 = ClassName('sgl');
+const cn$2 = ClassName("sgl");
 class SingleLogView {
     update_() {
         const values = this.value.rawValue;
         const lastValue = values[values.length - 1];
-        this.inputElement.value = lastValue !== undefined ? this.formatter_(lastValue) : '';
+        this.inputElement.value = lastValue !== undefined ? this.formatter_(lastValue) : "";
     }
     onValueUpdate_() {
         this.update_();
@@ -6761,17 +6761,17 @@ class SingleLogView {
     constructor(doc, config){
         this.onValueUpdate_ = this.onValueUpdate_.bind(this);
         this.formatter_ = config.formatter;
-        this.element = doc.createElement('div');
+        this.element = doc.createElement("div");
         this.element.classList.add(cn$2());
         config.viewProps.bindClassModifiers(this.element);
-        const inputElem = doc.createElement('input');
-        inputElem.classList.add(cn$2('i'));
+        const inputElem = doc.createElement("input");
+        inputElem.classList.add(cn$2("i"));
         inputElem.readOnly = true;
-        inputElem.type = 'text';
+        inputElem.type = "text";
         config.viewProps.bindDisabled(inputElem);
         this.element.appendChild(inputElem);
         this.inputElement = inputElem;
-        config.value.emitter.on('change', this.onValueUpdate_);
+        config.value.emitter.on("change", this.onValueUpdate_);
         this.value = config.value;
         this.update_();
     }
@@ -6788,10 +6788,10 @@ class SingleLogController {
     }
 }
 const BooleanMonitorPlugin = createPlugin({
-    id: 'monitor-bool',
-    type: 'monitor',
+    id: "monitor-bool",
+    type: "monitor",
     accept: (value, params)=>{
-        if (typeof value !== 'boolean') {
+        if (typeof value !== "boolean") {
             return null;
         }
         const result = parseRecord(params, (p)=>({
@@ -6825,19 +6825,19 @@ const BooleanMonitorPlugin = createPlugin({
 });
 class GraphLogMonitorBindingApi extends BindingApi {
     get max() {
-        return this.controller.valueController.props.get('max');
+        return this.controller.valueController.props.get("max");
     }
     set max(max) {
-        this.controller.valueController.props.set('max', max);
+        this.controller.valueController.props.set("max", max);
     }
     get min() {
-        return this.controller.valueController.props.get('min');
+        return this.controller.valueController.props.get("min");
     }
     set min(min) {
-        this.controller.valueController.props.set('min', min);
+        this.controller.valueController.props.set("min", min);
     }
 }
-const cn$1 = ClassName('grl');
+const cn$1 = ClassName("grl");
 class GraphLogView {
     get graphElement() {
         return this.svgElem_;
@@ -6845,8 +6845,8 @@ class GraphLogView {
     update_() {
         const bounds = this.svgElem_.getBoundingClientRect();
         const maxIndex = this.value.rawValue.length - 1;
-        const min = this.props_.get('min');
-        const max = this.props_.get('max');
+        const min = this.props_.get("min");
+        const max = this.props_.get("max");
         const points = [];
         this.value.rawValue.forEach((v, index)=>{
             if (v === undefined) {
@@ -6857,13 +6857,13 @@ class GraphLogView {
             points.push([
                 x,
                 y
-            ].join(','));
+            ].join(","));
         });
-        this.lineElem_.setAttributeNS(null, 'points', points.join(' '));
+        this.lineElem_.setAttributeNS(null, "points", points.join(" "));
         const tooltipElem = this.tooltipElem_;
         const value = this.value.rawValue[this.cursor_.rawValue];
         if (value === undefined) {
-            tooltipElem.classList.remove(cn$1('t', 'a'));
+            tooltipElem.classList.remove(cn$1("t", "a"));
             return;
         }
         const tx = mapRange(this.cursor_.rawValue, 0, maxIndex, 0, bounds.width);
@@ -6871,10 +6871,10 @@ class GraphLogView {
         tooltipElem.style.left = `${tx}px`;
         tooltipElem.style.top = `${ty}px`;
         tooltipElem.textContent = `${this.formatter_(value)}`;
-        if (!tooltipElem.classList.contains(cn$1('t', 'a'))) {
-            tooltipElem.classList.add(cn$1('t', 'a'), cn$1('t', 'in'));
+        if (!tooltipElem.classList.contains(cn$1("t", "a"))) {
+            tooltipElem.classList.add(cn$1("t", "a"), cn$1("t", "in"));
             forceReflow(tooltipElem);
-            tooltipElem.classList.remove(cn$1('t', 'in'));
+            tooltipElem.classList.remove(cn$1("t", "in"));
         }
     }
     onValueUpdate_() {
@@ -6886,26 +6886,26 @@ class GraphLogView {
     constructor(doc, config){
         this.onCursorChange_ = this.onCursorChange_.bind(this);
         this.onValueUpdate_ = this.onValueUpdate_.bind(this);
-        this.element = doc.createElement('div');
+        this.element = doc.createElement("div");
         this.element.classList.add(cn$1());
         config.viewProps.bindClassModifiers(this.element);
         this.formatter_ = config.formatter;
         this.props_ = config.props;
         this.cursor_ = config.cursor;
-        this.cursor_.emitter.on('change', this.onCursorChange_);
-        const svgElem = doc.createElementNS(SVG_NS, 'svg');
-        svgElem.classList.add(cn$1('g'));
-        svgElem.style.height = `calc(var(${getCssVar('containerUnitSize')}) * ${config.rows})`;
+        this.cursor_.emitter.on("change", this.onCursorChange_);
+        const svgElem = doc.createElementNS(SVG_NS, "svg");
+        svgElem.classList.add(cn$1("g"));
+        svgElem.style.height = `calc(var(${getCssVar("containerUnitSize")}) * ${config.rows})`;
         this.element.appendChild(svgElem);
         this.svgElem_ = svgElem;
-        const lineElem = doc.createElementNS(SVG_NS, 'polyline');
+        const lineElem = doc.createElementNS(SVG_NS, "polyline");
         this.svgElem_.appendChild(lineElem);
         this.lineElem_ = lineElem;
-        const tooltipElem = doc.createElement('div');
-        tooltipElem.classList.add(cn$1('t'), ClassName('tt')());
+        const tooltipElem = doc.createElement("div");
+        tooltipElem.classList.add(cn$1("t"), ClassName("tt")());
         this.element.appendChild(tooltipElem);
         this.tooltipElem_ = tooltipElem;
-        config.value.emitter.on('change', this.onValueUpdate_);
+        config.value.emitter.on("change", this.onValueUpdate_);
         this.value = config.value;
         this.update_();
     }
@@ -6916,15 +6916,15 @@ class GraphLogController {
                 max: p.required.number,
                 min: p.required.number
             }), (result)=>{
-            this.props.set('max', result.max);
-            this.props.set('min', result.min);
+            this.props.set("max", result.max);
+            this.props.set("min", result.min);
             return true;
         });
     }
     exportProps() {
         return exportBladeState(null, {
-            max: this.props.get('max'),
-            min: this.props.get('min')
+            max: this.props.get("max"),
+            min: this.props.get("min")
         });
     }
     onGraphMouseLeave_() {
@@ -6966,13 +6966,13 @@ class GraphLogController {
             viewProps: this.viewProps
         });
         if (!supportsTouch(doc)) {
-            this.view.element.addEventListener('mousemove', this.onGraphMouseMove_);
-            this.view.element.addEventListener('mouseleave', this.onGraphMouseLeave_);
+            this.view.element.addEventListener("mousemove", this.onGraphMouseMove_);
+            this.view.element.addEventListener("mouseleave", this.onGraphMouseLeave_);
         } else {
             const ph = new PointerHandler(this.view.element);
-            ph.emitter.on('down', this.onGraphPointerDown_);
-            ph.emitter.on('move', this.onGraphPointerMove_);
-            ph.emitter.on('up', this.onGraphPointerUp_);
+            ph.emitter.on("down", this.onGraphPointerDown_);
+            ph.emitter.on("move", this.onGraphPointerMove_);
+            ph.emitter.on("up", this.onGraphPointerUp_);
         }
     }
 }
@@ -7009,13 +7009,13 @@ function createGraphMonitor(args) {
     });
 }
 function shouldShowGraph(params) {
-    return params.view === 'graph';
+    return params.view === "graph";
 }
 const NumberMonitorPlugin = createPlugin({
-    id: 'monitor-number',
-    type: 'monitor',
+    id: "monitor-number",
+    type: "monitor",
     accept: (value, params)=>{
-        if (typeof value !== 'number') {
+        if (typeof value !== "number") {
             return null;
         }
         const result = parseRecord(params, (p)=>({
@@ -7049,10 +7049,10 @@ const NumberMonitorPlugin = createPlugin({
     }
 });
 const StringMonitorPlugin = createPlugin({
-    id: 'monitor-string',
-    type: 'monitor',
+    id: "monitor-string",
+    type: "monitor",
     accept: (value, params)=>{
-        if (typeof value !== 'string') {
+        if (typeof value !== "string") {
             return null;
         }
         const result = parseRecord(params, (p)=>({
@@ -7164,7 +7164,7 @@ function createInputBindingController(plugin, args) {
     return new InputBindingController(args.document, {
         blade: createBlade(),
         props: ValueMap.fromObject({
-            label: 'label' in args.params ? (_a = params === null || params === void 0 ? void 0 : params.label) !== null && _a !== void 0 ? _a : null : args.target.key
+            label: "label" in args.params ? (_a = params === null || params === void 0 ? void 0 : params.label) !== null && _a !== void 0 ? _a : null : args.target.key
         }),
         tag: params === null || params === void 0 ? void 0 : params.tag,
         value: value,
@@ -7227,7 +7227,7 @@ function createMonitorBindingController(plugin, args) {
     return new MonitorBindingController(args.document, {
         blade: createBlade(),
         props: ValueMap.fromObject({
-            label: 'label' in args.params ? (_c = params === null || params === void 0 ? void 0 : params.label) !== null && _c !== void 0 ? _c : null : args.target.key
+            label: "label" in args.params ? (_c = params === null || params === void 0 ? void 0 : params.label) !== null && _c !== void 0 ? _c : null : args.target.key
         }),
         value: value,
         valueController: controller
@@ -7245,11 +7245,11 @@ class PluginPool {
         if (!isCompatible(r.core)) {
             throw TpError.notCompatible(bundleId, r.id);
         }
-        if (r.type === 'blade') {
+        if (r.type === "blade") {
             this.pluginsMap_.blades.unshift(r);
-        } else if (r.type === 'input') {
+        } else if (r.type === "input") {
             this.pluginsMap_.inputs.unshift(r);
-        } else if (r.type === 'monitor') {
+        } else if (r.type === "monitor") {
             this.pluginsMap_.monitors.unshift(r);
         }
     }
@@ -7274,7 +7274,7 @@ class PluginPool {
                 context: {
                     key: target.key
                 },
-                type: 'nomatchingcontroller'
+                type: "nomatchingcontroller"
             });
         }
         const ic = this.createInput_(doc, target, params);
@@ -7289,7 +7289,7 @@ class PluginPool {
             context: {
                 key: target.key
             },
-            type: 'nomatchingcontroller'
+            type: "nomatchingcontroller"
         });
     }
     createBlade(document, params) {
@@ -7299,7 +7299,7 @@ class PluginPool {
             }), null);
         if (!bc) {
             throw new TpError({
-                type: 'nomatchingview',
+                type: "nomatchingview",
                 context: {
                     params: params
                 }
@@ -7388,22 +7388,22 @@ function createDefaultPluginPool() {
         FolderBladePlugin,
         TabBladePlugin
     ].forEach((p)=>{
-        pool.register('core', p);
+        pool.register("core", p);
     });
     return pool;
 }
 class ListBladeApi extends BladeApi {
     get label() {
-        return this.controller.labelController.props.get('label');
+        return this.controller.labelController.props.get("label");
     }
     set label(label) {
-        this.controller.labelController.props.set('label', label);
+        this.controller.labelController.props.set("label", label);
     }
     get options() {
-        return this.controller.valueController.props.get('options');
+        return this.controller.valueController.props.get("options");
     }
     set options(options) {
-        this.controller.valueController.props.set('options', options);
+        this.controller.valueController.props.set("options", options);
     }
     get value() {
         return this.controller.value.rawValue;
@@ -7423,8 +7423,8 @@ class ListBladeApi extends BladeApi {
      */ constructor(controller){
         super(controller);
         this.emitter_ = new Emitter();
-        this.controller.value.emitter.on('change', (ev)=>{
-            this.emitter_.emit('change', new TpChangeEvent(this, ev.rawValue));
+        this.controller.value.emitter.on("change", (ev)=>{
+            this.emitter_.emit("change", new TpChangeEvent(this, ev.rawValue));
         });
     }
 }
@@ -7432,22 +7432,22 @@ class SeparatorBladeApi extends BladeApi {
 }
 class SliderBladeApi extends BladeApi {
     get label() {
-        return this.controller.labelController.props.get('label');
+        return this.controller.labelController.props.get("label");
     }
     set label(label) {
-        this.controller.labelController.props.set('label', label);
+        this.controller.labelController.props.set("label", label);
     }
     get max() {
-        return this.controller.valueController.sliderController.props.get('max');
+        return this.controller.valueController.sliderController.props.get("max");
     }
     set max(max) {
-        this.controller.valueController.sliderController.props.set('max', max);
+        this.controller.valueController.sliderController.props.set("max", max);
     }
     get min() {
-        return this.controller.valueController.sliderController.props.get('min');
+        return this.controller.valueController.sliderController.props.get("min");
     }
     set min(min) {
-        this.controller.valueController.sliderController.props.set('min', min);
+        this.controller.valueController.sliderController.props.set("min", min);
     }
     get value() {
         return this.controller.value.rawValue;
@@ -7467,23 +7467,23 @@ class SliderBladeApi extends BladeApi {
      */ constructor(controller){
         super(controller);
         this.emitter_ = new Emitter();
-        this.controller.value.emitter.on('change', (ev)=>{
-            this.emitter_.emit('change', new TpChangeEvent(this, ev.rawValue));
+        this.controller.value.emitter.on("change", (ev)=>{
+            this.emitter_.emit("change", new TpChangeEvent(this, ev.rawValue));
         });
     }
 }
 class TextBladeApi extends BladeApi {
     get label() {
-        return this.controller.labelController.props.get('label');
+        return this.controller.labelController.props.get("label");
     }
     set label(label) {
-        this.controller.labelController.props.set('label', label);
+        this.controller.labelController.props.set("label", label);
     }
     get formatter() {
-        return this.controller.valueController.props.get('formatter');
+        return this.controller.valueController.props.get("formatter");
     }
     set formatter(formatter) {
-        this.controller.valueController.props.set('formatter', formatter);
+        this.controller.valueController.props.set("formatter", formatter);
     }
     get value() {
         return this.controller.value.rawValue;
@@ -7503,21 +7503,21 @@ class TextBladeApi extends BladeApi {
      */ constructor(controller){
         super(controller);
         this.emitter_ = new Emitter();
-        this.controller.value.emitter.on('change', (ev)=>{
-            this.emitter_.emit('change', new TpChangeEvent(this, ev.rawValue));
+        this.controller.value.emitter.on("change", (ev)=>{
+            this.emitter_.emit("change", new TpChangeEvent(this, ev.rawValue));
         });
     }
 }
 const ListBladePlugin = function() {
     return {
-        id: 'list',
-        type: 'blade',
+        id: "list",
+        type: "blade",
         core: VERSION$1,
         accept (params) {
             const result = parseRecord(params, (p)=>({
                     options: p.required.custom(parseListOptions),
                     value: p.required.raw,
-                    view: p.required.constant('list'),
+                    view: p.required.constant("list"),
                     label: p.optional.string
                 }));
             return result ? {
@@ -7531,7 +7531,7 @@ const ListBladePlugin = function() {
             });
             const ic = new ListController(args.document, {
                 props: new ValueMap({
-                    options: lc.values.value('options')
+                    options: lc.values.value("options")
                 }),
                 value: value,
                 viewProps: args.viewProps
@@ -7579,16 +7579,16 @@ class RootApi extends FolderApi {
         });
     }
 }
-const cn = ClassName('spr');
+const cn = ClassName("spr");
 /**
  * @hidden
  */ class SeparatorView {
     constructor(doc, config){
-        this.element = doc.createElement('div');
+        this.element = doc.createElement("div");
         this.element.classList.add(cn());
         config.viewProps.bindClassModifiers(this.element);
-        const hrElem = doc.createElement('hr');
-        hrElem.classList.add(cn('r'));
+        const hrElem = doc.createElement("hr");
+        hrElem.classList.add(cn("r"));
         this.element.appendChild(hrElem);
     }
 }
@@ -7606,12 +7606,12 @@ const cn = ClassName('spr');
     }
 }
 const SeparatorBladePlugin = {
-    id: 'separator',
-    type: 'blade',
+    id: "separator",
+    type: "blade",
     core: VERSION$1,
     accept (params) {
         const result = parseRecord(params, (p)=>({
-                view: p.required.constant('separator')
+                view: p.required.constant("separator")
             }));
         return result ? {
             params: result
@@ -7631,14 +7631,14 @@ const SeparatorBladePlugin = {
     }
 };
 const SliderBladePlugin = {
-    id: 'slider',
-    type: 'blade',
+    id: "slider",
+    type: "blade",
     core: VERSION$1,
     accept (params) {
         const result = parseRecord(params, (p)=>({
                 max: p.required.number,
                 min: p.required.number,
-                view: p.required.constant('slider'),
+                view: p.required.constant("slider"),
                 format: p.optional.function,
                 label: p.optional.string,
                 value: p.optional.number
@@ -7660,8 +7660,8 @@ const SliderBladePlugin = {
         const vc = new SliderTextController(args.document, Object.assign(Object.assign({}, createSliderTextProps({
             formatter: (_b = args.params.format) !== null && _b !== void 0 ? _b : numberToString,
             keyScale: createValue(1),
-            max: drc.values.value('max'),
-            min: drc.values.value('min'),
+            max: drc.values.value("max"),
+            min: drc.values.value("min"),
             pointerScale: getSuitablePointerScale(args.params, initialValue)
         })), {
             parser: parseNumber,
@@ -7689,14 +7689,14 @@ const SliderBladePlugin = {
 };
 const TextBladePlugin = function() {
     return {
-        id: 'text',
-        type: 'blade',
+        id: "text",
+        type: "blade",
         core: VERSION$1,
         accept (params) {
             const result = parseRecord(params, (p)=>({
                     parse: p.required.function,
                     value: p.required.raw,
-                    view: p.required.constant('text'),
+                    view: p.required.constant("text"),
                     format: p.optional.function,
                     label: p.optional.string
                 }));
@@ -7736,8 +7736,8 @@ const TextBladePlugin = function() {
     };
 }();
 function createDefaultWrapperElement(doc) {
-    const elem = doc.createElement('div');
-    elem.classList.add(ClassName('dfw')());
+    const elem = doc.createElement("div");
+    elem.classList.add(ClassName("dfw")());
     if (doc.body) {
         doc.body.appendChild(elem);
     }
@@ -7747,7 +7747,7 @@ function embedStyle(doc, id, css) {
     if (doc.querySelector(`style[data-tp-style=${id}]`)) {
         return;
     }
-    const styleElem = doc.createElement('style');
+    const styleElem = doc.createElement("style");
     styleElem.dataset.tpStyle = id;
     styleElem.textContent = css;
     doc.head.appendChild(styleElem);
@@ -7780,16 +7780,16 @@ function embedStyle(doc, id, css) {
         if (bundle.css) {
             embedStyle(this.document, `plugin-${bundle.id}`, bundle.css);
         }
-        const plugins = 'plugin' in bundle ? [
+        const plugins = "plugin" in bundle ? [
             bundle.plugin
-        ] : 'plugins' in bundle ? bundle.plugins : [];
+        ] : "plugins" in bundle ? bundle.plugins : [];
         plugins.forEach((p)=>{
             this.pool_.register(bundle.id, p);
         });
     }
     setUpDefaultPlugins_() {
         this.registerPlugin({
-            id: 'default',
+            id: "default",
             // NOTE: This string literal will be replaced with the default CSS by Rollup at the compilation time
             css: '.tp-tbiv_b,.tp-coltxtv_ms,.tp-colswv_b,.tp-ckbv_i,.tp-sglv_i,.tp-mllv_i,.tp-grlv_g,.tp-txtv_i,.tp-p2dpv_p,.tp-colswv_sw,.tp-rotv_b,.tp-fldv_b,.tp-p2dv_b,.tp-btnv_b,.tp-lstv_s{-webkit-appearance:none;-moz-appearance:none;appearance:none;background-color:rgba(0,0,0,0);border-width:0;font-family:inherit;font-size:inherit;font-weight:inherit;margin:0;outline:none;padding:0}.tp-p2dv_b,.tp-btnv_b,.tp-lstv_s{background-color:var(--btn-bg);border-radius:var(--bld-br);color:var(--btn-fg);cursor:pointer;display:block;font-weight:bold;height:var(--cnt-usz);line-height:var(--cnt-usz);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tp-p2dv_b:hover,.tp-btnv_b:hover,.tp-lstv_s:hover{background-color:var(--btn-bg-h)}.tp-p2dv_b:focus,.tp-btnv_b:focus,.tp-lstv_s:focus{background-color:var(--btn-bg-f)}.tp-p2dv_b:active,.tp-btnv_b:active,.tp-lstv_s:active{background-color:var(--btn-bg-a)}.tp-p2dv_b:disabled,.tp-btnv_b:disabled,.tp-lstv_s:disabled{opacity:.5}.tp-rotv_c>.tp-cntv.tp-v-lst,.tp-tbpv_c>.tp-cntv.tp-v-lst,.tp-fldv_c>.tp-cntv.tp-v-lst{margin-bottom:calc(-1 * var(--cnt-vp))}.tp-rotv_c>.tp-fldv.tp-v-lst .tp-fldv_c,.tp-tbpv_c>.tp-fldv.tp-v-lst .tp-fldv_c,.tp-fldv_c>.tp-fldv.tp-v-lst .tp-fldv_c{border-bottom-left-radius:0}.tp-rotv_c>.tp-fldv.tp-v-lst .tp-fldv_b,.tp-tbpv_c>.tp-fldv.tp-v-lst .tp-fldv_b,.tp-fldv_c>.tp-fldv.tp-v-lst .tp-fldv_b{border-bottom-left-radius:0}.tp-rotv_c>*:not(.tp-v-fst),.tp-tbpv_c>*:not(.tp-v-fst),.tp-fldv_c>*:not(.tp-v-fst){margin-top:var(--cnt-usp)}.tp-rotv_c>.tp-sprv:not(.tp-v-fst),.tp-tbpv_c>.tp-sprv:not(.tp-v-fst),.tp-fldv_c>.tp-sprv:not(.tp-v-fst),.tp-rotv_c>.tp-cntv:not(.tp-v-fst),.tp-tbpv_c>.tp-cntv:not(.tp-v-fst),.tp-fldv_c>.tp-cntv:not(.tp-v-fst){margin-top:var(--cnt-vp)}.tp-rotv_c>.tp-sprv+*:not(.tp-v-hidden),.tp-tbpv_c>.tp-sprv+*:not(.tp-v-hidden),.tp-fldv_c>.tp-sprv+*:not(.tp-v-hidden),.tp-rotv_c>.tp-cntv+*:not(.tp-v-hidden),.tp-tbpv_c>.tp-cntv+*:not(.tp-v-hidden),.tp-fldv_c>.tp-cntv+*:not(.tp-v-hidden){margin-top:var(--cnt-vp)}.tp-rotv_c>.tp-sprv:not(.tp-v-hidden)+.tp-sprv,.tp-tbpv_c>.tp-sprv:not(.tp-v-hidden)+.tp-sprv,.tp-fldv_c>.tp-sprv:not(.tp-v-hidden)+.tp-sprv,.tp-rotv_c>.tp-cntv:not(.tp-v-hidden)+.tp-cntv,.tp-tbpv_c>.tp-cntv:not(.tp-v-hidden)+.tp-cntv,.tp-fldv_c>.tp-cntv:not(.tp-v-hidden)+.tp-cntv{margin-top:0}.tp-tbpv_c>.tp-cntv,.tp-fldv_c>.tp-cntv{margin-left:4px}.tp-tbpv_c>.tp-fldv>.tp-fldv_b,.tp-fldv_c>.tp-fldv>.tp-fldv_b{border-top-left-radius:var(--bld-br);border-bottom-left-radius:var(--bld-br)}.tp-tbpv_c>.tp-fldv.tp-fldv-expanded>.tp-fldv_b,.tp-fldv_c>.tp-fldv.tp-fldv-expanded>.tp-fldv_b{border-bottom-left-radius:0}.tp-tbpv_c .tp-fldv>.tp-fldv_c,.tp-fldv_c .tp-fldv>.tp-fldv_c{border-bottom-left-radius:var(--bld-br)}.tp-tbpv_c>.tp-cntv+.tp-fldv>.tp-fldv_b,.tp-fldv_c>.tp-cntv+.tp-fldv>.tp-fldv_b{border-top-left-radius:0}.tp-tbpv_c>.tp-cntv+.tp-tabv>.tp-tabv_t,.tp-fldv_c>.tp-cntv+.tp-tabv>.tp-tabv_t{border-top-left-radius:0}.tp-tbpv_c>.tp-tabv>.tp-tabv_t,.tp-fldv_c>.tp-tabv>.tp-tabv_t{border-top-left-radius:var(--bld-br)}.tp-tbpv_c .tp-tabv>.tp-tabv_c,.tp-fldv_c .tp-tabv>.tp-tabv_c{border-bottom-left-radius:var(--bld-br)}.tp-rotv_b,.tp-fldv_b{background-color:var(--cnt-bg);color:var(--cnt-fg);cursor:pointer;display:block;height:calc(var(--cnt-usz) + 4px);line-height:calc(var(--cnt-usz) + 4px);overflow:hidden;padding-left:var(--cnt-hp);padding-right:calc(		2px * 2 + var(--cnt-usz) + var(--cnt-hp)	);position:relative;text-align:left;text-overflow:ellipsis;white-space:nowrap;width:100%;transition:border-radius .2s ease-in-out .2s}.tp-rotv_b:hover,.tp-fldv_b:hover{background-color:var(--cnt-bg-h)}.tp-rotv_b:focus,.tp-fldv_b:focus{background-color:var(--cnt-bg-f)}.tp-rotv_b:active,.tp-fldv_b:active{background-color:var(--cnt-bg-a)}.tp-rotv_b:disabled,.tp-fldv_b:disabled{opacity:.5}.tp-rotv_m,.tp-fldv_m{background:linear-gradient(to left, var(--cnt-fg), var(--cnt-fg) 2px, transparent 2px, transparent 4px, var(--cnt-fg) 4px);border-radius:2px;bottom:0;content:"";display:block;height:6px;right:calc(		var(--cnt-hp) + (				var(--cnt-usz) + 4px - 6px			) / 2 - 2px	);margin:auto;opacity:.5;position:absolute;top:0;transform:rotate(90deg);transition:transform .2s ease-in-out;width:6px}.tp-rotv.tp-rotv-expanded .tp-rotv_m,.tp-fldv.tp-fldv-expanded>.tp-fldv_b>.tp-fldv_m{transform:none}.tp-rotv_c,.tp-fldv_c{box-sizing:border-box;height:0;opacity:0;overflow:hidden;padding-bottom:0;padding-top:0;position:relative;transition:height .2s ease-in-out,opacity .2s linear,padding .2s ease-in-out}.tp-rotv.tp-rotv-cpl:not(.tp-rotv-expanded) .tp-rotv_c,.tp-fldv.tp-fldv-cpl:not(.tp-fldv-expanded)>.tp-fldv_c{display:none}.tp-rotv.tp-rotv-expanded .tp-rotv_c,.tp-fldv.tp-fldv-expanded>.tp-fldv_c{opacity:1;padding-bottom:var(--cnt-vp);padding-top:var(--cnt-vp);transform:none;overflow:visible;transition:height .2s ease-in-out,opacity .2s linear .2s,padding .2s ease-in-out}.tp-txtv_i,.tp-p2dpv_p,.tp-colswv_sw{background-color:var(--in-bg);border-radius:var(--bld-br);box-sizing:border-box;color:var(--in-fg);font-family:inherit;height:var(--cnt-usz);line-height:var(--cnt-usz);min-width:0;width:100%}.tp-txtv_i:hover,.tp-p2dpv_p:hover,.tp-colswv_sw:hover{background-color:var(--in-bg-h)}.tp-txtv_i:focus,.tp-p2dpv_p:focus,.tp-colswv_sw:focus{background-color:var(--in-bg-f)}.tp-txtv_i:active,.tp-p2dpv_p:active,.tp-colswv_sw:active{background-color:var(--in-bg-a)}.tp-txtv_i:disabled,.tp-p2dpv_p:disabled,.tp-colswv_sw:disabled{opacity:.5}.tp-lstv,.tp-coltxtv_m{position:relative}.tp-lstv_s{padding:0 20px 0 4px;width:100%}.tp-lstv_m,.tp-coltxtv_mm{bottom:0;margin:auto;pointer-events:none;position:absolute;right:2px;top:0}.tp-lstv_m svg,.tp-coltxtv_mm svg{bottom:0;height:16px;margin:auto;position:absolute;right:0;top:0;width:16px}.tp-lstv_m svg path,.tp-coltxtv_mm svg path{fill:currentColor}.tp-sglv_i,.tp-mllv_i,.tp-grlv_g{background-color:var(--mo-bg);border-radius:var(--bld-br);box-sizing:border-box;color:var(--mo-fg);height:var(--cnt-usz);scrollbar-color:currentColor rgba(0,0,0,0);scrollbar-width:thin;width:100%}.tp-sglv_i::-webkit-scrollbar,.tp-mllv_i::-webkit-scrollbar,.tp-grlv_g::-webkit-scrollbar{height:8px;width:8px}.tp-sglv_i::-webkit-scrollbar-corner,.tp-mllv_i::-webkit-scrollbar-corner,.tp-grlv_g::-webkit-scrollbar-corner{background-color:rgba(0,0,0,0)}.tp-sglv_i::-webkit-scrollbar-thumb,.tp-mllv_i::-webkit-scrollbar-thumb,.tp-grlv_g::-webkit-scrollbar-thumb{background-clip:padding-box;background-color:currentColor;border:rgba(0,0,0,0) solid 2px;border-radius:4px}.tp-pndtxtv,.tp-coltxtv_w{display:flex}.tp-pndtxtv_a,.tp-coltxtv_c{width:100%}.tp-pndtxtv_a+.tp-pndtxtv_a,.tp-coltxtv_c+.tp-pndtxtv_a,.tp-pndtxtv_a+.tp-coltxtv_c,.tp-coltxtv_c+.tp-coltxtv_c{margin-left:2px}.tp-rotv{--bs-bg: var(--tp-base-background-color, hsl(230, 7%, 17%));--bs-br: var(--tp-base-border-radius, 6px);--bs-ff: var(--tp-base-font-family, Roboto Mono, Source Code Pro, Menlo, Courier, monospace);--bs-sh: var(--tp-base-shadow-color, rgba(0, 0, 0, 0.2));--bld-br: var(--tp-blade-border-radius, 2px);--bld-hp: var(--tp-blade-horizontal-padding, 4px);--bld-vw: var(--tp-blade-value-width, 160px);--btn-bg: var(--tp-button-background-color, hsl(230, 7%, 70%));--btn-bg-a: var(--tp-button-background-color-active, #d6d7db);--btn-bg-f: var(--tp-button-background-color-focus, #c8cad0);--btn-bg-h: var(--tp-button-background-color-hover, #bbbcc4);--btn-fg: var(--tp-button-foreground-color, hsl(230, 7%, 17%));--cnt-bg: var(--tp-container-background-color, rgba(187, 188, 196, 0.1));--cnt-bg-a: var(--tp-container-background-color-active, rgba(187, 188, 196, 0.25));--cnt-bg-f: var(--tp-container-background-color-focus, rgba(187, 188, 196, 0.2));--cnt-bg-h: var(--tp-container-background-color-hover, rgba(187, 188, 196, 0.15));--cnt-fg: var(--tp-container-foreground-color, hsl(230, 7%, 75%));--cnt-hp: var(--tp-container-horizontal-padding, 4px);--cnt-vp: var(--tp-container-vertical-padding, 4px);--cnt-usp: var(--tp-container-unit-spacing, 4px);--cnt-usz: var(--tp-container-unit-size, 20px);--in-bg: var(--tp-input-background-color, rgba(187, 188, 196, 0.1));--in-bg-a: var(--tp-input-background-color-active, rgba(187, 188, 196, 0.25));--in-bg-f: var(--tp-input-background-color-focus, rgba(187, 188, 196, 0.2));--in-bg-h: var(--tp-input-background-color-hover, rgba(187, 188, 196, 0.15));--in-fg: var(--tp-input-foreground-color, hsl(230, 7%, 75%));--lbl-fg: var(--tp-label-foreground-color, rgba(187, 188, 196, 0.7));--mo-bg: var(--tp-monitor-background-color, rgba(0, 0, 0, 0.2));--mo-fg: var(--tp-monitor-foreground-color, rgba(187, 188, 196, 0.7));--grv-fg: var(--tp-groove-foreground-color, rgba(187, 188, 196, 0.1))}.tp-btnv_b{width:100%}.tp-btnv_t{text-align:center}.tp-ckbv_l{display:block;position:relative}.tp-ckbv_i{left:0;opacity:0;position:absolute;top:0}.tp-ckbv_w{background-color:var(--in-bg);border-radius:var(--bld-br);cursor:pointer;display:block;height:var(--cnt-usz);position:relative;width:var(--cnt-usz)}.tp-ckbv_w svg{bottom:0;display:block;height:16px;left:0;margin:auto;opacity:0;position:absolute;right:0;top:0;width:16px}.tp-ckbv_w svg path{fill:none;stroke:var(--in-fg);stroke-width:2}.tp-ckbv_i:hover+.tp-ckbv_w{background-color:var(--in-bg-h)}.tp-ckbv_i:focus+.tp-ckbv_w{background-color:var(--in-bg-f)}.tp-ckbv_i:active+.tp-ckbv_w{background-color:var(--in-bg-a)}.tp-ckbv_i:checked+.tp-ckbv_w svg{opacity:1}.tp-ckbv.tp-v-disabled .tp-ckbv_w{opacity:.5}.tp-colv{position:relative}.tp-colv_h{display:flex}.tp-colv_s{flex-grow:0;flex-shrink:0;width:var(--cnt-usz)}.tp-colv_t{flex:1;margin-left:4px}.tp-colv_p{height:0;margin-top:0;opacity:0;overflow:hidden;transition:height .2s ease-in-out,opacity .2s linear,margin .2s ease-in-out}.tp-colv.tp-colv-expanded.tp-colv-cpl .tp-colv_p{overflow:visible}.tp-colv.tp-colv-expanded .tp-colv_p{margin-top:var(--cnt-usp);opacity:1}.tp-colv .tp-popv{left:calc(-1 * var(--cnt-hp));right:calc(-1 * var(--cnt-hp));top:var(--cnt-usz)}.tp-colpv_h,.tp-colpv_ap{margin-left:6px;margin-right:6px}.tp-colpv_h{margin-top:var(--cnt-usp)}.tp-colpv_rgb{display:flex;margin-top:var(--cnt-usp);width:100%}.tp-colpv_a{display:flex;margin-top:var(--cnt-vp);padding-top:calc(			var(--cnt-vp) + 2px		);position:relative}.tp-colpv_a::before{background-color:var(--grv-fg);content:"";height:2px;left:calc(-1 * var(--cnt-hp));position:absolute;right:calc(-1 * var(--cnt-hp));top:0}.tp-colpv.tp-v-disabled .tp-colpv_a::before{opacity:.5}.tp-colpv_ap{align-items:center;display:flex;flex:3}.tp-colpv_at{flex:1;margin-left:4px}.tp-svpv{border-radius:var(--bld-br);outline:none;overflow:hidden;position:relative}.tp-svpv.tp-v-disabled{opacity:.5}.tp-svpv_c{cursor:crosshair;display:block;height:calc(var(--cnt-usz)*4);width:100%}.tp-svpv_m{border-radius:100%;border:rgba(255,255,255,.75) solid 2px;box-sizing:border-box;filter:drop-shadow(0 0 1px rgba(0, 0, 0, 0.3));height:12px;margin-left:-6px;margin-top:-6px;pointer-events:none;position:absolute;width:12px}.tp-svpv:focus .tp-svpv_m{border-color:#fff}.tp-hplv{cursor:pointer;height:var(--cnt-usz);outline:none;position:relative}.tp-hplv.tp-v-disabled{opacity:.5}.tp-hplv_c{background-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAAABCAYAAABubagXAAAAQ0lEQVQoU2P8z8Dwn0GCgQEDi2OK/RBgYHjBgIpfovFh8j8YBIgzFGQxuqEgPhaDOT5gOhPkdCxOZeBg+IDFZZiGAgCaSSMYtcRHLgAAAABJRU5ErkJggg==);background-position:left top;background-repeat:no-repeat;background-size:100% 100%;border-radius:2px;display:block;height:4px;left:0;margin-top:-2px;position:absolute;top:50%;width:100%}.tp-hplv_m{border-radius:var(--bld-br);border:rgba(255,255,255,.75) solid 2px;box-shadow:0 0 2px rgba(0,0,0,.1);box-sizing:border-box;height:12px;left:50%;margin-left:-6px;margin-top:-6px;pointer-events:none;position:absolute;top:50%;width:12px}.tp-hplv:focus .tp-hplv_m{border-color:#fff}.tp-aplv{cursor:pointer;height:var(--cnt-usz);outline:none;position:relative;width:100%}.tp-aplv.tp-v-disabled{opacity:.5}.tp-aplv_b{background-color:#fff;background-image:linear-gradient(to top right, #ddd 25%, transparent 25%, transparent 75%, #ddd 75%),linear-gradient(to top right, #ddd 25%, transparent 25%, transparent 75%, #ddd 75%);background-size:4px 4px;background-position:0 0,2px 2px;border-radius:2px;display:block;height:4px;left:0;margin-top:-2px;overflow:hidden;position:absolute;top:50%;width:100%}.tp-aplv_c{bottom:0;left:0;position:absolute;right:0;top:0}.tp-aplv_m{background-color:#fff;background-image:linear-gradient(to top right, #ddd 25%, transparent 25%, transparent 75%, #ddd 75%),linear-gradient(to top right, #ddd 25%, transparent 25%, transparent 75%, #ddd 75%);background-size:12px 12px;background-position:0 0,6px 6px;border-radius:var(--bld-br);box-shadow:0 0 2px rgba(0,0,0,.1);height:12px;left:50%;margin-left:-6px;margin-top:-6px;overflow:hidden;pointer-events:none;position:absolute;top:50%;width:12px}.tp-aplv_p{border-radius:var(--bld-br);border:rgba(255,255,255,.75) solid 2px;box-sizing:border-box;bottom:0;left:0;position:absolute;right:0;top:0}.tp-aplv:focus .tp-aplv_p{border-color:#fff}.tp-colswv{background-color:#fff;background-image:linear-gradient(to top right, #ddd 25%, transparent 25%, transparent 75%, #ddd 75%),linear-gradient(to top right, #ddd 25%, transparent 25%, transparent 75%, #ddd 75%);background-size:10px 10px;background-position:0 0,5px 5px;border-radius:var(--bld-br);overflow:hidden}.tp-colswv.tp-v-disabled{opacity:.5}.tp-colswv_sw{border-radius:0}.tp-colswv_b{cursor:pointer;display:block;height:var(--cnt-usz);left:0;position:absolute;top:0;width:var(--cnt-usz)}.tp-colswv_b:focus::after{border:rgba(255,255,255,.75) solid 2px;border-radius:var(--bld-br);bottom:0;content:"";display:block;left:0;position:absolute;right:0;top:0}.tp-coltxtv{display:flex;width:100%}.tp-coltxtv_m{margin-right:4px}.tp-coltxtv_ms{border-radius:var(--bld-br);color:var(--lbl-fg);cursor:pointer;height:var(--cnt-usz);line-height:var(--cnt-usz);padding:0 18px 0 4px}.tp-coltxtv_ms:hover{background-color:var(--in-bg-h)}.tp-coltxtv_ms:focus{background-color:var(--in-bg-f)}.tp-coltxtv_ms:active{background-color:var(--in-bg-a)}.tp-coltxtv_mm{color:var(--lbl-fg)}.tp-coltxtv.tp-v-disabled .tp-coltxtv_mm{opacity:.5}.tp-coltxtv_w{flex:1}.tp-dfwv{position:absolute;top:8px;right:8px;width:256px}.tp-fldv{position:relative}.tp-fldv_t{padding-left:4px}.tp-fldv_b:disabled .tp-fldv_m{display:none}.tp-fldv_c{padding-left:4px}.tp-fldv_i{bottom:0;color:var(--cnt-bg);left:0;overflow:hidden;position:absolute;top:calc(var(--cnt-usz) + 4px);width:max(var(--bs-br),4px)}.tp-fldv_i::before{background-color:currentColor;bottom:0;content:"";left:0;position:absolute;top:0;width:4px}.tp-fldv_b:hover+.tp-fldv_i{color:var(--cnt-bg-h)}.tp-fldv_b:focus+.tp-fldv_i{color:var(--cnt-bg-f)}.tp-fldv_b:active+.tp-fldv_i{color:var(--cnt-bg-a)}.tp-fldv.tp-v-disabled>.tp-fldv_i{opacity:.5}.tp-grlv{position:relative}.tp-grlv_g{display:block;height:calc(var(--cnt-usz) * 3)}.tp-grlv_g polyline{fill:none;stroke:var(--mo-fg);stroke-linejoin:round}.tp-grlv_t{margin-top:-4px;transition:left .05s,top .05s;visibility:hidden}.tp-grlv_t.tp-grlv_t-a{visibility:visible}.tp-grlv_t.tp-grlv_t-in{transition:none}.tp-grlv.tp-v-disabled .tp-grlv_g{opacity:.5}.tp-grlv .tp-ttv{background-color:var(--mo-fg)}.tp-grlv .tp-ttv::before{border-top-color:var(--mo-fg)}.tp-lblv{align-items:center;display:flex;line-height:1.3;padding-left:var(--cnt-hp);padding-right:var(--cnt-hp)}.tp-lblv.tp-lblv-nol{display:block}.tp-lblv_l{color:var(--lbl-fg);flex:1;-webkit-hyphens:auto;hyphens:auto;overflow:hidden;padding-left:4px;padding-right:16px}.tp-lblv.tp-v-disabled .tp-lblv_l{opacity:.5}.tp-lblv.tp-lblv-nol .tp-lblv_l{display:none}.tp-lblv_v{align-self:flex-start;flex-grow:0;flex-shrink:0;width:var(--bld-vw)}.tp-lblv.tp-lblv-nol .tp-lblv_v{width:100%}.tp-lstv_s{padding:0 20px 0 var(--bld-hp);width:100%}.tp-lstv_m{color:var(--btn-fg)}.tp-sglv_i{padding-left:var(--bld-hp);padding-right:var(--bld-hp)}.tp-sglv.tp-v-disabled .tp-sglv_i{opacity:.5}.tp-mllv_i{display:block;height:calc(var(--cnt-usz) * 3);line-height:var(--cnt-usz);padding-left:var(--bld-hp);padding-right:var(--bld-hp);resize:none;white-space:pre}.tp-mllv.tp-v-disabled .tp-mllv_i{opacity:.5}.tp-p2dv{position:relative}.tp-p2dv_h{display:flex}.tp-p2dv_b{height:var(--cnt-usz);margin-right:4px;position:relative;width:var(--cnt-usz)}.tp-p2dv_b svg{display:block;height:16px;left:50%;margin-left:-8px;margin-top:-8px;position:absolute;top:50%;width:16px}.tp-p2dv_b svg path{stroke:currentColor;stroke-width:2}.tp-p2dv_b svg circle{fill:currentColor}.tp-p2dv_t{flex:1}.tp-p2dv_p{height:0;margin-top:0;opacity:0;overflow:hidden;transition:height .2s ease-in-out,opacity .2s linear,margin .2s ease-in-out}.tp-p2dv.tp-p2dv-expanded .tp-p2dv_p{margin-top:var(--cnt-usp);opacity:1}.tp-p2dv .tp-popv{left:calc(-1 * var(--cnt-hp));right:calc(-1 * var(--cnt-hp));top:var(--cnt-usz)}.tp-p2dpv{padding-left:calc(var(--cnt-usz) + 4px)}.tp-p2dpv_p{cursor:crosshair;height:0;overflow:hidden;padding-bottom:100%;position:relative}.tp-p2dpv.tp-v-disabled .tp-p2dpv_p{opacity:.5}.tp-p2dpv_g{display:block;height:100%;left:0;pointer-events:none;position:absolute;top:0;width:100%}.tp-p2dpv_ax{opacity:.1;stroke:var(--in-fg);stroke-dasharray:1}.tp-p2dpv_l{opacity:.5;stroke:var(--in-fg);stroke-dasharray:1}.tp-p2dpv_m{border:var(--in-fg) solid 1px;border-radius:50%;box-sizing:border-box;height:4px;margin-left:-2px;margin-top:-2px;position:absolute;width:4px}.tp-p2dpv_p:focus .tp-p2dpv_m{background-color:var(--in-fg);border-width:0}.tp-popv{background-color:var(--bs-bg);border-radius:var(--bs-br);box-shadow:0 2px 4px var(--bs-sh);display:none;max-width:var(--bld-vw);padding:var(--cnt-vp) var(--cnt-hp);position:absolute;visibility:hidden;z-index:1000}.tp-popv.tp-popv-v{display:block;visibility:visible}.tp-sldv.tp-v-disabled{opacity:.5}.tp-sldv_t{box-sizing:border-box;cursor:pointer;height:var(--cnt-usz);margin:0 6px;outline:none;position:relative}.tp-sldv_t::before{background-color:var(--in-bg);border-radius:1px;bottom:0;content:"";display:block;height:2px;left:0;margin:auto;position:absolute;right:0;top:0}.tp-sldv_k{height:100%;left:0;position:absolute;top:0}.tp-sldv_k::before{background-color:var(--in-fg);border-radius:1px;bottom:0;content:"";display:block;height:2px;left:0;margin-bottom:auto;margin-top:auto;position:absolute;right:0;top:0}.tp-sldv_k::after{background-color:var(--btn-bg);border-radius:var(--bld-br);bottom:0;content:"";display:block;height:12px;margin-bottom:auto;margin-top:auto;position:absolute;right:-6px;top:0;width:12px}.tp-sldv_t:hover .tp-sldv_k::after{background-color:var(--btn-bg-h)}.tp-sldv_t:focus .tp-sldv_k::after{background-color:var(--btn-bg-f)}.tp-sldv_t:active .tp-sldv_k::after{background-color:var(--btn-bg-a)}.tp-sldtxtv{display:flex}.tp-sldtxtv_s{flex:2}.tp-sldtxtv_t{flex:1;margin-left:4px}.tp-tabv{position:relative}.tp-tabv_t{align-items:flex-end;color:var(--cnt-bg);display:flex;overflow:hidden;position:relative}.tp-tabv_t:hover{color:var(--cnt-bg-h)}.tp-tabv_t:has(*:focus){color:var(--cnt-bg-f)}.tp-tabv_t:has(*:active){color:var(--cnt-bg-a)}.tp-tabv_t::before{background-color:currentColor;bottom:0;content:"";height:2px;left:0;pointer-events:none;position:absolute;right:0}.tp-tabv.tp-v-disabled .tp-tabv_t::before{opacity:.5}.tp-tabv.tp-tabv-nop .tp-tabv_t{height:calc(var(--cnt-usz) + 4px);position:relative}.tp-tabv.tp-tabv-nop .tp-tabv_t::before{background-color:var(--cnt-bg);bottom:0;content:"";height:2px;left:0;position:absolute;right:0}.tp-tabv_i{bottom:0;color:var(--cnt-bg);left:0;overflow:hidden;position:absolute;top:calc(var(--cnt-usz) + 4px);width:max(var(--bs-br),4px)}.tp-tabv_i::before{background-color:currentColor;bottom:0;content:"";left:0;position:absolute;top:0;width:4px}.tp-tabv_t:hover+.tp-tabv_i{color:var(--cnt-bg-h)}.tp-tabv_t:has(*:focus)+.tp-tabv_i{color:var(--cnt-bg-f)}.tp-tabv_t:has(*:active)+.tp-tabv_i{color:var(--cnt-bg-a)}.tp-tabv.tp-v-disabled>.tp-tabv_i{opacity:.5}.tp-tbiv{flex:1;min-width:0;position:relative}.tp-tbiv+.tp-tbiv{margin-left:2px}.tp-tbiv+.tp-tbiv.tp-v-disabled::before{opacity:.5}.tp-tbiv_b{display:block;padding-left:calc(var(--cnt-hp) + 4px);padding-right:calc(var(--cnt-hp) + 4px);position:relative;width:100%}.tp-tbiv_b:disabled{opacity:.5}.tp-tbiv_b::before{background-color:var(--cnt-bg);bottom:2px;content:"";left:0;pointer-events:none;position:absolute;right:0;top:0}.tp-tbiv_b:hover::before{background-color:var(--cnt-bg-h)}.tp-tbiv_b:focus::before{background-color:var(--cnt-bg-f)}.tp-tbiv_b:active::before{background-color:var(--cnt-bg-a)}.tp-tbiv_t{color:var(--cnt-fg);height:calc(var(--cnt-usz) + 4px);line-height:calc(var(--cnt-usz) + 4px);opacity:.5;overflow:hidden;text-overflow:ellipsis}.tp-tbiv.tp-tbiv-sel .tp-tbiv_t{opacity:1}.tp-tbpv_c{padding-bottom:var(--cnt-vp);padding-left:4px;padding-top:var(--cnt-vp)}.tp-txtv{position:relative}.tp-txtv_i{padding-left:var(--bld-hp);padding-right:var(--bld-hp)}.tp-txtv.tp-txtv-fst .tp-txtv_i{border-bottom-right-radius:0;border-top-right-radius:0}.tp-txtv.tp-txtv-mid .tp-txtv_i{border-radius:0}.tp-txtv.tp-txtv-lst .tp-txtv_i{border-bottom-left-radius:0;border-top-left-radius:0}.tp-txtv.tp-txtv-num .tp-txtv_i{text-align:right}.tp-txtv.tp-txtv-drg .tp-txtv_i{opacity:.3}.tp-txtv_k{cursor:pointer;height:100%;left:calc(			var(--bld-hp) - 5px		);position:absolute;top:0;width:12px}.tp-txtv_k::before{background-color:var(--in-fg);border-radius:1px;bottom:0;content:"";height:calc(var(--cnt-usz) - 4px);left:50%;margin-bottom:auto;margin-left:-1px;margin-top:auto;opacity:.1;position:absolute;top:0;transition:border-radius .1s,height .1s,transform .1s,width .1s;width:2px}.tp-txtv_k:hover::before,.tp-txtv.tp-txtv-drg .tp-txtv_k::before{opacity:1}.tp-txtv.tp-txtv-drg .tp-txtv_k::before{border-radius:50%;height:4px;transform:translateX(-1px);width:4px}.tp-txtv_g{bottom:0;display:block;height:8px;left:50%;margin:auto;overflow:visible;pointer-events:none;position:absolute;top:0;visibility:hidden;width:100%}.tp-txtv.tp-txtv-drg .tp-txtv_g{visibility:visible}.tp-txtv_gb{fill:none;stroke:var(--in-fg);stroke-dasharray:1}.tp-txtv_gh{fill:none;stroke:var(--in-fg)}.tp-txtv .tp-ttv{margin-left:6px;visibility:hidden}.tp-txtv.tp-txtv-drg .tp-ttv{visibility:visible}.tp-ttv{background-color:var(--in-fg);border-radius:var(--bld-br);color:var(--bs-bg);padding:2px 4px;pointer-events:none;position:absolute;transform:translate(-50%, -100%)}.tp-ttv::before{border-color:var(--in-fg) rgba(0,0,0,0) rgba(0,0,0,0) rgba(0,0,0,0);border-style:solid;border-width:2px;box-sizing:border-box;content:"";font-size:.9em;height:4px;left:50%;margin-left:-2px;position:absolute;top:100%;width:4px}.tp-rotv{background-color:var(--bs-bg);border-radius:var(--bs-br);box-shadow:0 2px 4px var(--bs-sh);font-family:var(--bs-ff);font-size:11px;font-weight:500;line-height:1;text-align:left}.tp-rotv_b{border-bottom-left-radius:var(--bs-br);border-bottom-right-radius:var(--bs-br);border-top-left-radius:var(--bs-br);border-top-right-radius:var(--bs-br);padding-left:calc(			2px * 2 + var(--cnt-usz) + var(--cnt-hp)		);text-align:center}.tp-rotv.tp-rotv-expanded .tp-rotv_b{border-bottom-left-radius:0;border-bottom-right-radius:0;transition-delay:0s;transition-duration:0s}.tp-rotv.tp-rotv-not>.tp-rotv_b{display:none}.tp-rotv_b:disabled .tp-rotv_m{display:none}.tp-rotv_c>.tp-fldv.tp-v-lst>.tp-fldv_c{border-bottom-left-radius:var(--bs-br);border-bottom-right-radius:var(--bs-br)}.tp-rotv_c>.tp-fldv.tp-v-lst>.tp-fldv_i{border-bottom-left-radius:var(--bs-br)}.tp-rotv_c>.tp-fldv.tp-v-lst:not(.tp-fldv-expanded)>.tp-fldv_b{border-bottom-left-radius:var(--bs-br);border-bottom-right-radius:var(--bs-br)}.tp-rotv_c>.tp-fldv.tp-v-lst.tp-fldv-expanded>.tp-fldv_b{transition-delay:0s;transition-duration:0s}.tp-rotv_c .tp-fldv.tp-v-vlst:not(.tp-fldv-expanded)>.tp-fldv_b{border-bottom-right-radius:var(--bs-br)}.tp-rotv.tp-rotv-not .tp-rotv_c>.tp-fldv.tp-v-fst{margin-top:calc(-1 * var(--cnt-vp))}.tp-rotv.tp-rotv-not .tp-rotv_c>.tp-fldv.tp-v-fst>.tp-fldv_b{border-top-left-radius:var(--bs-br);border-top-right-radius:var(--bs-br)}.tp-rotv_c>.tp-tabv.tp-v-lst>.tp-tabv_c{border-bottom-left-radius:var(--bs-br);border-bottom-right-radius:var(--bs-br)}.tp-rotv_c>.tp-tabv.tp-v-lst>.tp-tabv_i{border-bottom-left-radius:var(--bs-br)}.tp-rotv.tp-rotv-not .tp-rotv_c>.tp-tabv.tp-v-fst{margin-top:calc(-1 * var(--cnt-vp))}.tp-rotv.tp-rotv-not .tp-rotv_c>.tp-tabv.tp-v-fst>.tp-tabv_t{border-top-left-radius:var(--bs-br);border-top-right-radius:var(--bs-br)}.tp-rotv.tp-v-disabled,.tp-rotv .tp-v-disabled{pointer-events:none}.tp-rotv.tp-v-hidden,.tp-rotv .tp-v-hidden{display:none}.tp-sprv_r{background-color:var(--grv-fg);border-width:0;display:block;height:2px;margin:0;width:100%}.tp-sprv.tp-v-disabled .tp-sprv_r{opacity:.5}',
             plugins: [
@@ -7823,6 +7823,6 @@ function embedStyle(doc, id, css) {
         this.setUpDefaultPlugins_();
     }
 }
-const VERSION = new Semver('4.0.1');
+const VERSION = new Semver("4.0.1");
 
 export { BladeApi, ButtonApi, FolderApi, ListBladeApi, ListInputBindingApi, Pane, Semver, SeparatorBladeApi, SliderBladeApi, SliderInputBindingApi, TabApi, TabPageApi, TextBladeApi, TpChangeEvent, VERSION };

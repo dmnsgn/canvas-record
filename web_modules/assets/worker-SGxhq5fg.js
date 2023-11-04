@@ -18,6 +18,8 @@
         FFMessageType["DOWNLOAD"] = "DOWNLOAD";
         FFMessageType["PROGRESS"] = "PROGRESS";
         FFMessageType["LOG"] = "LOG";
+        FFMessageType["MOUNT"] = "MOUNT";
+        FFMessageType["UNMOUNT"] = "UNMOUNT";
     })(FFMessageType || (FFMessageType = {}));
 
     const ERROR_UNKNOWN_MESSAGE_TYPE = new Error("unknown message type");
@@ -100,6 +102,18 @@
         ffmpeg.FS.rmdir(path);
         return true;
     };
+    const mount = ({ fsType, options, mountPoint }) => {
+        let str = fsType;
+        let fs = ffmpeg.FS.filesystems[str];
+        if (!fs)
+            return false;
+        ffmpeg.FS.mount(fs, options, mountPoint);
+        return true;
+    };
+    const unmount = ({ mountPoint }) => {
+        ffmpeg.FS.unmount(mountPoint);
+        return true;
+    };
     self.onmessage = async ({ data: { id, type, data: _data }, }) => {
         const trans = [];
         let data;
@@ -133,6 +147,12 @@
                     break;
                 case FFMessageType.DELETE_DIR:
                     data = deleteDir(_data);
+                    break;
+                case FFMessageType.MOUNT:
+                    data = mount(_data);
+                    break;
+                case FFMessageType.UNMOUNT:
+                    data = unmount(_data);
                     break;
                 default:
                     throw ERROR_UNKNOWN_MESSAGE_TYPE;

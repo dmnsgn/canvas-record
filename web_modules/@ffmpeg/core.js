@@ -1,4 +1,4 @@
-import { b as browser$1, d as global, B as Buffer } from '../_chunks/polyfills-25978697.js';
+import { b as browser$1, d as global, B as Buffer } from '../_chunks/polyfills-E-WL3E2Y.js';
 
 var createFFmpegCore = (()=>{
     var _scriptDir = import.meta.url;
@@ -123,7 +123,7 @@ var createFFmpegCore = (()=>{
         }
         var read_, readAsync, readBinary;
         if (ENVIRONMENT_IS_NODE) {
-            const { createRequire: createRequire  } = await import('../_chunks/polyfills-25978697.js').then(function (n) { return n._; });
+            const { createRequire: createRequire  } = await import('../_chunks/polyfills-E-WL3E2Y.js').then(function (n) { return n._; });
             var require = createRequire(import.meta.url);
             var fs = require("fs");
             var nodePath = require("path");
@@ -4860,7 +4860,7 @@ var createFFmpegCore = (()=>{
                     return leadingNulls(date.tm_sec, 2);
                 },
                 "%t": function() {
-                    return "\t";
+                    return "	";
                 },
                 "%u": function(date) {
                     return date.tm_wday || 7;
@@ -4913,7 +4913,7 @@ var createFFmpegCore = (()=>{
                     return "%";
                 }
             };
-            pattern = pattern.replace(/%%/g, "\0\0");
+            pattern = pattern.replace(/%%/g, "\x00\x00");
             for(var rule in EXPANSION_RULES_2){
                 if (pattern.includes(rule)) {
                     pattern = pattern.replace(new RegExp(rule, "g"), EXPANSION_RULES_2[rule](date));

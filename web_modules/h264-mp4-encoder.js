@@ -1,4 +1,4 @@
-import { g as getDefaultExportFromCjs, r as require$$0, b as browser$1, B as Buffer, a as require$$1, c as require$$2 } from './_chunks/polyfills-25978697.js';
+import { g as getDefaultExportFromCjs, r as require$$0, b as browser$1, B as Buffer, a as require$$1, c as require$$2 } from './_chunks/polyfills-E-WL3E2Y.js';
 
 var h264Mp4Encoder_node = function(A) {
     var B = {};
@@ -2066,7 +2066,7 @@ var h264Mp4Encoder_node = function(A) {
                         I = I << 2 | g >> 4, g = (15 & g) << 4 | E >> 2;
                         var D = (3 & E) << 6 | C;
                         B += String.fromCharCode(I), 64 !== E && (B += String.fromCharCode(g)), 64 !== C && (B += String.fromCharCode(D));
-                    }while (Q < A.length)
+                    }while (Q < A.length);
                     return B;
                 };
                 function _B(A) {
@@ -3197,7 +3197,7 @@ var h264Mp4Encoder_node = function(A) {
                                     return E(A.uc, 2);
                                 },
                                 "%t": function() {
-                                    return "\t";
+                                    return "	";
                                 },
                                 "%u": function(A) {
                                     return A.Ha || 7;

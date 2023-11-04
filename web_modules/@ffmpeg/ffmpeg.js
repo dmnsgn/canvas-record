@@ -13,6 +13,8 @@ var FFMessageType;
     FFMessageType["DOWNLOAD"] = "DOWNLOAD";
     FFMessageType["PROGRESS"] = "PROGRESS";
     FFMessageType["LOG"] = "LOG";
+    FFMessageType["MOUNT"] = "MOUNT";
+    FFMessageType["UNMOUNT"] = "UNMOUNT";
 })(FFMessageType || (FFMessageType = {}));
 
 /**
@@ -109,6 +111,8 @@ var _worker = /*#__PURE__*/ _class_private_field_loose_key("_worker"), /**
                             this.loaded = true;
                             _class_private_field_loose_base(this, _resolves)[_resolves][id](data);
                             break;
+                        case FFMessageType.MOUNT:
+                        case FFMessageType.UNMOUNT:
                         case FFMessageType.EXEC:
                         case FFMessageType.WRITE_FILE:
                         case FFMessageType.READ_FILE:
@@ -134,7 +138,7 @@ var _worker = /*#__PURE__*/ _class_private_field_loose_key("_worker"), /**
                 };
             }
         };
-        _class_private_field_loose_base(this, _send)[_send] = (param, trans)=>{
+        _class_private_field_loose_base(this, _send)[_send] = (param, trans, signal)=>{
             let { type , data  } = param;
             if (trans === void 0) trans = [];
             if (!_class_private_field_loose_base(this, _worker)[_worker]) {
@@ -149,6 +153,11 @@ var _worker = /*#__PURE__*/ _class_private_field_loose_key("_worker"), /**
                 }, trans);
                 _class_private_field_loose_base(this, _resolves)[_resolves][id] = resolve;
                 _class_private_field_loose_base(this, _rejects)[_rejects][id] = reject;
+                signal?.addEventListener("abort", ()=>{
+                    reject(new DOMException(`Message # ${id} was aborted`, "AbortError"));
+                }, {
+                    once: true
+                });
             });
         };
         /**
@@ -157,10 +166,11 @@ var _worker = /*#__PURE__*/ _class_private_field_loose_key("_worker"), /**
      *
      * @category FFmpeg
      * @returns `true` if ffmpeg core is loaded for the first time.
-     */ this.load = (config)=>{
+     */ this.load = (config, param)=>{
             if (config === void 0) config = {};
+            let { signal  } = param === void 0 ? {} : param;
             if (!_class_private_field_loose_base(this, _worker)[_worker]) {
-                _class_private_field_loose_base(this, _worker)[_worker] = new Worker(new URL(new URL('../assets/worker-f5dbab86.js', import.meta.url).href, import.meta.url), {
+                _class_private_field_loose_base(this, _worker)[_worker] = new Worker(new URL(new URL('../assets/worker-SGxhq5fg.js', import.meta.url).href, import.meta.url), {
                     type: "module"
                 });
                 _class_private_field_loose_base(this, _registerHandlers)[_registerHandlers]();
@@ -168,7 +178,7 @@ var _worker = /*#__PURE__*/ _class_private_field_loose_key("_worker"), /**
             return _class_private_field_loose_base(this, _send)[_send]({
                 type: FFMessageType.LOAD,
                 data: config
-            });
+            }, undefined, signal);
         };
         /**
      * Execute ffmpeg command.
@@ -193,15 +203,16 @@ var _worker = /*#__PURE__*/ _class_private_field_loose_key("_worker"), /**
      * milliseconds to wait before stopping the command execution.
      *
      * @defaultValue -1
-     */ timeout)=>{
+     */ timeout, param)=>{
             if (timeout === void 0) timeout = -1;
+            let { signal  } = param === void 0 ? {} : param;
             return _class_private_field_loose_base(this, _send)[_send]({
                 type: FFMessageType.EXEC,
                 data: {
                     args,
                     timeout
                 }
-            });
+            }, undefined, signal);
         };
         /**
      * Terminate all ongoing API calls and terminate web worker.
@@ -234,7 +245,8 @@ var _worker = /*#__PURE__*/ _class_private_field_loose_key("_worker"), /**
      * ```
      *
      * @category File System
-     */ this.writeFile = (path, data)=>{
+     */ this.writeFile = (path, data, param)=>{
+            let { signal  } = param === void 0 ? {} : param;
             const trans = [];
             if (data instanceof Uint8Array) {
                 trans.push(data.buffer);
@@ -244,6 +256,26 @@ var _worker = /*#__PURE__*/ _class_private_field_loose_key("_worker"), /**
                 data: {
                     path,
                     data
+                }
+            }, trans, signal);
+        };
+        this.mount = (fsType, options, mountPoint)=>{
+            const trans = [];
+            return _class_private_field_loose_base(this, _send)[_send]({
+                type: FFMessageType.MOUNT,
+                data: {
+                    fsType,
+                    options,
+                    mountPoint
+                }
+            }, trans);
+        };
+        this.unmount = (mountPoint)=>{
+            const trans = [];
+            return _class_private_field_loose_base(this, _send)[_send]({
+                type: FFMessageType.UNMOUNT,
+                data: {
+                    mountPoint
                 }
             }, trans);
         };
@@ -264,67 +296,83 @@ var _worker = /*#__PURE__*/ _class_private_field_loose_key("_worker"), /**
      * - binary: read file as binary file, return data in Uint8Array type.
      *
      * @defaultValue binary
-     */ encoding)=>{
+     */ encoding, param)=>{
             if (encoding === void 0) encoding = "binary";
+            let { signal  } = param === void 0 ? {} : param;
             return _class_private_field_loose_base(this, _send)[_send]({
                 type: FFMessageType.READ_FILE,
                 data: {
                     path,
                     encoding
                 }
-            });
+            }, undefined, signal);
         };
         /**
      * Delete a file.
      *
      * @category File System
-     */ this.deleteFile = (path)=>_class_private_field_loose_base(this, _send)[_send]({
+     */ this.deleteFile = (path, param)=>{
+            let { signal  } = param === void 0 ? {} : param;
+            return _class_private_field_loose_base(this, _send)[_send]({
                 type: FFMessageType.DELETE_FILE,
                 data: {
                     path
                 }
-            });
+            }, undefined, signal);
+        };
         /**
      * Rename a file or directory.
      *
      * @category File System
-     */ this.rename = (oldPath, newPath)=>_class_private_field_loose_base(this, _send)[_send]({
+     */ this.rename = (oldPath, newPath, param)=>{
+            let { signal  } = param === void 0 ? {} : param;
+            return _class_private_field_loose_base(this, _send)[_send]({
                 type: FFMessageType.RENAME,
                 data: {
                     oldPath,
                     newPath
                 }
-            });
+            }, undefined, signal);
+        };
         /**
      * Create a directory.
      *
      * @category File System
-     */ this.createDir = (path)=>_class_private_field_loose_base(this, _send)[_send]({
+     */ this.createDir = (path, param)=>{
+            let { signal  } = param === void 0 ? {} : param;
+            return _class_private_field_loose_base(this, _send)[_send]({
                 type: FFMessageType.CREATE_DIR,
                 data: {
                     path
                 }
-            });
+            }, undefined, signal);
+        };
         /**
      * List directory contents.
      *
      * @category File System
-     */ this.listDir = (path)=>_class_private_field_loose_base(this, _send)[_send]({
+     */ this.listDir = (path, param)=>{
+            let { signal  } = param === void 0 ? {} : param;
+            return _class_private_field_loose_base(this, _send)[_send]({
                 type: FFMessageType.LIST_DIR,
                 data: {
                     path
                 }
-            });
+            }, undefined, signal);
+        };
         /**
      * Delete an empty directory.
      *
      * @category File System
-     */ this.deleteDir = (path)=>_class_private_field_loose_base(this, _send)[_send]({
+     */ this.deleteDir = (path, param)=>{
+            let { signal  } = param === void 0 ? {} : param;
+            return _class_private_field_loose_base(this, _send)[_send]({
                 type: FFMessageType.DELETE_DIR,
                 data: {
                     path
                 }
-            });
+            }, undefined, signal);
+        };
     }
 }
 

@@ -115,7 +115,7 @@ Roadmap:
 ## Modules
 
 <dl>
-<dt><a href="#module_index">index</a></dt>
+<dt><a href="#module_canvas-record">canvas-record</a></dt>
 <dd><p>Re-export Recorder, RecorderStatus, all Encoders and utils.</p>
 </dd>
 </dl>
@@ -124,32 +124,91 @@ Roadmap:
 
 <dl>
 <dt><a href="#Recorder">Recorder</a></dt>
-<dd><p>Base Recorder class.</p>
+<dd></dd>
+<dt><a href="#Encoder">Encoder</a></dt>
+<dd></dd>
+<dt><a href="#FFmpegEncoder">FFmpegEncoder</a></dt>
+<dd></dd>
+<dt><a href="#FrameEncoder">FrameEncoder</a></dt>
+<dd></dd>
+<dt><a href="#GIFEncoder">GIFEncoder</a></dt>
+<dd></dd>
+<dt><a href="#H264MP4Encoder">H264MP4Encoder</a></dt>
+<dd></dd>
+<dt><a href="#MP4WasmEncoder">MP4WasmEncoder</a></dt>
+<dd></dd>
+<dt><a href="#MediaCaptureEncoder">MediaCaptureEncoder</a></dt>
+<dd></dd>
+<dt><a href="#WebCodecsEncoder">WebCodecsEncoder</a></dt>
+<dd></dd>
+</dl>
+
+## Constants
+
+<dl>
+<dt><a href="#isWebCodecsSupported">isWebCodecsSupported</a> : <code>boolean</code></dt>
+<dd><p>Check for WebCodecs support on the current platform.</p>
 </dd>
 </dl>
 
 ## Functions
 
 <dl>
-<dt><a href="#onStatusChangeCb">onStatusChangeCb(RecorderStatus)</a></dt>
-<dd><p>A callback to notify on the status change. To compare with RecorderStatus enum values.</p>
+<dt><a href="#estimateBitRate">estimateBitRate(width, height, frameRate, motionRank, bitrateMode)</a> ⇒ <code>number</code></dt>
+<dd><p>Estimate the bit rate of a video rounded to nearest megabit.
+Based on &quot;H.264 for the rest of us&quot; by Kush Amerasinghe.</p>
 </dd>
 </dl>
 
 ## Typedefs
 
 <dl>
+<dt><a href="#onStatusChangeCb">onStatusChangeCb</a> : <code>function</code></dt>
+<dd><p>A callback to notify on the status change. To compare with RecorderStatus enum values.</p>
+</dd>
 <dt><a href="#RecorderOptions">RecorderOptions</a> : <code>object</code></dt>
 <dd><p>Options for recording. All optional.</p>
 </dd>
 <dt><a href="#RecorderStartOptions">RecorderStartOptions</a> : <code>object</code></dt>
-<dd><p>Options for recording. All optional.</p>
+<dd><p>Options for recording initialisation. All optional.</p>
 </dd>
+<dt><a href="#EncoderExtensions">EncoderExtensions</a> : <code>&quot;mp4&quot;</code> | <code>&quot;webm&quot;</code> | <code>&quot;png&quot;</code> | <code>&quot;jpg&quot;</code> | <code>&quot;gif&quot;</code> | <code>&quot;mkv&quot;</code></dt>
+<dd></dd>
+<dt><a href="#EncoderTarget">EncoderTarget</a> : <code>&quot;in-browser&quot;</code> | <code>&quot;file-system&quot;</code></dt>
+<dd></dd>
+<dt><a href="#FFmpegEncoderOptions">FFmpegEncoderOptions</a> : <code>object</code></dt>
+<dd></dd>
+<dt><a href="#FFmpegEncoderEncoderOptions">FFmpegEncoderEncoderOptions</a> : <code>module:@ffmpeg/ffmpeg/dist/esm/types.js~FFMessageLoadConfig</code></dt>
+<dd></dd>
+<dt><a href="#GIFEncoderOptions">GIFEncoderOptions</a> : <code>object</code></dt>
+<dd></dd>
+<dt><a href="#GIFEncoderQuantizeOptions">GIFEncoderQuantizeOptions</a> : <code>object</code></dt>
+<dd></dd>
+<dt><a href="#GIFEncoderEncoderOptions">GIFEncoderEncoderOptions</a> : <code>object</code></dt>
+<dd></dd>
+<dt><a href="#H264MP4EncoderOptions">H264MP4EncoderOptions</a> : <code>object</code></dt>
+<dd></dd>
+<dt><a href="#H264MP4EncoderEncoderOptions">H264MP4EncoderEncoderOptions</a> : <code>module:h264-mp4-encoder~H264MP4Encoder</code></dt>
+<dd></dd>
+<dt><a href="#MP4WasmEncoderOptions">MP4WasmEncoderOptions</a> : <code>object</code></dt>
+<dd></dd>
+<dt><a href="#MP4WasmEncoderEncoderOptions">MP4WasmEncoderEncoderOptions</a> : <code>VideoEncoderConfig</code></dt>
+<dd></dd>
+<dt><a href="#MediaCaptureEncoderOptions">MediaCaptureEncoderOptions</a> : <code>object</code></dt>
+<dd></dd>
+<dt><a href="#MediaCaptureEncoderEncoderOptions">MediaCaptureEncoderEncoderOptions</a> : <code>MediaRecorderOptions</code></dt>
+<dd></dd>
+<dt><a href="#WebCodecsEncoderOptions">WebCodecsEncoderOptions</a> : <code>object</code></dt>
+<dd></dd>
+<dt><a href="#WebCodecsEncoderEncoderOptions">WebCodecsEncoderEncoderOptions</a> : <code>VideoEncoderConfig</code></dt>
+<dd></dd>
+<dt><a href="#WebCodecsMuxerOptions">WebCodecsMuxerOptions</a> : <code>MuxerOptions</code></dt>
+<dd></dd>
 </dl>
 
-<a name="module_index"></a>
+<a name="module_canvas-record"></a>
 
-## index
+## canvas-record
 
 Re-export Recorder, RecorderStatus, all Encoders and utils.
 
@@ -157,42 +216,53 @@ Re-export Recorder, RecorderStatus, all Encoders and utils.
 
 ## Recorder
 
-Base Recorder class.
-
 **Kind**: global class
-**Properties**
-
-| Name      | Type                 | Default           | Description                                     |
-| --------- | -------------------- | ----------------- | ----------------------------------------------- |
-| [enabled] | <code>boolean</code> | <code>true</code> | Enable/disable pointer interaction and drawing. |
 
 - [Recorder](#Recorder)
-  - [new Recorder(context, options)](#new_Recorder_new)
-  - [.start(startOptions)](#Recorder+start)
+  - [new Recorder(context, [options])](#new_Recorder_new)
+  - [.defaultOptions](#Recorder+defaultOptions) : [<code>RecorderOptions</code>](#RecorderOptions)
+  - [.mimeTypes](#Recorder+mimeTypes) : <code>object</code>
+  - [.start([startOptions])](#Recorder+start)
   - [.step()](#Recorder+step)
   - [.stop()](#Recorder+stop) ⇒ <code>ArrayBuffer</code> \| <code>Uint8Array</code> \| <code>Array.&lt;Blob&gt;</code> \| <code>undefined</code>
   - [.dispose()](#Recorder+dispose)
 
 <a name="new_Recorder_new"></a>
 
-### new Recorder(context, options)
+### new Recorder(context, [options])
 
-| Param   | Type                                             |
-| ------- | ------------------------------------------------ |
-| context | <code>RenderingContext</code>                    |
-| options | [<code>RecorderOptions</code>](#RecorderOptions) |
+Create a Recorder instance
 
+| Param     | Type                                             | Default         |
+| --------- | ------------------------------------------------ | --------------- |
+| context   | <code>RenderingContext</code>                    |                 |
+| [options] | [<code>RecorderOptions</code>](#RecorderOptions) | <code>{}</code> |
+
+<a name="Recorder+defaultOptions"></a>
+
+### recorder.defaultOptions : [<code>RecorderOptions</code>](#RecorderOptions)
+
+Sensible defaults for recording so that the recorder "just works".
+
+**Kind**: instance property of [<code>Recorder</code>](#Recorder)
+<a name="Recorder+mimeTypes"></a>
+
+### recorder.mimeTypes : <code>object</code>
+
+A mapping of extension to their mime types
+
+**Kind**: instance property of [<code>Recorder</code>](#Recorder)
 <a name="Recorder+start"></a>
 
-### recorder.start(startOptions)
+### recorder.start([startOptions])
 
 Start the recording by initializing and optionally calling the initial step.
 
 **Kind**: instance method of [<code>Recorder</code>](#Recorder)
 
-| Param        | Type                                                       |
-| ------------ | ---------------------------------------------------------- |
-| startOptions | [<code>RecorderStartOptions</code>](#RecorderStartOptions) |
+| Param          | Type                                                       | Default         |
+| -------------- | ---------------------------------------------------------- | --------------- |
+| [startOptions] | [<code>RecorderStartOptions</code>](#RecorderStartOptions) | <code>{}</code> |
 
 <a name="Recorder+step"></a>
 
@@ -215,9 +285,178 @@ Is called when duration is reached or manually.
 
 ### recorder.dispose()
 
-Clean up
+Clean up the recorder and encoder
 
 **Kind**: instance method of [<code>Recorder</code>](#Recorder)
+<a name="Encoder"></a>
+
+## Encoder
+
+**Kind**: global class
+**Properties**
+
+| Name             | Type                                                 |
+| ---------------- | ---------------------------------------------------- |
+| target           | [<code>EncoderTarget</code>](#EncoderTarget)         |
+| extension        | [<code>EncoderExtensions</code>](#EncoderExtensions) |
+| [encoderOptions] | <code>object</code>                                  |
+| [muxerOptions]   | <code>object</code>                                  |
+
+- [Encoder](#Encoder)
+  - [new Encoder(options)](#new_Encoder_new)
+  - [.supportedExtensions](#Encoder+supportedExtensions) : <code>Array.&lt;Extensions&gt;</code>
+  - [.supportedTargets](#Encoder+supportedTargets) : [<code>Array.&lt;EncoderTarget&gt;</code>](#EncoderTarget)
+  - [.init(options)](#Encoder+init)
+  - [.encode(frame, [frameNumber])](#Encoder+encode)
+  - [.stop()](#Encoder+stop) ⇒ <code>ArrayBuffer</code> \| <code>Uint8Array</code> \| <code>Array.&lt;Blob&gt;</code> \| <code>undefined</code>
+  - [.dispose()](#Encoder+dispose)
+
+<a name="new_Encoder_new"></a>
+
+### new Encoder(options)
+
+Base Encoder class. All Encoders extend it and its method are called by the Recorder.
+
+| Param   | Type                |
+| ------- | ------------------- |
+| options | <code>object</code> |
+
+<a name="Encoder+supportedExtensions"></a>
+
+### encoder.supportedExtensions : <code>Array.&lt;Extensions&gt;</code>
+
+The extension the encoder supports
+
+**Kind**: instance property of [<code>Encoder</code>](#Encoder)
+<a name="Encoder+supportedTargets"></a>
+
+### encoder.supportedTargets : [<code>Array.&lt;EncoderTarget&gt;</code>](#EncoderTarget)
+
+The target to download the file to.
+
+**Kind**: instance property of [<code>Encoder</code>](#Encoder)
+<a name="Encoder+init"></a>
+
+### encoder.init(options)
+
+Setup the encoder: load binary, instantiate muxers, setup file system target...
+
+**Kind**: instance method of [<code>Encoder</code>](#Encoder)
+
+| Param   | Type                |
+| ------- | ------------------- |
+| options | <code>object</code> |
+
+<a name="Encoder+encode"></a>
+
+### encoder.encode(frame, [frameNumber])
+
+Encode a single frame. The frameNumber is usually used for GOP (Group Of Pictures).
+
+**Kind**: instance method of [<code>Encoder</code>](#Encoder)
+
+| Param         | Type                |
+| ------------- | ------------------- |
+| frame         | <code>number</code> |
+| [frameNumber] | <code>number</code> |
+
+<a name="Encoder+stop"></a>
+
+### encoder.stop() ⇒ <code>ArrayBuffer</code> \| <code>Uint8Array</code> \| <code>Array.&lt;Blob&gt;</code> \| <code>undefined</code>
+
+Stop the encoding process and cleanup the temporary data.
+
+**Kind**: instance method of [<code>Encoder</code>](#Encoder)
+<a name="Encoder+dispose"></a>
+
+### encoder.dispose()
+
+Clean up the encoder
+
+**Kind**: instance method of [<code>Encoder</code>](#Encoder)
+<a name="FFmpegEncoder"></a>
+
+## FFmpegEncoder
+
+**Kind**: global class
+<a name="new_FFmpegEncoder_new"></a>
+
+### new FFmpegEncoder([options])
+
+| Param     | Type                                                       |
+| --------- | ---------------------------------------------------------- |
+| [options] | [<code>FFmpegEncoderOptions</code>](#FFmpegEncoderOptions) |
+
+<a name="FrameEncoder"></a>
+
+## FrameEncoder
+
+**Kind**: global class
+<a name="GIFEncoder"></a>
+
+## GIFEncoder
+
+**Kind**: global class
+<a name="new_GIFEncoder_new"></a>
+
+### new GIFEncoder([options])
+
+| Param     | Type                                                 |
+| --------- | ---------------------------------------------------- |
+| [options] | [<code>GIFEncoderOptions</code>](#GIFEncoderOptions) |
+
+<a name="H264MP4Encoder"></a>
+
+## H264MP4Encoder
+
+**Kind**: global class
+<a name="new_H264MP4Encoder_new"></a>
+
+### new H264MP4Encoder([options])
+
+| Param     | Type                                                         |
+| --------- | ------------------------------------------------------------ |
+| [options] | [<code>H264MP4EncoderOptions</code>](#H264MP4EncoderOptions) |
+
+<a name="MP4WasmEncoder"></a>
+
+## MP4WasmEncoder
+
+**Kind**: global class
+<a name="new_MP4WasmEncoder_new"></a>
+
+### new MP4WasmEncoder([options])
+
+| Param     | Type                                                         |
+| --------- | ------------------------------------------------------------ |
+| [options] | [<code>MP4WasmEncoderOptions</code>](#MP4WasmEncoderOptions) |
+
+<a name="MediaCaptureEncoder"></a>
+
+## MediaCaptureEncoder
+
+**Kind**: global class
+<a name="new_MediaCaptureEncoder_new"></a>
+
+### new MediaCaptureEncoder([options])
+
+| Param     | Type                                                                   |
+| --------- | ---------------------------------------------------------------------- |
+| [options] | [<code>MediaCaptureEncoderOptions</code>](#MediaCaptureEncoderOptions) |
+
+<a name="WebCodecsEncoder"></a>
+
+## WebCodecsEncoder
+
+**Kind**: global class
+<a name="new_WebCodecsEncoder_new"></a>
+
+### new WebCodecsEncoder([options])
+
+| Param     | Type                                                             |
+| --------- | ---------------------------------------------------------------- |
+| [options] | [<code>WebCodecsEncoderOptions</code>](#WebCodecsEncoderOptions) |
+
 <a name="RecorderStatus"></a>
 
 ## RecorderStatus : <code>enum</code>
@@ -235,13 +474,46 @@ if (canvasRecorder.status !== RecorderStatus.Stopped) {
 }
 ```
 
+<a name="isWebCodecsSupported"></a>
+
+## isWebCodecsSupported : <code>boolean</code>
+
+Check for WebCodecs support on the current platform.
+
+**Kind**: global constant
+<a name="estimateBitRate"></a>
+
+## estimateBitRate(width, height, frameRate, motionRank, bitrateMode) ⇒ <code>number</code>
+
+Estimate the bit rate of a video rounded to nearest megabit.
+Based on "H.264 for the rest of us" by Kush Amerasinghe.
+
+**Kind**: global function
+**Returns**: <code>number</code> - A bitrate value in bits per second
+
+| Param       | Type                                                                   | Default               | Description           |
+| ----------- | ---------------------------------------------------------------------- | --------------------- | --------------------- |
+| width       | <code>number</code>                                                    |                       |                       |
+| height      | <code>number</code>                                                    |                       |                       |
+| frameRate   | <code>number</code>                                                    | <code>30</code>       |                       |
+| motionRank  | <code>number</code>                                                    | <code>4</code>        | A factor of 1, 2 or 4 |
+| bitrateMode | <code>&quot;variable&quot;</code> \| <code>&quot;constant&quot;</code> | <code>variable</code> |                       |
+
+**Example**
+
+```js
+// Full HD (1080p)
+const bitRate = estimateBitRate(1920, 1080, 30, "variable");
+const bitRateMbps = bitRate * 1_000_000; // => 13 Mbps
+```
+
 <a name="onStatusChangeCb"></a>
 
-## onStatusChangeCb(RecorderStatus)
+## onStatusChangeCb : <code>function</code>
 
 A callback to notify on the status change. To compare with RecorderStatus enum values.
 
-**Kind**: global function
+**Kind**: global typedef
 
 | Param          | Type                | Description |
 | -------------- | ------------------- | ----------- |
@@ -262,7 +534,7 @@ Options for recording. All optional.
 | [duration]       | <code>number</code>                                | <code>10</code>                                   | The recording duration in seconds. If set to Infinity, `await canvasRecorder.stop()` needs to be called manually.       |
 | [frameRate]      | <code>number</code>                                | <code>30</code>                                   | The frame rate in frame per seconds. Use `await canvasRecorder.step();` to go to the next frame.                        |
 | [download]       | <code>boolean</code>                               | <code>true</code>                                 | Automatically download the recording when duration is reached or when `await canvasRecorder.stop()` is manually called. |
-| [extension]      | <code>boolean</code>                               | <code>&quot;mp4&quot;</code>                      | Default file extension: infers which Encoder is selected.                                                               |
+| [extension]      | <code>string</code>                                | <code>&quot;\&quot;mp4\&quot;&quot;</code>        | Default file extension: infers which Encoder is selected.                                                               |
 | [target]         | <code>string</code>                                | <code>&quot;\&quot;in-browser\&quot;&quot;</code> | Default writing target: in-browser or file-system when available.                                                       |
 | [encoder]        | <code>object</code>                                |                                                   | A specific encoder. Default encoder based on options.extension: GIF > WebCodecs > H264MP4.                              |
 | [encoderOptions] | <code>object</code>                                |                                                   | See `src/encoders` or individual packages for a list of options.                                                        |
@@ -273,7 +545,7 @@ Options for recording. All optional.
 
 ## RecorderStartOptions : <code>object</code>
 
-Options for recording. All optional.
+Options for recording initialisation. All optional.
 
 **Kind**: global typedef
 **Properties**
@@ -282,6 +554,164 @@ Options for recording. All optional.
 | ---------- | -------------------- | ----------------------------------------------------------------------------- |
 | [filename] | <code>string</code>  | Overwrite the file name completely.                                           |
 | [initOnly] | <code>boolean</code> | Only initialised the recorder and don't call the first await recorder.step(). |
+
+<a name="EncoderExtensions"></a>
+
+## EncoderExtensions : <code>&quot;mp4&quot;</code> \| <code>&quot;webm&quot;</code> \| <code>&quot;png&quot;</code> \| <code>&quot;jpg&quot;</code> \| <code>&quot;gif&quot;</code> \| <code>&quot;mkv&quot;</code>
+
+**Kind**: global typedef
+<a name="EncoderTarget"></a>
+
+## EncoderTarget : <code>&quot;in-browser&quot;</code> \| <code>&quot;file-system&quot;</code>
+
+**Kind**: global typedef
+<a name="FFmpegEncoderOptions"></a>
+
+## FFmpegEncoderOptions : <code>object</code>
+
+**Kind**: global typedef
+**Properties**
+
+| Name             | Type                                                                     | Default         |
+| ---------------- | ------------------------------------------------------------------------ | --------------- |
+| [encoderOptions] | [<code>FFmpegEncoderEncoderOptions</code>](#FFmpegEncoderEncoderOptions) | <code>{}</code> |
+
+<a name="FFmpegEncoderEncoderOptions"></a>
+
+## FFmpegEncoderEncoderOptions : <code>module:@ffmpeg/ffmpeg/dist/esm/types.js~FFMessageLoadConfig</code>
+
+**Kind**: global typedef
+**See**: [FFmpeg#load](https://ffmpegwasm.netlify.app/docs/api/ffmpeg/classes/FFmpeg#load)
+<a name="GIFEncoderOptions"></a>
+
+## GIFEncoderOptions : <code>object</code>
+
+**Kind**: global typedef
+**Properties**
+
+| Name              | Type                                                                 | Default          |
+| ----------------- | -------------------------------------------------------------------- | ---------------- |
+| [maxColors]       | <code>number</code>                                                  | <code>256</code> |
+| [quantizeOptions] | [<code>GIFEncoderQuantizeOptions</code>](#GIFEncoderQuantizeOptions) |                  |
+| [encoderOptions]  | [<code>GIFEncoderEncoderOptions</code>](#GIFEncoderEncoderOptions)   | <code>{}</code>  |
+
+<a name="GIFEncoderQuantizeOptions"></a>
+
+## GIFEncoderQuantizeOptions : <code>object</code>
+
+**Kind**: global typedef
+**See**: [QuantizeOptions](https://github.com/mattdesl/gifenc#palette--quantizergba-maxcolors-options--)
+**Properties**
+
+| Name                  | Type                                                                                                    | Default                         |
+| --------------------- | ------------------------------------------------------------------------------------------------------- | ------------------------------- |
+| [format]              | <code>&quot;rgb565&quot;</code> \| <code>&quot;rgb444&quot;</code> \| <code>&quot;rgba4444&quot;</code> | <code>&quot;rgb565&quot;</code> |
+| [oneBitAlpha]         | <code>boolean</code> \| <code>number</code>                                                             | <code>false</code>              |
+| [clearAlpha]          | <code>boolean</code>                                                                                    | <code>true</code>               |
+| [clearAlphaThreshold] | <code>number</code>                                                                                     | <code>0</code>                  |
+| [clearAlphaColor]     | <code>number</code>                                                                                     | <code>0x00</code>               |
+
+<a name="GIFEncoderEncoderOptions"></a>
+
+## GIFEncoderEncoderOptions : <code>object</code>
+
+**Kind**: global typedef
+**See**: [WriteFrameOpts](https://github.com/mattdesl/gifenc#gifwriteframeindex-width-height-opts--)
+**Properties**
+
+| Name               | Type                                            | Default            |
+| ------------------ | ----------------------------------------------- | ------------------ |
+| [palette]          | <code>Array.&lt;Array.&lt;number&gt;&gt;</code> |                    |
+| [first]            | <code>boolean</code>                            | <code>false</code> |
+| [transparent]      | <code>boolean</code>                            | <code>0</code>     |
+| [transparentIndex] | <code>number</code>                             | <code>0</code>     |
+| [delay]            | <code>number</code>                             | <code>0</code>     |
+| [repeat]           | <code>number</code>                             | <code>0</code>     |
+| [dispose]          | <code>number</code>                             | <code>-1</code>    |
+
+<a name="H264MP4EncoderOptions"></a>
+
+## H264MP4EncoderOptions : <code>object</code>
+
+**Kind**: global typedef
+**Properties**
+
+| Name             | Type                                                                       | Default         |
+| ---------------- | -------------------------------------------------------------------------- | --------------- |
+| [debug]          | <code>boolean</code>                                                       |                 |
+| [encoderOptions] | [<code>H264MP4EncoderEncoderOptions</code>](#H264MP4EncoderEncoderOptions) | <code>{}</code> |
+
+<a name="H264MP4EncoderEncoderOptions"></a>
+
+## H264MP4EncoderEncoderOptions : <code>module:h264-mp4-encoder~H264MP4Encoder</code>
+
+**Kind**: global typedef
+**See**: [h264-mp4-encoder#api](https://github.com/TrevorSundberg/h264-mp4-encoder#api)
+<a name="MP4WasmEncoderOptions"></a>
+
+## MP4WasmEncoderOptions : <code>object</code>
+
+**Kind**: global typedef
+**Properties**
+
+| Name              | Type                                                                       | Default         |
+| ----------------- | -------------------------------------------------------------------------- | --------------- |
+| [groupOfPictures] | <code>number</code>                                                        | <code>20</code> |
+| [flushFrequency]  | <code>number</code>                                                        | <code>10</code> |
+| [encoderOptions]  | [<code>MP4WasmEncoderEncoderOptions</code>](#MP4WasmEncoderEncoderOptions) | <code>{}</code> |
+
+<a name="MP4WasmEncoderEncoderOptions"></a>
+
+## MP4WasmEncoderEncoderOptions : <code>VideoEncoderConfig</code>
+
+**Kind**: global typedef
+**See**: [VideoEncoder.configure](https://developer.mozilla.org/en-US/docs/Web/API/VideoEncoder/configure#config)
+<a name="MediaCaptureEncoderOptions"></a>
+
+## MediaCaptureEncoderOptions : <code>object</code>
+
+**Kind**: global typedef
+**Properties**
+
+| Name             | Type                                                                                 | Default         |
+| ---------------- | ------------------------------------------------------------------------------------ | --------------- |
+| [flushFrequency] | <code>number</code>                                                                  | <code>10</code> |
+| [encoderOptions] | [<code>MediaCaptureEncoderEncoderOptions</code>](#MediaCaptureEncoderEncoderOptions) | <code>{}</code> |
+
+<a name="MediaCaptureEncoderEncoderOptions"></a>
+
+## MediaCaptureEncoderEncoderOptions : <code>MediaRecorderOptions</code>
+
+**Kind**: global typedef
+**See**: [MediaRecorder#options](https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder/MediaRecorder#options)
+<a name="WebCodecsEncoderOptions"></a>
+
+## WebCodecsEncoderOptions : <code>object</code>
+
+**Kind**: global typedef
+**Properties**
+
+| Name              | Type                                                                           | Default         |
+| ----------------- | ------------------------------------------------------------------------------ | --------------- |
+| [groupOfPictures] | <code>number</code>                                                            | <code>20</code> |
+| [flushFrequency]  | <code>number</code>                                                            | <code>10</code> |
+| [encoderOptions]  | [<code>WebCodecsEncoderEncoderOptions</code>](#WebCodecsEncoderEncoderOptions) | <code>{}</code> |
+
+<a name="WebCodecsEncoderEncoderOptions"></a>
+
+## WebCodecsEncoderEncoderOptions : <code>VideoEncoderConfig</code>
+
+**Kind**: global typedef
+**See**: [VideoEncoder.configure](https://developer.mozilla.org/en-US/docs/Web/API/VideoEncoder/configure#config)
+<a name="WebCodecsMuxerOptions"></a>
+
+## WebCodecsMuxerOptions : <code>MuxerOptions</code>
+
+**Kind**: global typedef
+**See**
+
+- [Mp4.MuxerOptions](https://github.com/Vanilagy/mp4-muxer/#usage)
+- [WebM.MuxerOptions](https://github.com/Vanilagy/webm-muxer/#usage)
 
 <!-- api-end -->
 
