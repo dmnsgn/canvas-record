@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [5.0.1](https://github.com/dmnsgn/canvas-record/compare/v5.0.0...v5.0.1) (2024-06-10)
+
+
+### Bug Fixes
+
+* actually allow encoding to be passed by encoderOptions.codec ([16b338e](https://github.com/dmnsgn/canvas-record/commit/16b338e254974e0e7e25c6c34694caf86ccd00af))
+
+
+
 # [5.0.0](https://github.com/dmnsgn/canvas-record/compare/v5.0.0-beta.0...v5.0.0) (2024-01-08)
 
 

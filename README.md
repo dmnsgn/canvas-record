@@ -135,9 +135,9 @@ Roadmap:
 <dd></dd>
 <dt><a href="#H264MP4Encoder">H264MP4Encoder</a></dt>
 <dd></dd>
-<dt><a href="#MP4WasmEncoder">MP4WasmEncoder</a></dt>
-<dd></dd>
 <dt><a href="#MediaCaptureEncoder">MediaCaptureEncoder</a></dt>
+<dd></dd>
+<dt><a href="#MP4WasmEncoder">MP4WasmEncoder</a></dt>
 <dd></dd>
 <dt><a href="#WebCodecsEncoder">WebCodecsEncoder</a></dt>
 <dd></dd>
@@ -190,13 +190,13 @@ Based on &quot;H.264 for the rest of us&quot; by Kush Amerasinghe.</p>
 <dd></dd>
 <dt><a href="#H264MP4EncoderEncoderOptions">H264MP4EncoderEncoderOptions</a> : <code>module:h264-mp4-encoder~H264MP4Encoder</code></dt>
 <dd></dd>
-<dt><a href="#MP4WasmEncoderOptions">MP4WasmEncoderOptions</a> : <code>object</code></dt>
-<dd></dd>
-<dt><a href="#MP4WasmEncoderEncoderOptions">MP4WasmEncoderEncoderOptions</a> : <code>VideoEncoderConfig</code></dt>
-<dd></dd>
 <dt><a href="#MediaCaptureEncoderOptions">MediaCaptureEncoderOptions</a> : <code>object</code></dt>
 <dd></dd>
 <dt><a href="#MediaCaptureEncoderEncoderOptions">MediaCaptureEncoderEncoderOptions</a> : <code>MediaRecorderOptions</code></dt>
+<dd></dd>
+<dt><a href="#MP4WasmEncoderOptions">MP4WasmEncoderOptions</a> : <code>object</code></dt>
+<dd></dd>
+<dt><a href="#MP4WasmEncoderEncoderOptions">MP4WasmEncoderEncoderOptions</a> : <code>VideoEncoderConfig</code></dt>
 <dd></dd>
 <dt><a href="#WebCodecsEncoderOptions">WebCodecsEncoderOptions</a> : <code>object</code></dt>
 <dd></dd>
@@ -418,19 +418,6 @@ Clean up the encoder
 | --------- | ------------------------------------------------------------ |
 | [options] | [<code>H264MP4EncoderOptions</code>](#H264MP4EncoderOptions) |
 
-<a name="MP4WasmEncoder"></a>
-
-## MP4WasmEncoder
-
-**Kind**: global class
-<a name="new_MP4WasmEncoder_new"></a>
-
-### new MP4WasmEncoder([options])
-
-| Param     | Type                                                         |
-| --------- | ------------------------------------------------------------ |
-| [options] | [<code>MP4WasmEncoderOptions</code>](#MP4WasmEncoderOptions) |
-
 <a name="MediaCaptureEncoder"></a>
 
 ## MediaCaptureEncoder
@@ -443,6 +430,19 @@ Clean up the encoder
 | Param     | Type                                                                   |
 | --------- | ---------------------------------------------------------------------- |
 | [options] | [<code>MediaCaptureEncoderOptions</code>](#MediaCaptureEncoderOptions) |
+
+<a name="MP4WasmEncoder"></a>
+
+## MP4WasmEncoder
+
+**Kind**: global class
+<a name="new_MP4WasmEncoder_new"></a>
+
+### new MP4WasmEncoder([options])
+
+| Param     | Type                                                         |
+| --------- | ------------------------------------------------------------ |
+| [options] | [<code>MP4WasmEncoderOptions</code>](#MP4WasmEncoderOptions) |
 
 <a name="WebCodecsEncoder"></a>
 
@@ -647,6 +647,24 @@ Options for recording initialisation. All optional.
 
 **Kind**: global typedef
 **See**: [h264-mp4-encoder#api](https://github.com/TrevorSundberg/h264-mp4-encoder#api)
+<a name="MediaCaptureEncoderOptions"></a>
+
+## MediaCaptureEncoderOptions : <code>object</code>
+
+**Kind**: global typedef
+**Properties**
+
+| Name             | Type                                                                                 | Default         |
+| ---------------- | ------------------------------------------------------------------------------------ | --------------- |
+| [flushFrequency] | <code>number</code>                                                                  | <code>10</code> |
+| [encoderOptions] | [<code>MediaCaptureEncoderEncoderOptions</code>](#MediaCaptureEncoderEncoderOptions) | <code>{}</code> |
+
+<a name="MediaCaptureEncoderEncoderOptions"></a>
+
+## MediaCaptureEncoderEncoderOptions : <code>MediaRecorderOptions</code>
+
+**Kind**: global typedef
+**See**: [MediaRecorder#options](https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder/MediaRecorder#options)
 <a name="MP4WasmEncoderOptions"></a>
 
 ## MP4WasmEncoderOptions : <code>object</code>
@@ -666,24 +684,6 @@ Options for recording initialisation. All optional.
 
 **Kind**: global typedef
 **See**: [VideoEncoder.configure](https://developer.mozilla.org/en-US/docs/Web/API/VideoEncoder/configure#config)
-<a name="MediaCaptureEncoderOptions"></a>
-
-## MediaCaptureEncoderOptions : <code>object</code>
-
-**Kind**: global typedef
-**Properties**
-
-| Name             | Type                                                                                 | Default         |
-| ---------------- | ------------------------------------------------------------------------------------ | --------------- |
-| [flushFrequency] | <code>number</code>                                                                  | <code>10</code> |
-| [encoderOptions] | [<code>MediaCaptureEncoderEncoderOptions</code>](#MediaCaptureEncoderEncoderOptions) | <code>{}</code> |
-
-<a name="MediaCaptureEncoderEncoderOptions"></a>
-
-## MediaCaptureEncoderEncoderOptions : <code>MediaRecorderOptions</code>
-
-**Kind**: global typedef
-**See**: [MediaRecorder#options](https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder/MediaRecorder#options)
 <a name="WebCodecsEncoderOptions"></a>
 
 ## WebCodecsEncoderOptions : <code>object</code>
