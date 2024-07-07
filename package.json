@@ -1,6 +1,6 @@
 {
   "name": "canvas-record",
-  "version": "5.0.1",
+  "version": "5.1.0",
   "description": "Record a video in the browser or directly on the File System from a canvas (2D/WebGL/WebGPU) as MP4, WebM, MKV, GIF, PNG/JPG Sequence using WebCodecs and wasm when available.",
   "keywords": [
     "canvas",
@@ -20,7 +20,10 @@
   ],
   "homepage": "https://github.com/dmnsgn/canvas-record",
   "bugs": "https://github.com/dmnsgn/canvas-record/issues",
-  "repository": "dmnsgn/canvas-record",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dmnsgn/canvas-record.git"
+  },
   "funding": [
     {
       "type": "individual",
