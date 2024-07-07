@@ -1,34 +1,3 @@
-var commonjsGlobal = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
-
-function getDefaultExportFromCjs (x) {
-	return x && x.__esModule && Object.prototype.hasOwnProperty.call(x, 'default') ? x['default'] : x;
-}
-
-function getAugmentedNamespace(n) {
-  if (n.__esModule) return n;
-  var f = n.default;
-	if (typeof f == "function") {
-		var a = function a () {
-			if (this instanceof a) {
-        return Reflect.construct(f, arguments, this.constructor);
-			}
-			return f.apply(this, arguments);
-		};
-		a.prototype = f.prototype;
-  } else a = {};
-  Object.defineProperty(a, '__esModule', {value: true});
-	Object.keys(n).forEach(function (k) {
-		var d = Object.getOwnPropertyDescriptor(n, k);
-		Object.defineProperty(a, k, d.get ? d : {
-			enumerable: true,
-			get: function () {
-				return n[k];
-			}
-		});
-	});
-	return a;
-}
-
 var global$1 = (typeof global !== "undefined" ? global :
   typeof self !== "undefined" ? self :
   typeof window !== "undefined" ? window : {});
@@ -462,6 +431,8 @@ var isArray = Array.isArray || function (arr) {
  * @author   Feross Aboukhadijeh <feross@feross.org> <http://feross.org>
  * @license  MIT
  */
+/* eslint-disable no-proto */
+
 
 var INSPECT_MAX_BYTES = 50;
 
@@ -2230,6 +2201,37 @@ function isSlowBuffer (obj) {
   return typeof obj.readFloatLE === 'function' && typeof obj.slice === 'function' && isFastBuffer(obj.slice(0, 0))
 }
 
+var commonjsGlobal = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
+
+function getDefaultExportFromCjs (x) {
+	return x && x.__esModule && Object.prototype.hasOwnProperty.call(x, 'default') ? x['default'] : x;
+}
+
+function getAugmentedNamespace(n) {
+  if (n.__esModule) return n;
+  var f = n.default;
+	if (typeof f == "function") {
+		var a = function a () {
+			if (this instanceof a) {
+        return Reflect.construct(f, arguments, this.constructor);
+			}
+			return f.apply(this, arguments);
+		};
+		a.prototype = f.prototype;
+  } else a = {};
+  Object.defineProperty(a, '__esModule', {value: true});
+	Object.keys(n).forEach(function (k) {
+		var d = Object.getOwnPropertyDescriptor(n, k);
+		Object.defineProperty(a, k, d.get ? d : {
+			enumerable: true,
+			get: function () {
+				return n[k];
+			}
+		});
+	});
+	return a;
+}
+
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -2464,18 +2466,18 @@ var substr = 'ab'.substr(-1) === 'b' ?
 ;
 
 var _polyfillNode_path$1 = /*#__PURE__*/Object.freeze({
-	__proto__: null,
-	basename: basename,
-	default: _polyfillNode_path,
-	delimiter: delimiter,
-	dirname: dirname,
-	extname: extname,
-	isAbsolute: isAbsolute,
-	join: join,
-	normalize: normalize,
-	relative: relative,
-	resolve: resolve,
-	sep: sep
+  __proto__: null,
+  basename: basename,
+  default: _polyfillNode_path,
+  delimiter: delimiter,
+  dirname: dirname,
+  extname: extname,
+  isAbsolute: isAbsolute,
+  join: join,
+  normalize: normalize,
+  relative: relative,
+  resolve: resolve,
+  sep: sep
 });
 
 var require$$0 = /*@__PURE__*/getAugmentedNamespace(_polyfillNode_path$1);
@@ -2483,8 +2485,8 @@ var require$$0 = /*@__PURE__*/getAugmentedNamespace(_polyfillNode_path$1);
 var _polyfillNode_fs = {};
 
 var _polyfillNode_fs$1 = /*#__PURE__*/Object.freeze({
-	__proto__: null,
-	default: _polyfillNode_fs
+  __proto__: null,
+  default: _polyfillNode_fs
 });
 
 var require$$1 = /*@__PURE__*/getAugmentedNamespace(_polyfillNode_fs$1);
@@ -2492,14 +2494,14 @@ var require$$1 = /*@__PURE__*/getAugmentedNamespace(_polyfillNode_fs$1);
 var _polyfillNode_crypto = {};
 
 var _polyfillNode_crypto$1 = /*#__PURE__*/Object.freeze({
-	__proto__: null,
-	default: _polyfillNode_crypto
+  __proto__: null,
+  default: _polyfillNode_crypto
 });
 
 var require$$2 = /*@__PURE__*/getAugmentedNamespace(_polyfillNode_crypto$1);
 
 var _polyfillNode_module = /*#__PURE__*/Object.freeze({
-	__proto__: null
+  __proto__: null
 });
 
-export { Buffer as B, _polyfillNode_module as _, require$$1 as a, browser$1 as b, require$$2 as c, global$1 as d, commonjsGlobal as e, getDefaultExportFromCjs as g, require$$0 as r };
+export { Buffer as B, _polyfillNode_module as _, getDefaultExportFromCjs as a, browser$1 as b, commonjsGlobal as c, require$$1 as d, require$$2 as e, global$1 as g, require$$0 as r };

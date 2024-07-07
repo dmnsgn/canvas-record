@@ -6,7 +6,7 @@ const HeaderContentLength = "Content-Length";
 const readFromBlobOrFile = (blob)=>new Promise((resolve, reject)=>{
         const fileReader = new FileReader();
         fileReader.onload = ()=>{
-            const { result  } = fileReader;
+            const { result } = fileReader;
             if (result instanceof ArrayBuffer) {
                 resolve(new Uint8Array(result));
             } else {
@@ -14,7 +14,8 @@ const readFromBlobOrFile = (blob)=>new Promise((resolve, reject)=>{
             }
         };
         fileReader.onerror = (event)=>{
-            reject(Error(`File could not be read! Code=${event?.target?.error?.code || -1}`));
+            var _event_target_error, _event_target;
+            reject(Error(`File could not be read! Code=${(event == null ? void 0 : (_event_target = event.target) == null ? void 0 : (_event_target_error = _event_target.error) == null ? void 0 : _event_target_error.code) || -1}`));
         };
         fileReader.readAsArrayBuffer(blob);
     });
@@ -83,14 +84,15 @@ const readFromBlobOrFile = (blob)=>new Promise((resolve, reject)=>{
     const resp = await fetch(url);
     let buf;
     try {
+        var _resp_body;
         // Set total to -1 to indicate that there is not Content-Type Header.
         const total = parseInt(resp.headers.get(HeaderContentLength) || "-1");
-        const reader = resp.body?.getReader();
+        const reader = (_resp_body = resp.body) == null ? void 0 : _resp_body.getReader();
         if (!reader) throw ERROR_RESPONSE_BODY_READER;
         const chunks = [];
         let received = 0;
         for(;;){
-            const { done , value  } = await reader.read();
+            const { done, value } = await reader.read();
             const delta = value ? value.length : 0;
             if (done) {
                 if (total != -1 && total !== received) throw ERROR_INCOMPLETED_DOWNLOAD;

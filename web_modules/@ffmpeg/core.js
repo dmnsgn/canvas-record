@@ -1,4 +1,4 @@
-import { b as browser$1, d as global, B as Buffer } from '../_chunks/polyfills-E-WL3E2Y.js';
+import { b as browser$1, g as global, B as Buffer } from '../_chunks/polyfills-DtuN-KmU.js';
 
 var createFFmpegCore = (()=>{
     var _scriptDir = import.meta.url;
@@ -89,7 +89,7 @@ var createFFmpegCore = (()=>{
         function _locateFile(path, prefix) {
             const mainScriptUrlOrBlob = Module["mainScriptUrlOrBlob"];
             if (mainScriptUrlOrBlob) {
-                const { wasmURL: wasmURL , workerURL: workerURL  } = JSON.parse(atob(mainScriptUrlOrBlob.slice(mainScriptUrlOrBlob.lastIndexOf("#") + 1)));
+                const { wasmURL: wasmURL, workerURL: workerURL } = JSON.parse(atob(mainScriptUrlOrBlob.slice(mainScriptUrlOrBlob.lastIndexOf("#") + 1)));
                 if (path.endsWith(".wasm")) return wasmURL;
                 if (path.endsWith(".worker.js")) return workerURL;
             }
@@ -123,7 +123,7 @@ var createFFmpegCore = (()=>{
         }
         var read_, readAsync, readBinary;
         if (ENVIRONMENT_IS_NODE) {
-            const { createRequire: createRequire  } = await import('../_chunks/polyfills-E-WL3E2Y.js').then(function (n) { return n._; });
+            const { createRequire: createRequire } = await import('../_chunks/polyfills-DtuN-KmU.js').then(function (n) { return n._; });
             var require = createRequire(import.meta.url);
             var fs = require("fs");
             var nodePath = require("path");
@@ -747,7 +747,7 @@ var createFFmpegCore = (()=>{
             return outIdx - startIdx;
         }
         function intArrayFromString(stringy, dontAddNull, length) {
-            var len = length > 0 ? length : lengthBytesUTF8(stringy) + 1;
+            var len = lengthBytesUTF8(stringy) + 1;
             var u8array = new Array(len);
             var numBytesWritten = stringToUTF8Array(stringy, u8array, 0, u8array.length);
             if (dontAddNull) u8array.length = numBytesWritten;
@@ -1212,7 +1212,7 @@ var createFFmpegCore = (()=>{
             }
         };
         function asyncLoad(url, onload, onerror, noRunDep) {
-            var dep = !noRunDep ? getUniqueRunDependency(`al ${url}`) : "";
+            var dep = getUniqueRunDependency(`al ${url}`) ;
             readAsync(url, (arrayBuffer)=>{
                 assert(arrayBuffer, `Loading data file "${url}" failed (no arrayBuffer).`);
                 onload(new Uint8Array(arrayBuffer));
@@ -4374,9 +4374,6 @@ var createFFmpegCore = (()=>{
                 if (curr < 0) return -1;
                 ret += curr;
                 if (curr < len) break;
-                if (typeof offset !== "undefined") {
-                    offset += curr;
-                }
             }
             return ret;
         }
@@ -4419,9 +4416,6 @@ var createFFmpegCore = (()=>{
                 var curr = FS.write(stream, HEAP8, ptr, len, offset);
                 if (curr < 0) return -1;
                 ret += curr;
-                if (typeof offset !== "undefined") {
-                    offset += curr;
-                }
             }
             return ret;
         }
@@ -4860,7 +4854,7 @@ var createFFmpegCore = (()=>{
                     return leadingNulls(date.tm_sec, 2);
                 },
                 "%t": function() {
-                    return "	";
+                    return "\t";
                 },
                 "%u": function(date) {
                     return date.tm_wday || 7;
@@ -4913,7 +4907,7 @@ var createFFmpegCore = (()=>{
                     return "%";
                 }
             };
-            pattern = pattern.replace(/%%/g, "\x00\x00");
+            pattern = pattern.replace(/%%/g, "\0\0");
             for(var rule in EXPANSION_RULES_2){
                 if (pattern.includes(rule)) {
                     pattern = pattern.replace(new RegExp(rule, "g"), EXPANSION_RULES_2[rule](date));

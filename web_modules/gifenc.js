@@ -134,12 +134,12 @@ function T(t) {
 }
 function tt(t, e, s) {
     var n = 0, r = 1e100;
-    let o = t[e], i = o.cnt, c = o.ac, x = o.rc, a = o.gc, l = o.bc;
+    let o = t[e], i = o.cnt; o.ac; let x = o.rc, a = o.gc, l = o.bc;
     for(var f = o.fw; f != 0; f = t[f].fw){
         let h = t[f], b = h.cnt, w = i * b / (i + b);
         if (!(w >= r)) {
             var g = 0;
-            s && (g += w * T(h.ac - c), g >= r) || (g += w * T(h.rc - x), !(g >= r) && (g += w * T(h.gc - a), !(g >= r) && (g += w * T(h.bc - l), !(g >= r) && (r = g, n = f))));
+            (g += w * T(h.rc - x), !(g >= r) && (g += w * T(h.gc - a), !(g >= r) && (g += w * T(h.bc - l), !(g >= r) && (r = g, n = f))));
         }
     }
     o.err = r, o.nn = n;
@@ -177,7 +177,7 @@ function ut(t, e) {
 }
 function H(t, e, s) {
     if (s === void 0) s = {};
-    let { format: n = "rgb565" , clearAlpha: r = !0 , clearAlphaColor: o = 0 , clearAlphaThreshold: i = 0 , oneBitAlpha: c = !1  } = s;
+    let { format: n = "rgb565", clearAlpha: r = !0, clearAlphaColor: o = 0, clearAlphaThreshold: i = 0, oneBitAlpha: c = !1 } = s;
     if (!t || !t.buffer) throw new Error("quantize() expected RGBA Uint8Array data");
     if (!(t instanceof Uint8Array) && !(t instanceof Uint8ClampedArray)) throw new Error("quantize() expected RGBA Uint8Array data");
     let x = new Uint32Array(t.buffer), a = s.useSqrt !== !1, l = n === "rgba4444", f = ut(x, n), g = f.length, h = g - 1, b = new Uint32Array(g + 1);
@@ -193,7 +193,7 @@ function H(t, e, s) {
     a && (f[u].cnt = Math.sqrt(f[u].cnt));
     var k, B, p;
     for(u = 0; u < w; ++u){
-        tt(f, u, !1);
+        tt(f, u);
         var A = f[u].err;
         for(B = ++b[0]; B > 1 && (p = B >> 1, !(f[k = b[p]].err <= A)); B = p)b[B] = k;
         b[B] = u;
@@ -203,7 +203,7 @@ function H(t, e, s) {
         for(var d;;){
             var I = b[1];
             if (d = f[I], d.tm >= d.mtm && f[d.nn].mtm <= d.tm) break;
-            d.mtm == h ? I = b[1] = b[b[0]--] : (tt(f, I, !1), d.tm = u);
+            d.mtm == h ? I = b[1] = b[b[0]--] : (tt(f, I), d.tm = u);
             var A = f[I].err;
             for(B = 1; (p = B + B) <= b[0] && (p < b[0] && f[b[p]].err > f[b[p + 1]].err && p++, !(A <= f[k = b[p]].err)); B = p)b[B] = k;
             b[B] = I;
@@ -255,7 +255,7 @@ function P(t, e) {
     return e > 1 ? Math.round(t / e) * e : t;
 }
 function et(t, param) {
-    let { roundRGB: e = 5 , roundAlpha: s = 10 , oneBitAlpha: n = null  } = param === void 0 ? {} : param;
+    let { roundRGB: e = 5, roundAlpha: s = 10, oneBitAlpha: n = null } = param === void 0 ? {} : param;
     let r = new Uint32Array(t.buffer);
     for(let o = 0; o < r.length; o++){
         let i = r[o], c = i >> 24 & 255, x = i >> 16 & 255, a = i >> 8 & 255, l = i & 255;
@@ -357,7 +357,7 @@ function ot(t, e, s) {
 }
 function ct(t) {
     if (t === void 0) t = {};
-    let { initialCapacity: e = 4096 , auto: s = !0  } = t, n = F(e), r = 5003, o = new Uint8Array(256), i = new Int32Array(r), c = new Int32Array(r), x = !1;
+    let { initialCapacity: e = 4096, auto: s = !0 } = t, n = F(e), r = 5003, o = new Uint8Array(256), i = new Int32Array(r), c = new Int32Array(r), x = !1;
     return {
         reset () {
             n.reset(), x = !1;
@@ -380,7 +380,7 @@ function ct(t) {
         writeHeader: a,
         writeFrame (l, f, g, h) {
             if (h === void 0) h = {};
-            let { transparent: b = !1 , transparentIndex: w = 0 , delay: _ = 0 , palette: u = null , repeat: k = 0 , colorDepth: B = 8 , dispose: p = -1  } = h, A = !1;
+            let { transparent: b = !1, transparentIndex: w = 0, delay: _ = 0, palette: u = null, repeat: k = 0, colorDepth: B = 8, dispose: p = -1 } = h, A = !1;
             if (s ? x || (A = !0, a(), x = !0) : A = Boolean(h.first), f = Math.max(0, Math.floor(f)), g = Math.max(0, Math.floor(g)), A) {
                 if (!u) throw new Error("First frame must include a { palette } option");
                 pt(n, f, g, u, B), it(n, u), k >= 0 && dt(n, k);

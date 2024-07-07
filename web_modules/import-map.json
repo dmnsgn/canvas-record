@@ -1,19 +1,19 @@
 {
   "imports": {
+    "@ffmpeg/core": "./@ffmpeg/core.js",
+    "@ffmpeg/core-mt": "./@ffmpeg/core-mt.js",
     "@ffmpeg/ffmpeg": "./@ffmpeg/ffmpeg.js",
     "@ffmpeg/util": "./@ffmpeg/util.js",
+    "canvas-context": "./canvas-context.js",
     "canvas-screenshot": "./canvas-screenshot.js",
+    "es-module-shims": "./es-module-shims.js",
+    "es-module-shims/debug": "./es-module-shims/debug.js",
+    "es-module-shims/wasm": "./es-module-shims/wasm.js",
     "gifenc": "./gifenc.js",
     "h264-mp4-encoder": "./h264-mp4-encoder.js",
     "media-codecs": "./media-codecs.js",
     "mp4-muxer": "./mp4-muxer.js",
-    "webm-muxer": "./webm-muxer.js",
-    "@ffmpeg/core": "./@ffmpeg/core.js",
-    "@ffmpeg/core-mt": "./@ffmpeg/core-mt.js",
-    "canvas-context": "./canvas-context.js",
-    "es-module-shims": "./es-module-shims.js",
-    "es-module-shims/debug": "./es-module-shims/dist/es-module-shims.debug.js",
-    "es-module-shims/wasm": "./es-module-shims/dist/es-module-shims.wasm.js",
-    "tweakpane": "./tweakpane.js"
+    "tweakpane": "./tweakpane.js",
+    "webm-muxer": "./webm-muxer.js"
   }
 }

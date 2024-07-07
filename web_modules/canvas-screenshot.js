@@ -1,4 +1,4 @@
-import { g as getDefaultExportFromCjs } from './_chunks/polyfills-E-WL3E2Y.js';
+import { a as getDefaultExportFromCjs } from './_chunks/polyfills-DtuN-KmU.js';
 
 var fileExtension$1 = {exports: {}};
 
@@ -21,19 +21,28 @@ var fileExtension$1 = {exports: {}};
 var fileExtensionExports = fileExtension$1.exports;
 var fileExtension = /*@__PURE__*/ getDefaultExportFromCjs(fileExtensionExports);
 
-let link = null;
 /**
- * Get the mimetype
+ * Get the MIME type
  *
  * @private
  * @param {string} filename
  * @returns {string}
  */ function getType(filename) {
-    const ext = fileExtension(filename);
-    return [
-        "jpg",
-        "jpeg"
-    ].includes(ext) ? "image/jpeg" : "image/png";
+    const ext = filename.includes(".") && fileExtension(filename);
+    return `image/${ext === "jpg" ? "jpeg" : ext || "png"}`;
+}
+/**
+ * Download in browser using a DOM link
+ *
+ * @private
+ * @param {string} filename
+ * @param {string} url
+ */ function downloadURL(filename, url) {
+    const link = document.createElement("a");
+    link.download = filename;
+    link.href = url;
+    const event = new MouseEvent("click");
+    link.dispatchEvent(event);
 }
 /**
  * Take a screenshot.
@@ -43,39 +52,32 @@ let link = null;
  * @param {import("./types.js").CanvasScreenshotOptions} [options={}]
  * @returns {string | Promise<Blob>} A `DOMString` or a `Promise` resolving with a `Blob`.
  *
- * Type is inferred from the filename extension (jpg/jpeg) for `"image/jpeg"` and default to `"image/png"`.
+ * Type is inferred from the filename extension:
+ * - png for `"image/png"` (default)
+ * - jpg/jpeg for `"image/jpeg"`
+ * - webp for `"image/webp"`
  */ function canvasScreenshot(canvas, options) {
     if (options === void 0) options = {};
     const date = new Date();
-    const { filename =`Screen Shot ${date.toISOString().slice(0, 10)} at ${date.toTimeString().slice(0, 8).replace(/:/g, ".")}.png` , quality =1 , useBlob , download =true  } = {
+    const { filename = `Screen Shot ${date.toISOString().slice(0, 10)} at ${date.toTimeString().slice(0, 8).replace(/:/g, ".")}.png`, type = getType(filename), quality = 1, useBlob, download = true } = {
         ...options
     };
-    if (download) {
-        link = link || document.createElement("a");
-        link.download = filename;
-    }
     if (useBlob) {
         return new Promise((resolve)=>{
             canvas.toBlob((blob)=>{
                 if (download) {
                     const url = URL.createObjectURL(blob);
-                    link.href = url;
-                    const event = new MouseEvent("click");
-                    link.dispatchEvent(event);
+                    downloadURL(filename, url);
                     setTimeout(()=>{
                         URL.revokeObjectURL(url);
                     }, 1);
                 }
                 resolve(blob);
-            }, getType(filename), quality);
+            }, type, quality);
         });
     }
-    const dataURL = canvas.toDataURL(`${getType(filename)};base64`, quality);
-    if (download) {
-        link.href = dataURL;
-        const event = new MouseEvent("click");
-        link.dispatchEvent(event);
-    }
+    const dataURL = canvas.toDataURL(type, quality);
+    if (download) downloadURL(filename, dataURL);
     return dataURL;
 }
 

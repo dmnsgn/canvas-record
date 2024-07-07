@@ -1,6 +1,7 @@
 /** @module vp */ /**
  * List of codecs
- * @constant {import("../types.js").CodecItem[]}
+ * @constant
+ * @type {import("../types.js").CodecItem[]}
  */ const VP_CODECS = [
     {
         name: "VP8",
@@ -22,7 +23,8 @@
 ];
 /**
  * VP Levels
- * @constant {number[]}
+ * @constant
+ * @type {string[]}
  * @see [webmproject.org]{@link https://www.webmproject.org/vp9/mp4/}
  */ // prettier-ignore
 const VP_LEVELS = [
@@ -43,7 +45,8 @@ const VP_LEVELS = [
 ];
 /**
  * List of supported bit depth
- * @constant {number[]}
+ * @constant
+ * @type {number[]}
  */ const VP_BIT_DEPTH = [
     8,
     10,
@@ -65,7 +68,7 @@ const VP_LEVELS = [
  * @param {import("../types.js").VPCodecOptions} options
  * @returns {string}
  */ const getCodec$3 = (param)=>{
-    let { name , profile , level , bitDepth  } = param;
+    let { name, profile, level, bitDepth } = param;
     const codec = VP_CODECS.find((codec)=>codec.name === name);
     if (!codec) throw new Error(`Unknown VP Codec "${name}"`);
     if (!VP_PROFILES.includes(profile)) {
@@ -83,7 +86,10 @@ const VP_LEVELS = [
  * Get a codec human readbable name
  * @param {string} codec a codec string (avc1[.PPCCLL] eg. "avc1.640028")
  * @returns {string}
- */ const getCodecName$3 = (codec)=>getAllItems$3().find((item)=>item.codec === codec)?.name;
+ */ const getCodecName$3 = (codec)=>{
+    var _getAllItems_find;
+    return (_getAllItems_find = getAllItems$3().find((item)=>item.codec === codec)) == null ? void 0 : _getAllItems_find.name;
+};
 
 var vp = /*#__PURE__*/Object.freeze({
   __proto__: null,
@@ -100,7 +106,8 @@ var vp = /*#__PURE__*/Object.freeze({
 
 /** @module av */ /**
  * List of codecs
- * @constant {import("../types.js").CodecItem[]}
+ * @constant
+ * @type {import("../types.js").CodecItem[]}
  */ const AV_CODECS = [
     {
         name: "AV1",
@@ -109,7 +116,8 @@ var vp = /*#__PURE__*/Object.freeze({
 ];
 /**
  * List of AV profiles numbers
- * @constant {number[]}
+ * @constant
+ * @type {import("../types.js").AVProfileItem[]}
  * @see [av1-spec]{@link https://aomediacodec.github.io/av1-spec/#profiles}
  */ const AV_PROFILES = [
     {
@@ -127,7 +135,8 @@ var vp = /*#__PURE__*/Object.freeze({
 ];
 /**
  * AV Levels
- * @constant {number[]}
+ * @constant
+ * @type {string[]}
  * @see [av1-spec]{@link https://aomediacodec.github.io/av1-spec/#levels}
  */ // prettier-ignore
 const AV_LEVELS = [
@@ -158,21 +167,23 @@ const AV_LEVELS = [
 ];
 /**
  * List of supported tier
- * @constant {number[]}
+ * @constant
+ * @type {string[]}
  */ const AV_TIER = [
     "Main",
     "High"
 ];
 /**
  * List of supported bit depth
- * @constant {number[]}
+ * @constant
+ * @type {number[]}
  */ const AV_BIT_DEPTH = [
     8,
     10,
     12
 ];
 /** @private  */ const formatProfile = (param)=>{
-    let { P  } = param;
+    let { P } = param;
     return P;
 };
 /** @private  */ const convertLevel$1 = (level)=>{
@@ -203,7 +214,7 @@ const AV_LEVELS = [
  * @param {import("../types.js").AVCodecOptions} options
  * @returns {string}
  */ const getCodec$2 = (param)=>{
-    let { name , profile: profileName , level , tier , bitDepth  } = param;
+    let { name, profile: profileName, level, tier, bitDepth } = param;
     const codec = AV_CODECS.find((codec)=>codec.name === name);
     if (!codec) throw new Error(`Unknown AV Codec "${name}"`);
     const profile = AV_PROFILES.find((profile)=>profile.name === profileName);
@@ -225,7 +236,10 @@ const AV_LEVELS = [
  * Get a codec human readbable name
  * @param {string} codec a codec string (av01.P.LLT.DD eg. "av01.P.LLT.DD")
  * @returns {string}
- */ const getCodecName$2 = (codec)=>getAllItems$2().find((item)=>item.codec === codec)?.name;
+ */ const getCodecName$2 = (codec)=>{
+    var _getAllItems_find;
+    return (_getAllItems_find = getAllItems$2().find((item)=>item.codec === codec)) == null ? void 0 : _getAllItems_find.name;
+};
 
 var av = /*#__PURE__*/Object.freeze({
   __proto__: null,
@@ -233,6 +247,7 @@ var av = /*#__PURE__*/Object.freeze({
   AV_CODECS: AV_CODECS,
   AV_LEVELS: AV_LEVELS,
   AV_PROFILES: AV_PROFILES,
+  AV_TIER: AV_TIER,
   formatCodec: formatCodec$2,
   formatLevel: formatLevel$2,
   getAllItems: getAllItems$2,
@@ -242,7 +257,8 @@ var av = /*#__PURE__*/Object.freeze({
 
 /** @module avc */ /**
  * List of profiles with their profile numbers (PP) and the constraints component (CC).
- * @constant {import("../types.js").VCProfileItem[]}
+ * @constant
+ * @type {import("../types.js").VCProfileItem[]}
  */ const AVC_PROFILES = [
     {
         name: "Constrained Baseline",
@@ -358,7 +374,8 @@ var av = /*#__PURE__*/Object.freeze({
 const cccc$1 = "avc1";
 /**
  * AVC Levels
- * @constant {number[]}
+ * @constant
+ * @type {number[]}
  * @see [wikipedia.org]{@link https://en.wikipedia.org/wiki/Advanced_Video_Coding#Levels}
  */ // prettier-ignore
 const AVC_LEVELS = [
@@ -384,7 +401,7 @@ const AVC_LEVELS = [
 ];
 /** @private */ const formatLevel$1 = (level)=>(parseFloat(level) * 10).toString(16).padStart(2, "0");
 /** @private */ const formatCodec$1 = (cccc, param, LL)=>{
-    let { PP , CC  } = param;
+    let { PP, CC } = param;
     return `${cccc}.${PP}${CC}${LL}`;
 };
 /**
@@ -399,7 +416,7 @@ const AVC_LEVELS = [
  * @param {import("../types.js").AVCCodecOptions} options
  * @returns {string}
  */ const getCodec$1 = (param)=>{
-    let { profile: profileName , level  } = param;
+    let { profile: profileName, level } = param;
     if (!AVC_LEVELS.includes(level)) throw new Error(`Unknown AVC Level "${level}"`);
     const profile = AVC_PROFILES.find((profile)=>profile.name === profileName);
     if (!profile) throw new Error(`Unknown AVC Profile "${profileName}"`);
@@ -409,7 +426,10 @@ const AVC_LEVELS = [
  * Get a codec human readbable name
  * @param {string} codec a codec string (cccc.PP.LL.DD eg. "vp09.00.10.08")
  * @returns {string}
- */ const getCodecName$1 = (codec)=>getAllItems$1().find((item)=>item.codec === codec)?.name;
+ */ const getCodecName$1 = (codec)=>{
+    var _getAllItems_find;
+    return (_getAllItems_find = getAllItems$1().find((item)=>item.codec === codec)) == null ? void 0 : _getAllItems_find.name;
+};
 
 var avc = /*#__PURE__*/Object.freeze({
   __proto__: null,
@@ -424,8 +444,10 @@ var avc = /*#__PURE__*/Object.freeze({
 
 /** @module hevc */ /**
  * List of profiles with their profile numbers (PP) and the compatibility (C).
- * @constant {import("../types.js").VCProfileItem[]}
+ *
  * See Annexe 3 Profiles
+ * @constant
+ * @type {import("../types.js").VCProfileItem[]}
  */ const HEVC_PROFILES = [
     {
         name: "Main",
@@ -478,13 +500,15 @@ const cccc = "hev1"; // TODO: is "hvc1" necessary
 /**
  * HEVC Profile Compatibility as a number in the 0..32 range
  * TODO: is that correct
- * @constant {number[]}
+ * @constant
+ * @type {number[]}
  */ const HEVC_PROFILE_COMPATIBILITY = Array.from({
     length: 32
 }, (_, i)=>i);
 /**
  * HEVC Levels
- * @constant {number[]}
+ * @constant
+ * @type {string[]}
  * @see [hevc-levels]{@link https://en.wikipedia.org/wiki/High_Efficiency_Video_Coding#Tiers_and_levels}
  */ // prettier-ignore
 const HEVC_LEVELS = [
@@ -504,7 +528,8 @@ const HEVC_LEVELS = [
 ];
 /**
  * List of supported tier
- * @constant {number[]}
+ * @constant
+ * @type {string[]}
  */ const HEVC_TIER = [
     "Main",
     "High"
@@ -519,7 +544,7 @@ const HEVC_LEVELS = [
 /** @private  */ const formatCompatibility = (compatibility)=>compatibility.toString(16);
 /** @private  */ const formatTier = (tier)=>tier === "Main" ? "L" : "H";
 /** @private  */ const formatCodec = (cccc, param, C, T, LL, CC)=>{
-    let { PP  } = param;
+    let { PP } = param;
     return `${cccc}.${PP}.${C}.${T}${LL}.${CC}`;
 };
 /**
@@ -530,8 +555,7 @@ const HEVC_LEVELS = [
                     if (tier === "High" && convertLevel(level) < 120) return;
                     return {
                         name: `HEVC ${profile.name} Profile Compability ${compatibility} Level ${level} Tier ${tier}`,
-                        codec: formatCodec(cccc, profile, formatCompatibility(compatibility), formatTier(tier), formatLevel(level), "b0" // TODO
-                        )
+                        codec: formatCodec(cccc, profile, formatCompatibility(compatibility), formatTier(tier), formatLevel(level), "b0")
                     };
                 })))).flat(3).filter(Boolean);
 /**
@@ -539,7 +563,7 @@ const HEVC_LEVELS = [
  * @param {import("../types.js").HEVCCodecOptions} options
  * @returns {string}
  */ const getCodec = (param)=>{
-    let { profile: profileName , compatibility , level , tier , constraint ="b0"  } = param;
+    let { profile: profileName, compatibility, level, tier, constraint = "b0" } = param;
     const profile = HEVC_PROFILES.find((profile)=>profile.name === profileName);
     if (!profile) throw new Error(`Unknown HEVC profile "${profileName}"`);
     if (!HEVC_LEVELS.includes(level)) {
@@ -554,12 +578,17 @@ const HEVC_LEVELS = [
  * Get a codec human readbable name
  * @param {string} codec a codec string (cccc.PP.C.TLL.CC eg. "hev1.1.3.H34.B0")
  * @returns {string}
- */ const getCodecName = (codec)=>getAllItems().find((item)=>item.codec === codec)?.name;
+ */ const getCodecName = (codec)=>{
+    var _getAllItems_find;
+    return (_getAllItems_find = getAllItems().find((item)=>item.codec === codec)) == null ? void 0 : _getAllItems_find.name;
+};
 
 var hevc = /*#__PURE__*/Object.freeze({
   __proto__: null,
   HEVC_LEVELS: HEVC_LEVELS,
   HEVC_PROFILES: HEVC_PROFILES,
+  HEVC_PROFILE_COMPATIBILITY: HEVC_PROFILE_COMPATIBILITY,
+  HEVC_TIER: HEVC_TIER,
   formatCodec: formatCodec,
   formatLevel: formatLevel,
   getAllItems: getAllItems,

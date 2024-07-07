@@ -20,9 +20,11 @@ try {
 }
 
 export default {
-  eslint: {
-    ignorePatterns: ["src/encoders/mp4.embed.js"],
-  },
+  eslint: [
+    {
+      ignores: ["src/encoders/mp4.embed.js"],
+    },
+  ],
   dependencies: [
     "@ffmpeg/ffmpeg",
     "@ffmpeg/core",

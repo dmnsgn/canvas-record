@@ -1,6 +1,4 @@
-/**
- * @module createCanvasContext
- */ const contextTypeList = [
+/** @module createCanvasContext */ const contextTypeList = [
     "2d",
     "webgl",
     "experimental-webgl",
@@ -21,7 +19,7 @@
     if (contextType === void 0) contextType = "2d";
     if (options === void 0) options = {};
     // Get options and set defaults
-    const { width , height , offscreen =false , worker =false , contextAttributes ={}  } = {
+    const { width, height, offscreen = false, worker = false, contextAttributes = {} } = {
         ...options
     };
     // Check contextType is valid
@@ -47,6 +45,7 @@
     try {
         context = canvas.getContext(contextType, contextAttributes) || (contextType === "webgl" ? canvas.getContext("experimental-webgl", contextAttributes) : null);
     } catch (error) {
+        console.error(error);
         context = null;
     }
     return {
