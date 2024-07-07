@@ -1,5 +1,5 @@
 node_modules
 .DS_Store
-types
-lib
-example/*.wasm
+/types
+/lib
+/example/*.wasm
