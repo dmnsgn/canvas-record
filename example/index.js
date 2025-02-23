@@ -4,6 +4,8 @@ import createCanvasContext from "canvas-context";
 import { Pane } from "tweakpane";
 import { toBlobURL } from "@ffmpeg/util";
 
+const params = new URLSearchParams(window.location.search);
+
 // GUI
 const CONFIG = {
   extension: "mp4",
@@ -12,7 +14,7 @@ const CONFIG = {
   frameRate: 30,
   target: "in-browser",
   filename: "",
-  ...Object.fromEntries(new URLSearchParams(window.location.search).entries()),
+  ...Object.fromEntries(params.entries()),
 };
 const pane = new Pane();
 pane.addBinding(CONFIG, "extension", {
@@ -144,14 +146,13 @@ const reset = async () => {
   render();
 };
 
-startButton.on("click", async () => {
+const initRecorder = async (encoderName) => {
   await reset();
 
   // const baseURL = "https://unpkg.com/@ffmpeg/core-mt@0.12.4/dist/esm";
 
   let encoderOptions = {};
-  console.log(CONFIG.encoder);
-  if (CONFIG.encoder === "FFmpegEncoder") {
+  if (encoderName === "FFmpegEncoder") {
     encoderOptions = {
       // FFmpeg requires more effort...
       coreURL: new URL(
@@ -190,20 +191,28 @@ startButton.on("click", async () => {
   }
 
   canvasRecorder = new Recorder(context, {
-    name: `canvas-record-example-${CONFIG.encoder || "default"}`,
+    name: `canvas-record-example-${encoderName || "default"}`,
     ...CONFIG,
-    encoder: CONFIG.encoder ? new Encoders[`${CONFIG.encoder}`]() : null,
+    encoder: encoderName ? new Encoders[`${encoderName}`]() : null,
     debug: true,
     encoderOptions,
   });
 
   console.log(canvasRecorder);
+};
+
+const start = async (encoderName) => {
+  await initRecorder(encoderName);
 
   // Start and encode frame 0
   await canvasRecorder.start({ filename: CONFIG.filename });
 
   // Animate to encode the rest
   tick(canvasRecorder);
+};
+
+startButton.on("click", async () => {
+  await start(CONFIG.encoder);
 });
 
 stopButton.on("click", async () => {
@@ -212,3 +221,30 @@ stopButton.on("click", async () => {
 
 reset();
 render();
+
+// Test
+const id = params.get("id");
+
+if (id === "test") {
+  for (let Encoder of Object.values(Encoders)) {
+    const extensions = Encoder.supportedExtensions;
+
+    const encoderName = Encoder.name;
+
+    if (encoderName === "Encoder" || encoderName === "FrameEncoder") continue;
+
+    for (let extension of extensions) {
+      CONFIG.extension = extension;
+
+      await start(encoderName);
+
+      // Await for recording
+      await new Promise(async (resolve) => {
+        while (canvasRecorder.status !== RecorderStatus.Stopped) {
+          await new Promise((r) => setTimeout(r, 1));
+        }
+        resolve();
+      });
+    }
+  }
+}
