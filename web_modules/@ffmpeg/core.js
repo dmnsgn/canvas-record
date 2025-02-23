@@ -1,9 +1,9 @@
-import { b as browser$1, g as global, B as Buffer } from '../_chunks/polyfills-DtuN-KmU.js';
+import { b as browser$1, g as global, B as Buffer } from '../_chunks/polyfills-QWxePbon.js';
 
 var createFFmpegCore = (()=>{
     var _scriptDir = import.meta.url;
     return async function(createFFmpegCore) {
-        if (createFFmpegCore === void 0) createFFmpegCore = {};
+        if (createFFmpegCore === undefined) createFFmpegCore = {};
         var Module = typeof createFFmpegCore != "undefined" ? createFFmpegCore : {};
         var readyPromiseResolve, readyPromiseReject;
         Module["ready"] = new Promise((resolve, reject)=>{
@@ -123,7 +123,7 @@ var createFFmpegCore = (()=>{
         }
         var read_, readAsync, readBinary;
         if (ENVIRONMENT_IS_NODE) {
-            const { createRequire: createRequire } = await import('../_chunks/polyfills-DtuN-KmU.js').then(function (n) { return n._; });
+            const { createRequire: createRequire } = await import('../_chunks/polyfills-QWxePbon.js').then(function (n) { return n._; });
             var require = createRequire(import.meta.url);
             var fs = require("fs");
             var nodePath = require("path");
@@ -144,7 +144,7 @@ var createFFmpegCore = (()=>{
                 return ret;
             };
             readAsync = (filename, onload, onerror, binary)=>{
-                if (binary === void 0) binary = true;
+                if (binary === undefined) binary = true;
                 filename = isFileURI(filename) ? new URL(filename) : nodePath.normalize(filename);
                 fs.readFile(filename, binary ? undefined : "utf8", (err, data)=>{
                     if (err) onerror(err);
@@ -154,7 +154,6 @@ var createFFmpegCore = (()=>{
             if (!Module["thisProgram"] && browser$1.argv.length > 1) {
                 thisProgram = browser$1.argv[1].replace(/\\/g, "/");
             }
-            browser$1.argv.slice(2);
             quit_ = (status, toThrow)=>{
                 browser$1.exitCode = status;
                 throw toThrow;
@@ -244,9 +243,8 @@ var createFFmpegCore = (()=>{
         var __ATPRERUN__ = [];
         var __ATINIT__ = [];
         var __ATPOSTRUN__ = [];
-        var runtimeKeepaliveCounter = 0;
         function keepRuntimeAlive() {
-            return noExitRuntime || runtimeKeepaliveCounter > 0;
+            return noExitRuntime;
         }
         function preRun() {
             if (Module["preRun"]) {
@@ -460,7 +458,7 @@ var createFFmpegCore = (()=>{
             return func;
         }
         function getValue(ptr, type) {
-            if (type === void 0) type = "i8";
+            if (type === undefined) type = "i8";
             if (type.endsWith("*")) type = "*";
             switch(type){
                 case "i1":
@@ -484,7 +482,7 @@ var createFFmpegCore = (()=>{
             }
         }
         function setValue(ptr, value, type) {
-            if (type === void 0) type = "i8";
+            if (type === undefined) type = "i8";
             if (type.endsWith("*")) type = "*";
             switch(type){
                 case "i1":
@@ -1301,7 +1299,7 @@ var createFFmpegCore = (()=>{
             filesystems: null,
             syncFSRequests: 0,
             lookupPath: (path, opts)=>{
-                if (opts === void 0) opts = {};
+                if (opts === undefined) opts = {};
                 path = PATH_FS.resolve(path);
                 if (!path) return {
                     path: "",
@@ -1524,7 +1522,7 @@ var createFFmpegCore = (()=>{
             },
             getStream: (fd)=>FS.streams[fd],
             createStream: (stream, fd)=>{
-                if (fd === void 0) fd = -1;
+                if (fd === undefined) fd = -1;
                 if (!FS.FSStream) {
                     FS.FSStream = function() {
                         this.shared = {};
@@ -1945,7 +1943,7 @@ var createFFmpegCore = (()=>{
                     throw new FS.ErrnoError(63);
                 }
                 node.node_ops.setattr(node, {
-                    mode: mode & 4095 | node.mode & ~4095,
+                    mode: mode & 4095 | node.mode & -4096,
                     timestamp: Date.now()
                 });
             },
@@ -2074,7 +2072,7 @@ var createFFmpegCore = (()=>{
                     throw new FS.ErrnoError(44);
                 }
                 if (FS.isChrdev(node.mode)) {
-                    flags &= ~512;
+                    flags &= -513;
                 }
                 if (flags & 65536 && !FS.isDir(node.mode)) {
                     throw new FS.ErrnoError(54);
@@ -2088,7 +2086,7 @@ var createFFmpegCore = (()=>{
                 if (flags & 512 && !created) {
                     FS.truncate(node, 0);
                 }
-                flags &= ~(128 | 512 | 131072);
+                flags &= -131713;
                 var stream = FS.createStream({
                     node: node,
                     path: FS.getPath(node),
@@ -2242,7 +2240,7 @@ var createFFmpegCore = (()=>{
                 return stream.stream_ops.ioctl(stream, cmd, arg);
             },
             readFile: (path, opts)=>{
-                if (opts === void 0) opts = {};
+                if (opts === undefined) opts = {};
                 opts.flags = opts.flags || 0;
                 opts.encoding = opts.encoding || "binary";
                 if (opts.encoding !== "utf8" && opts.encoding !== "binary") {
@@ -2263,7 +2261,7 @@ var createFFmpegCore = (()=>{
                 return ret;
             },
             writeFile: (path, data, opts)=>{
-                if (opts === void 0) opts = {};
+                if (opts === undefined) opts = {};
                 opts.flags = opts.flags || 577;
                 var stream = FS.open(path, opts.flags, opts.mode);
                 if (typeof data == "string") {
@@ -2878,7 +2876,7 @@ var createFFmpegCore = (()=>{
                 return FS.createNode(null, "/", 16384 | 511, 0);
             },
             createSocket: function(family, type, protocol) {
-                type &= ~526336;
+                type &= -526337;
                 var streaming = type == 1;
                 if (streaming && protocol && protocol != 6) {
                     throw new FS.ErrnoError(66);
@@ -4481,7 +4479,7 @@ var createFFmpegCore = (()=>{
             if (!node && !service) {
                 return -2;
             }
-            if (flags & ~(1 | 2 | 4 | 1024 | 8 | 16 | 32)) {
+            if (flags & -1088) {
                 return -1;
             }
             if (hint !== 0 && HEAP32[hint >> 2] & 2 && !node) {
@@ -4943,7 +4941,7 @@ var createFFmpegCore = (()=>{
                     return (this.mode & readMode) === readMode;
                 },
                 set: function(val) {
-                    val ? this.mode |= readMode : this.mode &= ~readMode;
+                    val ? this.mode |= readMode : this.mode &= -366;
                 }
             },
             write: {
@@ -4951,7 +4949,7 @@ var createFFmpegCore = (()=>{
                     return (this.mode & writeMode) === writeMode;
                 },
                 set: function(val) {
-                    val ? this.mode |= writeMode : this.mode &= ~writeMode;
+                    val ? this.mode |= writeMode : this.mode &= -147;
                 }
             },
             isFolder: {

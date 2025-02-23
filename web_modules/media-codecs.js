@@ -86,10 +86,7 @@ const VP_LEVELS = [
  * Get a codec human readbable name
  * @param {string} codec a codec string (avc1[.PPCCLL] eg. "avc1.640028")
  * @returns {string}
- */ const getCodecName$3 = (codec)=>{
-    var _getAllItems_find;
-    return (_getAllItems_find = getAllItems$3().find((item)=>item.codec === codec)) == null ? void 0 : _getAllItems_find.name;
-};
+ */ const getCodecName$3 = (codec)=>getAllItems$3().find((item)=>item.codec === codec)?.name;
 
 var vp = /*#__PURE__*/Object.freeze({
   __proto__: null,
@@ -236,10 +233,7 @@ const AV_LEVELS = [
  * Get a codec human readbable name
  * @param {string} codec a codec string (av01.P.LLT.DD eg. "av01.P.LLT.DD")
  * @returns {string}
- */ const getCodecName$2 = (codec)=>{
-    var _getAllItems_find;
-    return (_getAllItems_find = getAllItems$2().find((item)=>item.codec === codec)) == null ? void 0 : _getAllItems_find.name;
-};
+ */ const getCodecName$2 = (codec)=>getAllItems$2().find((item)=>item.codec === codec)?.name;
 
 var av = /*#__PURE__*/Object.freeze({
   __proto__: null,
@@ -426,10 +420,7 @@ const AVC_LEVELS = [
  * Get a codec human readbable name
  * @param {string} codec a codec string (cccc.PP.LL.DD eg. "vp09.00.10.08")
  * @returns {string}
- */ const getCodecName$1 = (codec)=>{
-    var _getAllItems_find;
-    return (_getAllItems_find = getAllItems$1().find((item)=>item.codec === codec)) == null ? void 0 : _getAllItems_find.name;
-};
+ */ const getCodecName$1 = (codec)=>getAllItems$1().find((item)=>item.codec === codec)?.name;
 
 var avc = /*#__PURE__*/Object.freeze({
   __proto__: null,
@@ -578,10 +569,7 @@ const HEVC_LEVELS = [
  * Get a codec human readbable name
  * @param {string} codec a codec string (cccc.PP.C.TLL.CC eg. "hev1.1.3.H34.B0")
  * @returns {string}
- */ const getCodecName = (codec)=>{
-    var _getAllItems_find;
-    return (_getAllItems_find = getAllItems().find((item)=>item.codec === codec)) == null ? void 0 : _getAllItems_find.name;
-};
+ */ const getCodecName = (codec)=>getAllItems().find((item)=>item.codec === codec)?.name;
 
 var hevc = /*#__PURE__*/Object.freeze({
   __proto__: null,

@@ -108,7 +108,7 @@ const ERROR_TERMINATED = new Error("called FFmpeg.terminate()");
         };
         this.#send = (param, trans, signal)=>{
             let { type, data } = param;
-            if (trans === void 0) trans = [];
+            if (trans === undefined) trans = [];
             if (!this.#worker) {
                 return Promise.reject(ERROR_NOT_LOADED);
             }
@@ -121,7 +121,7 @@ const ERROR_TERMINATED = new Error("called FFmpeg.terminate()");
                 }, trans);
                 this.#resolves[id] = resolve;
                 this.#rejects[id] = reject;
-                signal == null ? void 0 : signal.addEventListener("abort", ()=>{
+                signal?.addEventListener("abort", ()=>{
                     reject(new DOMException(`Message # ${id} was aborted`, "AbortError"));
                 }, {
                     once: true
@@ -135,8 +135,8 @@ const ERROR_TERMINATED = new Error("called FFmpeg.terminate()");
      * @category FFmpeg
      * @returns `true` if ffmpeg core is loaded for the first time.
      */ this.load = (config, param)=>{
-            if (config === void 0) config = {};
-            let { signal } = param === void 0 ? {} : param;
+            if (config === undefined) config = {};
+            let { signal } = param === undefined ? {} : param;
             if (!this.#worker) {
                 this.#worker = new Worker(new URL(new URL('../assets/worker-BIbGGrl-.js', import.meta.url).href, import.meta.url), {
                     type: "module"
@@ -172,8 +172,8 @@ const ERROR_TERMINATED = new Error("called FFmpeg.terminate()");
      *
      * @defaultValue -1
      */ timeout, param)=>{
-            if (timeout === void 0) timeout = -1;
-            let { signal } = param === void 0 ? {} : param;
+            if (timeout === undefined) timeout = -1;
+            let { signal } = param === undefined ? {} : param;
             return this.#send({
                 type: FFMessageType.EXEC,
                 data: {
@@ -214,7 +214,7 @@ const ERROR_TERMINATED = new Error("called FFmpeg.terminate()");
      *
      * @category File System
      */ this.writeFile = (path, data, param)=>{
-            let { signal } = param === void 0 ? {} : param;
+            let { signal } = param === undefined ? {} : param;
             const trans = [];
             if (data instanceof Uint8Array) {
                 trans.push(data.buffer);
@@ -265,8 +265,8 @@ const ERROR_TERMINATED = new Error("called FFmpeg.terminate()");
      *
      * @defaultValue binary
      */ encoding, param)=>{
-            if (encoding === void 0) encoding = "binary";
-            let { signal } = param === void 0 ? {} : param;
+            if (encoding === undefined) encoding = "binary";
+            let { signal } = param === undefined ? {} : param;
             return this.#send({
                 type: FFMessageType.READ_FILE,
                 data: {
@@ -280,7 +280,7 @@ const ERROR_TERMINATED = new Error("called FFmpeg.terminate()");
      *
      * @category File System
      */ this.deleteFile = (path, param)=>{
-            let { signal } = param === void 0 ? {} : param;
+            let { signal } = param === undefined ? {} : param;
             return this.#send({
                 type: FFMessageType.DELETE_FILE,
                 data: {
@@ -293,7 +293,7 @@ const ERROR_TERMINATED = new Error("called FFmpeg.terminate()");
      *
      * @category File System
      */ this.rename = (oldPath, newPath, param)=>{
-            let { signal } = param === void 0 ? {} : param;
+            let { signal } = param === undefined ? {} : param;
             return this.#send({
                 type: FFMessageType.RENAME,
                 data: {
@@ -307,7 +307,7 @@ const ERROR_TERMINATED = new Error("called FFmpeg.terminate()");
      *
      * @category File System
      */ this.createDir = (path, param)=>{
-            let { signal } = param === void 0 ? {} : param;
+            let { signal } = param === undefined ? {} : param;
             return this.#send({
                 type: FFMessageType.CREATE_DIR,
                 data: {
@@ -320,7 +320,7 @@ const ERROR_TERMINATED = new Error("called FFmpeg.terminate()");
      *
      * @category File System
      */ this.listDir = (path, param)=>{
-            let { signal } = param === void 0 ? {} : param;
+            let { signal } = param === undefined ? {} : param;
             return this.#send({
                 type: FFMessageType.LIST_DIR,
                 data: {
@@ -333,7 +333,7 @@ const ERROR_TERMINATED = new Error("called FFmpeg.terminate()");
      *
      * @category File System
      */ this.deleteDir = (path, param)=>{
-            let { signal } = param === void 0 ? {} : param;
+            let { signal } = param === undefined ? {} : param;
             return this.#send({
                 type: FFMessageType.DELETE_DIR,
                 data: {

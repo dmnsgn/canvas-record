@@ -1,18 +1,21 @@
-import { c as commonjsGlobal } from './_chunks/polyfills-DtuN-KmU.js';
+import { c as commonjsGlobal } from './_chunks/polyfills-QWxePbon.js';
 
 var esModuleShims = {};
 
 (function() {
     const hasDocument = typeof document !== 'undefined';
     const noop = ()=>{};
+    const dynamicImport = (u, errUrl)=>import(u);
     const optionsScript = hasDocument ? document.querySelector('script[type=esms-options]') : undefined;
     const esmsInitOptions = optionsScript ? JSON.parse(optionsScript.innerHTML) : {};
     Object.assign(esmsInitOptions, self.esmsInitOptions || {});
-    let shimMode = hasDocument ? !!esmsInitOptions.shimMode : true;
+    // shim mode is determined on initialization, no late shim mode
+    const shimMode = hasDocument ? esmsInitOptions.shimMode || document.querySelectorAll('script[type=module-shim],script[type=importmap-shim],link[rel=modulepreload-shim]').length > 0 : true;
     const importHook = globalHook(shimMode && esmsInitOptions.onimport);
     const resolveHook = globalHook(shimMode && esmsInitOptions.resolve);
     let fetchHook = esmsInitOptions.fetch ? globalHook(esmsInitOptions.fetch) : fetch;
     const metaHook = esmsInitOptions.meta ? globalHook(shimMode && esmsInitOptions.meta) : noop;
+    const tsTransform = esmsInitOptions.tsTransform || hasDocument && document.currentScript && document.currentScript.src.replace(/\.js$/, '-typescript.js') || './es-module-shims-typescript.js';
     const mapOverrides = esmsInitOptions.mapOverrides;
     let nonce = esmsInitOptions.nonce;
     if (!nonce && hasDocument) {
@@ -20,22 +23,24 @@ var esModuleShims = {};
         if (nonceElement) nonce = nonceElement.nonce || nonceElement.getAttribute('nonce');
     }
     const onerror = globalHook(esmsInitOptions.onerror || noop);
-    const { revokeBlobURLs, noLoadEventRetriggers, globalLoadEventRetrigger, enforceIntegrity } = esmsInitOptions;
+    const { revokeBlobURLs, noLoadEventRetriggers, enforceIntegrity } = esmsInitOptions;
     function globalHook(name) {
         return typeof name === 'string' ? self[name] : name;
     }
     const enable = Array.isArray(esmsInitOptions.polyfillEnable) ? esmsInitOptions.polyfillEnable : [];
-    const cssModulesEnabled = enable.includes('css-modules');
-    const jsonModulesEnabled = enable.includes('json-modules');
-    const wasmModulesEnabled = enable.includes('wasm-modules');
-    const sourcePhaseEnabled = enable.includes('source-phase');
+    const enableAll = esmsInitOptions.polyfillEnable === 'all' || enable.includes('all');
+    const enableLatest = esmsInitOptions.polyfillEnable === 'latest' || enable.includes('latest');
+    const cssModulesEnabled = enable.includes('css-modules') || enableAll || enableLatest;
+    const jsonModulesEnabled = enable.includes('json-modules') || enableAll || enableLatest;
+    const wasmModulesEnabled = enable.includes('wasm-modules') || enableAll;
+    const sourcePhaseEnabled = enable.includes('source-phase') || enableAll;
+    const typescriptEnabled = enable.includes('typescript') || enableAll;
     const onpolyfill = esmsInitOptions.onpolyfill ? globalHook(esmsInitOptions.onpolyfill) : ()=>{
         console.log(`%c^^ Module error above is polyfilled and can be ignored ^^`, 'font-weight:900;color:#391');
     };
-    const edge = !navigator.userAgentData && !!navigator.userAgent.match(/Edge\/\d+\.\d+/);
     const baseUrl = hasDocument ? document.baseURI : `${location.protocol}//${location.host}${location.pathname.includes('/') ? location.pathname.slice(0, location.pathname.lastIndexOf('/') + 1) : location.pathname}`;
     const createBlob = (source, type)=>{
-        if (type === void 0) type = 'text/javascript';
+        if (type === undefined) type = 'text/javascript';
         return URL.createObjectURL(new Blob([
             source
         ], {
@@ -60,26 +65,6 @@ var esModuleShims = {};
     };
     function fromParent(parent) {
         return parent ? ` imported from ${parent}` : '';
-    }
-    let importMapSrcOrLazy = false;
-    function setImportMapSrcOrLazy() {
-        importMapSrcOrLazy = true;
-    }
-    // shim mode is determined on initialization, no late shim mode
-    if (!shimMode) {
-        if (document.querySelectorAll('script[type=module-shim],script[type=importmap-shim],link[rel=modulepreload-shim]').length) {
-            shimMode = true;
-        } else {
-            let seenScript = false;
-            for (const script of document.querySelectorAll('script[type=module],script[type=importmap]')){
-                if (!seenScript) {
-                    if (script.type === 'module' && !script.ep) seenScript = true;
-                } else if (script.type === 'importmap' && seenScript) {
-                    importMapSrcOrLazy = true;
-                    break;
-                }
-            }
-        }
     }
     const backslashRegEx = /\\/g;
     function asURL(url) {
@@ -198,7 +183,8 @@ var esModuleShims = {};
         for(let p in packages){
             const resolvedLhs = resolveIfNotPlainOrUrl(p, baseUrl) || p;
             if ((!shimMode || !mapOverrides) && outPackages[resolvedLhs] && outPackages[resolvedLhs] !== packages[resolvedLhs]) {
-                throw Error(`Rejected map override "${resolvedLhs}" from ${outPackages[resolvedLhs]} to ${packages[resolvedLhs]}.`);
+                console.warn(`es-module-shims: Rejected map override "${resolvedLhs}" from ${outPackages[resolvedLhs]} to ${packages[resolvedLhs]}.`);
+                continue;
             }
             let target = packages[p];
             if (typeof target !== 'string') continue;
@@ -207,68 +193,26 @@ var esModuleShims = {};
                 outPackages[resolvedLhs] = mapped;
                 continue;
             }
-            console.warn(`Mapping "${p}" -> "${packages[p]}" does not resolve`);
+            console.warn(`es-module-shims: Mapping "${p}" -> "${packages[p]}" does not resolve`);
         }
     }
     function resolveAndComposeIntegrity(integrity, outIntegrity, baseUrl) {
         for(let p in integrity){
             const resolvedLhs = resolveIfNotPlainOrUrl(p, baseUrl) || p;
             if ((!shimMode || !mapOverrides) && outIntegrity[resolvedLhs] && outIntegrity[resolvedLhs] !== integrity[resolvedLhs]) {
-                throw Error(`Rejected map integrity override "${resolvedLhs}" from ${outIntegrity[resolvedLhs]} to ${integrity[resolvedLhs]}.`);
+                console.warn(`es-module-shims: Rejected map integrity override "${resolvedLhs}" from ${outIntegrity[resolvedLhs]} to ${integrity[resolvedLhs]}.`);
             }
             outIntegrity[resolvedLhs] = integrity[p];
         }
     }
-    let dynamicImport = !hasDocument && (0, eval)('u=>import(u)');
-    let supportsDynamicImport;
-    const dynamicImportCheck = hasDocument && new Promise((resolve)=>{
-        const s = Object.assign(document.createElement('script'), {
-            src: createBlob('self._d=u=>import(u)'),
-            ep: true
-        });
-        s.setAttribute('nonce', nonce);
-        s.addEventListener('load', ()=>{
-            if (!(supportsDynamicImport = !!(dynamicImport = self._d))) {
-                let err;
-                window.addEventListener('error', (_err)=>err = _err);
-                dynamicImport = (url, opts)=>new Promise((resolve, reject)=>{
-                        const s = Object.assign(document.createElement('script'), {
-                            type: 'module',
-                            src: createBlob(`import*as m from'${url}';self._esmsi=m`)
-                        });
-                        err = undefined;
-                        s.ep = true;
-                        if (nonce) s.setAttribute('nonce', nonce);
-                        // Safari is unique in supporting module script error events
-                        s.addEventListener('error', cb);
-                        s.addEventListener('load', cb);
-                        function cb(_err) {
-                            document.head.removeChild(s);
-                            if (self._esmsi) {
-                                resolve(self._esmsi, baseUrl);
-                                self._esmsi = undefined;
-                            } else {
-                                reject(!(_err instanceof Event) && _err || err && err.error || new Error(`Error loading ${opts && opts.errUrl || url} (${s.src}).`));
-                                err = undefined;
-                            }
-                        }
-                        document.head.appendChild(s);
-                    });
-            }
-            document.head.removeChild(s);
-            delete self._d;
-            resolve();
-        });
-        document.head.appendChild(s);
-    });
     // support browsers without dynamic import support (eg Firefox 6x)
-    let supportsJsonAssertions = false;
-    let supportsCssAssertions = false;
+    let supportsJsonType = false;
+    let supportsCssType = false;
     const supports = hasDocument && HTMLScriptElement.supports;
     let supportsImportMaps = supports && supports.name === 'supports' && supports('importmap');
-    let supportsImportMeta = supportsDynamicImport;
     let supportsWasmModules = false;
     let supportsSourcePhase = false;
+    let supportsMultipleImportMaps = false;
     const wasmBytes = [
         0,
         97,
@@ -279,14 +223,12 @@ var esModuleShims = {};
         0,
         0
     ];
-    let featureDetectionPromise = Promise.resolve(dynamicImportCheck).then(()=>{
-        if (!supportsDynamicImport) return;
+    let featureDetectionPromise = async function() {
         if (!hasDocument) return Promise.all([
-            supportsImportMaps || dynamicImport(createBlob('import.meta')).then(()=>supportsImportMeta = true, noop),
-            cssModulesEnabled && dynamicImport(createBlob(`import"${createBlob('', 'text/css')}"with{type:"css"}`)).then(()=>supportsCssAssertions = true, noop),
-            jsonModulesEnabled && dynamicImport(createBlob(`import"${createBlob('{}', 'text/json')}"with{type:"json"}`)).then(()=>supportsJsonAssertions = true, noop),
-            wasmModulesEnabled && dynamicImport(createBlob(`import"${createBlob(new Uint8Array(wasmBytes), 'application/wasm')}"`)).then(()=>supportsWasmModules = true, noop),
-            wasmModulesEnabled && sourcePhaseEnabled && dynamicImport(createBlob(`import source x from"${createBlob(new Uint8Array(wasmBytes), 'application/wasm')}"`)).then(()=>supportsSourcePhase = true, noop)
+            cssModulesEnabled && import(createBlob(`import"${createBlob('', 'text/css')}"with{type:"css"}`)).then(()=>supportsCssType = true, noop),
+            jsonModulesEnabled && import(createBlob(`import"${createBlob('{}', 'text/json')}"with{type:"json"}`)).then(()=>supportsJsonType = true, noop),
+            wasmModulesEnabled && import(createBlob(`import"${createBlob(new Uint8Array(wasmBytes), 'application/wasm')}"`)).then(()=>supportsWasmModules = true, noop),
+            wasmModulesEnabled && sourcePhaseEnabled && import(createBlob(`import source x from"${createBlob(new Uint8Array(wasmBytes), 'application/wasm')}"`)).then(()=>supportsSourcePhase = true, noop)
         ]);
         return new Promise((resolve)=>{
             const iframe = document.createElement('iframe');
@@ -296,13 +238,13 @@ var esModuleShims = {};
                 let { data } = param;
                 const isFeatureDetectionMessage = Array.isArray(data) && data[0] === 'esms';
                 if (!isFeatureDetectionMessage) return;
-                [, supportsImportMaps, supportsImportMeta, supportsCssAssertions, supportsJsonAssertions, supportsWasmModules, supportsSourcePhase] = data;
+                [, supportsImportMaps, supportsMultipleImportMaps, supportsCssType, supportsJsonType, supportsWasmModules, supportsSourcePhase] = data;
                 resolve();
                 document.head.removeChild(iframe);
                 window.removeEventListener('message', cb, false);
             }
             window.addEventListener('message', cb, false);
-            const importMapTest = `<script nonce=${nonce || ''}>b=(s,type='text/javascript')=>URL.createObjectURL(new Blob([s],{type}));document.head.appendChild(Object.assign(document.createElement('script'),{type:'importmap',nonce:"${nonce}",innerText:\`{"imports":{"x":"\${b('')}"}}\`}));Promise.all([${supportsImportMaps ? 'true,true' : `'x',b('import.meta')`}, ${cssModulesEnabled ? `b(\`import"\${b('','text/css')}"with{type:"css"}\`)` : 'false'}, ${jsonModulesEnabled ? `b(\`import"\${b('{}','text/json')\}"with{type:"json"}\`)` : 'false'}, ${wasmModulesEnabled ? `b(\`import"\${b(new Uint8Array(${JSON.stringify(wasmBytes)}),'application/wasm')\}"\`)` : 'false'}, ${wasmModulesEnabled && sourcePhaseEnabled ? `b(\`import source x from "\${b(new Uint8Array(${JSON.stringify(wasmBytes)}),'application/wasm')\}"\`)` : 'false'}].map(x =>typeof x==='string'?import(x).then(()=>true,()=>false):x)).then(a=>parent.postMessage(['esms'].concat(a),'*'))<${''}/script>`;
+            const importMapTest = `<script nonce=${nonce || ''}>b=(s,type='text/javascript')=>URL.createObjectURL(new Blob([s],{type}));i=innerText=>document.head.appendChild(Object.assign(document.createElement('script'),{type:'importmap',nonce:"${nonce}",innerText}));i(\`{"imports":{"x":"\${b('')}"}}\`);i(\`{"imports":{"y":"\${b('')}"}}\`);Promise.all([${supportsImportMaps ? 'true' : "'x'"},${supportsImportMaps ? "'y'" : false},${supportsImportMaps && cssModulesEnabled ? `b(\`import"\${b('','text/css')}"with{type:"css"}\`)` : 'false'}, ${supportsImportMaps && jsonModulesEnabled ? `b(\`import"\${b('{}','text/json')\}"with{type:"json"}\`)` : 'false'},${supportsImportMaps && wasmModulesEnabled ? `b(\`import"\${b(new Uint8Array(${JSON.stringify(wasmBytes)}),'application/wasm')\}"\`)` : 'false'},${supportsImportMaps && wasmModulesEnabled && sourcePhaseEnabled ? `b(\`import source x from "\${b(new Uint8Array(${JSON.stringify(wasmBytes)}),'application/wasm')\}"\`)` : 'false'}].map(x =>typeof x==='string'?import(x).then(()=>true,()=>false):x)).then(a=>parent.postMessage(['esms'].concat(a),'*'))<${''}/script>`;
             // Safari will call onload eagerly on head injection, but we don't want the Wechat
             // path to trigger before setting srcdoc, therefore we track the timing
             let readyForOnload = false, onloadCalledWhileNotReady = false;
@@ -333,8 +275,8 @@ var esModuleShims = {};
             // retrigger onload for Safari only if necessary
             if (onloadCalledWhileNotReady) doOnload();
         });
-    });
-    /* es-module-lexer 1.5.2 */ let e, a, r, i = 2 << 19;
+    }();
+    /* es-module-lexer 1.6.0 */ let e, a, r, i = 2 << 19;
     const s = 1 === new Uint8Array(new Uint16Array([
         1
     ]).buffer)[0] ? function(e, a) {
@@ -348,10 +290,10 @@ var esModuleShims = {};
             const r = e.charCodeAt(i);
             a[i++] = (255 & r) << 8 | r >>> 8;
         }
-    }, f = "xportmportlassetaourceromsyncunctionssertvoyiedelecontininstantybreareturdebuggeawaithrwhileforifcatcfinallels";
+    }, f = "xportmportlassforetaourceromsyncunctionssertvoyiedelecontininstantybreareturdebuggeawaithrwhileifcatcfinallels";
     let t, c$1, n;
     function parse(k, l) {
-        if (l === void 0) l = "@";
+        if (l === undefined) l = "@";
         t = k, c$1 = l;
         const u = 2 * t.length + (2 << 18);
         if (u > i || !e) {
@@ -360,8 +302,8 @@ var esModuleShims = {};
                 "use asm";
                 var i = new e.Int8Array(r), s = new e.Int16Array(r), f = new e.Int32Array(r), t = new e.Uint8Array(r), c = new e.Uint16Array(r), n = 1040;
                 function b() {
-                    var e = 0, a = 0, r = 0, t = 0, b = 0, o = 0;
-                    o = n;
+                    var e = 0, a = 0, r = 0, t = 0, c = 0, b = 0, u = 0;
+                    u = n;
                     n = n + 10240 | 0;
                     i[804] = 1;
                     i[803] = 0;
@@ -371,8 +313,8 @@ var esModuleShims = {};
                     i[805] = 0;
                     f[68] = 0;
                     i[802] = 0;
-                    f[70] = o + 2048;
-                    f[71] = o;
+                    f[70] = u + 2048;
+                    f[71] = u;
                     i[806] = 0;
                     e = (f[3] | 0) + -2 | 0;
                     f[72] = e;
@@ -382,7 +324,7 @@ var esModuleShims = {};
                         r = e + 2 | 0;
                         f[72] = r;
                         if (e >>> 0 >= a >>> 0) {
-                            b = 18;
+                            t = 18;
                             break;
                         }
                         a: do {
@@ -397,22 +339,22 @@ var esModuleShims = {};
                                 case 101:
                                     {
                                         if ((((s[400] | 0) == 0 ? H(r) | 0 : 0) ? (m(e + 4 | 0, 16, 10) | 0) == 0 : 0) ? (k(), (i[804] | 0) == 0) : 0) {
-                                            b = 9;
+                                            t = 9;
                                             break e;
-                                        } else b = 17;
+                                        } else t = 17;
                                         break;
                                     }
                                 case 105:
                                     {
                                         if (H(r) | 0 ? (m(e + 4 | 0, 26, 10) | 0) == 0 : 0) {
                                             l();
-                                            b = 17;
-                                        } else b = 17;
+                                            t = 17;
+                                        } else t = 17;
                                         break;
                                     }
                                 case 59:
                                     {
-                                        b = 17;
+                                        t = 17;
                                         break;
                                     }
                                 case 47:
@@ -429,43 +371,43 @@ var esModuleShims = {};
                                             }
                                         default:
                                             {
-                                                b = 16;
+                                                t = 16;
                                                 break e;
                                             }
                                     }
                                 default:
                                     {
-                                        b = 16;
+                                        t = 16;
                                         break e;
                                     }
                             }
                         }while (0);
-                        if ((b | 0) == 17) {
-                            b = 0;
+                        if ((t | 0) == 17) {
+                            t = 0;
                             f[69] = f[72];
                         }
                         e = f[72] | 0;
                         a = f[73] | 0;
                     }
-                    if ((b | 0) == 9) {
+                    if ((t | 0) == 9) {
                         e = f[72] | 0;
                         f[69] = e;
-                        b = 19;
-                    } else if ((b | 0) == 16) {
+                        t = 19;
+                    } else if ((t | 0) == 16) {
                         i[804] = 0;
                         f[72] = e;
-                        b = 19;
-                    } else if ((b | 0) == 18) if (!(i[802] | 0)) {
+                        t = 19;
+                    } else if ((t | 0) == 18) if (!(i[802] | 0)) {
                         e = r;
-                        b = 19;
+                        t = 19;
                     } else e = 0;
                     do {
-                        if ((b | 0) == 19) {
+                        if ((t | 0) == 19) {
                             e: while(1){
                                 a = e + 2 | 0;
                                 f[72] = a;
                                 if (e >>> 0 >= (f[73] | 0) >>> 0) {
-                                    b = 86;
+                                    t = 92;
                                     break;
                                 }
                                 a: do {
@@ -481,66 +423,66 @@ var esModuleShims = {};
                                             {
                                                 if (((s[400] | 0) == 0 ? H(a) | 0 : 0) ? (m(e + 4 | 0, 16, 10) | 0) == 0 : 0) {
                                                     k();
-                                                    b = 85;
-                                                } else b = 85;
+                                                    t = 91;
+                                                } else t = 91;
                                                 break;
                                             }
                                         case 105:
                                             {
                                                 if (H(a) | 0 ? (m(e + 4 | 0, 26, 10) | 0) == 0 : 0) {
                                                     l();
-                                                    b = 85;
-                                                } else b = 85;
+                                                    t = 91;
+                                                } else t = 91;
                                                 break;
                                             }
                                         case 99:
                                             {
                                                 if ((H(a) | 0 ? (m(e + 4 | 0, 36, 8) | 0) == 0 : 0) ? V(s[e + 12 >> 1] | 0) | 0 : 0) {
                                                     i[806] = 1;
-                                                    b = 85;
-                                                } else b = 85;
+                                                    t = 91;
+                                                } else t = 91;
                                                 break;
                                             }
                                         case 40:
                                             {
-                                                t = f[70] | 0;
-                                                a = s[400] | 0;
-                                                b = a & 65535;
-                                                f[t + (b << 3) >> 2] = 1;
-                                                r = f[69] | 0;
-                                                s[400] = a + 1 << 16 >> 16;
-                                                f[t + (b << 3) + 4 >> 2] = r;
-                                                b = 85;
+                                                r = f[70] | 0;
+                                                e = s[400] | 0;
+                                                t = e & 65535;
+                                                f[r + (t << 3) >> 2] = 1;
+                                                a = f[69] | 0;
+                                                s[400] = e + 1 << 16 >> 16;
+                                                f[r + (t << 3) + 4 >> 2] = a;
+                                                t = 91;
                                                 break;
                                             }
                                         case 41:
                                             {
                                                 a = s[400] | 0;
                                                 if (!(a << 16 >> 16)) {
-                                                    b = 36;
+                                                    t = 36;
                                                     break e;
                                                 }
-                                                b = a + -1 << 16 >> 16;
-                                                s[400] = b;
+                                                r = a + -1 << 16 >> 16;
+                                                s[400] = r;
                                                 t = s[399] | 0;
                                                 a = t & 65535;
-                                                if (t << 16 >> 16 != 0 ? (f[(f[70] | 0) + ((b & 65535) << 3) >> 2] | 0) == 5 : 0) {
+                                                if (t << 16 >> 16 != 0 ? (f[(f[70] | 0) + ((r & 65535) << 3) >> 2] | 0) == 5 : 0) {
                                                     a = f[(f[71] | 0) + (a + -1 << 2) >> 2] | 0;
                                                     r = a + 4 | 0;
                                                     if (!(f[r >> 2] | 0)) f[r >> 2] = (f[69] | 0) + 2;
                                                     f[a + 12 >> 2] = e + 4;
                                                     s[399] = t + -1 << 16 >> 16;
-                                                    b = 85;
-                                                } else b = 85;
+                                                    t = 91;
+                                                } else t = 91;
                                                 break;
                                             }
                                         case 123:
                                             {
-                                                b = f[69] | 0;
-                                                t = f[63] | 0;
-                                                e = b;
+                                                t = f[69] | 0;
+                                                r = f[63] | 0;
+                                                e = t;
                                                 do {
-                                                    if ((s[b >> 1] | 0) == 41 & (t | 0) != 0 ? (f[t + 4 >> 2] | 0) == (b | 0) : 0) {
+                                                    if ((s[t >> 1] | 0) == 41 & (r | 0) != 0 ? (f[r + 4 >> 2] | 0) == (t | 0) : 0) {
                                                         a = f[64] | 0;
                                                         f[63] = a;
                                                         if (!a) {
@@ -552,42 +494,42 @@ var esModuleShims = {};
                                                         }
                                                     }
                                                 }while (0);
-                                                t = f[70] | 0;
-                                                r = s[400] | 0;
-                                                b = r & 65535;
-                                                f[t + (b << 3) >> 2] = (i[806] | 0) == 0 ? 2 : 6;
-                                                s[400] = r + 1 << 16 >> 16;
-                                                f[t + (b << 3) + 4 >> 2] = e;
+                                                r = f[70] | 0;
+                                                a = s[400] | 0;
+                                                t = a & 65535;
+                                                f[r + (t << 3) >> 2] = (i[806] | 0) == 0 ? 2 : 6;
+                                                s[400] = a + 1 << 16 >> 16;
+                                                f[r + (t << 3) + 4 >> 2] = e;
                                                 i[806] = 0;
-                                                b = 85;
+                                                t = 91;
                                                 break;
                                             }
                                         case 125:
                                             {
                                                 e = s[400] | 0;
                                                 if (!(e << 16 >> 16)) {
-                                                    b = 49;
+                                                    t = 49;
                                                     break e;
                                                 }
-                                                t = f[70] | 0;
-                                                b = e + -1 << 16 >> 16;
-                                                s[400] = b;
-                                                if ((f[t + ((b & 65535) << 3) >> 2] | 0) == 4) {
+                                                r = f[70] | 0;
+                                                t = e + -1 << 16 >> 16;
+                                                s[400] = t;
+                                                if ((f[r + ((t & 65535) << 3) >> 2] | 0) == 4) {
                                                     h();
-                                                    b = 85;
-                                                } else b = 85;
+                                                    t = 91;
+                                                } else t = 91;
                                                 break;
                                             }
                                         case 39:
                                             {
                                                 v(39);
-                                                b = 85;
+                                                t = 91;
                                                 break;
                                             }
                                         case 34:
                                             {
                                                 v(34);
-                                                b = 85;
+                                                t = 91;
                                                 break;
                                             }
                                         case 47:
@@ -607,137 +549,138 @@ var esModuleShims = {};
                                                         e = f[69] | 0;
                                                         a = s[e >> 1] | 0;
                                                         r: do {
-                                                            if (!(U(a) | 0)) {
-                                                                switch(a << 16 >> 16){
-                                                                    case 41:
-                                                                        if (D(f[(f[70] | 0) + (c[400] << 3) + 4 >> 2] | 0) | 0) break r;
-                                                                        else {
-                                                                            b = 66;
-                                                                            break r;
-                                                                        }
-                                                                    case 125:
-                                                                        break;
-                                                                    default:
-                                                                        {
-                                                                            b = 66;
-                                                                            break r;
-                                                                        }
-                                                                }
-                                                                r = f[70] | 0;
-                                                                t = c[400] | 0;
-                                                                if (!(p(f[r + (t << 3) + 4 >> 2] | 0) | 0) ? (f[r + (t << 3) >> 2] | 0) != 6 : 0) b = 66;
-                                                            } else switch(a << 16 >> 16){
+                                                            if (!(U(a) | 0)) if (a << 16 >> 16 == 41) {
+                                                                r = s[400] | 0;
+                                                                if (!(D(f[(f[70] | 0) + ((r & 65535) << 3) + 4 >> 2] | 0) | 0)) t = 65;
+                                                            } else t = 64;
+                                                            else switch(a << 16 >> 16){
                                                                 case 46:
                                                                     if (((s[e + -2 >> 1] | 0) + -48 & 65535) < 10) {
-                                                                        b = 66;
+                                                                        t = 64;
                                                                         break r;
                                                                     } else break r;
                                                                 case 43:
                                                                     if ((s[e + -2 >> 1] | 0) == 43) {
-                                                                        b = 66;
+                                                                        t = 64;
                                                                         break r;
                                                                     } else break r;
                                                                 case 45:
                                                                     if ((s[e + -2 >> 1] | 0) == 45) {
-                                                                        b = 66;
+                                                                        t = 64;
                                                                         break r;
                                                                     } else break r;
                                                                 default:
                                                                     break r;
                                                             }
                                                         }while (0);
+                                                        if ((t | 0) == 64) {
+                                                            r = s[400] | 0;
+                                                            t = 65;
+                                                        }
                                                         r: do {
-                                                            if ((b | 0) == 66 ? (0, !(u(e) | 0)) : 0) {
-                                                                switch(a << 16 >> 16){
-                                                                    case 0:
-                                                                        break r;
-                                                                    case 47:
-                                                                        {
-                                                                            if (i[805] | 0) break r;
-                                                                            break;
-                                                                        }
-                                                                    default:
-                                                                        {}
+                                                            if ((t | 0) == 65) {
+                                                                t = 0;
+                                                                if (r << 16 >> 16 != 0 ? (c = f[70] | 0, b = (r & 65535) + -1 | 0, a << 16 >> 16 == 102 ? (f[c + (b << 3) >> 2] | 0) == 1 : 0) : 0) {
+                                                                    if ((s[e + -2 >> 1] | 0) == 111 ? $(f[c + (b << 3) + 4 >> 2] | 0, 44, 3) | 0 : 0) break;
+                                                                } else t = 69;
+                                                                if ((t | 0) == 69 ? (0, a << 16 >> 16 == 125) : 0) {
+                                                                    t = f[70] | 0;
+                                                                    r = r & 65535;
+                                                                    if (p(f[t + (r << 3) + 4 >> 2] | 0) | 0) break;
+                                                                    if ((f[t + (r << 3) >> 2] | 0) == 6) break;
                                                                 }
-                                                                b = f[65] | 0;
-                                                                if ((b | 0 ? e >>> 0 >= (f[b >> 2] | 0) >>> 0 : 0) ? e >>> 0 <= (f[b + 4 >> 2] | 0) >>> 0 : 0) {
-                                                                    g();
-                                                                    i[805] = 0;
-                                                                    b = 85;
-                                                                    break a;
-                                                                }
-                                                                r = f[3] | 0;
-                                                                do {
-                                                                    if (e >>> 0 <= r >>> 0) break;
-                                                                    e = e + -2 | 0;
-                                                                    f[69] = e;
-                                                                    a = s[e >> 1] | 0;
-                                                                }while (!(E(a) | 0));
-                                                                if (F(a) | 0) {
+                                                                if (!(o(e) | 0)) {
+                                                                    switch(a << 16 >> 16){
+                                                                        case 0:
+                                                                            break r;
+                                                                        case 47:
+                                                                            {
+                                                                                if (i[805] | 0) break r;
+                                                                                break;
+                                                                            }
+                                                                        default:
+                                                                            {}
+                                                                    }
+                                                                    t = f[65] | 0;
+                                                                    if ((t | 0 ? e >>> 0 >= (f[t >> 2] | 0) >>> 0 : 0) ? e >>> 0 <= (f[t + 4 >> 2] | 0) >>> 0 : 0) {
+                                                                        g();
+                                                                        i[805] = 0;
+                                                                        t = 91;
+                                                                        break a;
+                                                                    }
+                                                                    r = f[3] | 0;
                                                                     do {
                                                                         if (e >>> 0 <= r >>> 0) break;
                                                                         e = e + -2 | 0;
                                                                         f[69] = e;
-                                                                    }while (F(s[e >> 1] | 0) | 0);
-                                                                    if (j(e) | 0) {
-                                                                        g();
-                                                                        i[805] = 0;
-                                                                        b = 85;
-                                                                        break a;
+                                                                        a = s[e >> 1] | 0;
+                                                                    }while (!(E(a) | 0));
+                                                                    if (F(a) | 0) {
+                                                                        do {
+                                                                            if (e >>> 0 <= r >>> 0) break;
+                                                                            e = e + -2 | 0;
+                                                                            f[69] = e;
+                                                                        }while (F(s[e >> 1] | 0) | 0);
+                                                                        if (j(e) | 0) {
+                                                                            g();
+                                                                            i[805] = 0;
+                                                                            t = 91;
+                                                                            break a;
+                                                                        }
                                                                     }
+                                                                    i[805] = 1;
+                                                                    t = 91;
+                                                                    break a;
                                                                 }
-                                                                i[805] = 1;
-                                                                b = 85;
-                                                                break a;
                                                             }
                                                         }while (0);
                                                         g();
                                                         i[805] = 0;
-                                                        b = 85;
+                                                        t = 91;
                                                         break a;
                                                     }
                                             }
                                         case 96:
                                             {
-                                                t = f[70] | 0;
-                                                r = s[400] | 0;
-                                                b = r & 65535;
-                                                f[t + (b << 3) + 4 >> 2] = f[69];
-                                                s[400] = r + 1 << 16 >> 16;
-                                                f[t + (b << 3) >> 2] = 3;
+                                                r = f[70] | 0;
+                                                a = s[400] | 0;
+                                                t = a & 65535;
+                                                f[r + (t << 3) + 4 >> 2] = f[69];
+                                                s[400] = a + 1 << 16 >> 16;
+                                                f[r + (t << 3) >> 2] = 3;
                                                 h();
-                                                b = 85;
+                                                t = 91;
                                                 break;
                                             }
                                         default:
-                                            b = 85;
+                                            t = 91;
                                     }
                                 }while (0);
-                                if ((b | 0) == 85) {
-                                    b = 0;
+                                if ((t | 0) == 91) {
+                                    t = 0;
                                     f[69] = f[72];
                                 }
                                 e = f[72] | 0;
                             }
-                            if ((b | 0) == 36) {
+                            if ((t | 0) == 36) {
                                 T();
                                 e = 0;
                                 break;
-                            } else if ((b | 0) == 49) {
+                            } else if ((t | 0) == 49) {
                                 T();
                                 e = 0;
                                 break;
-                            } else if ((b | 0) == 86) {
+                            } else if ((t | 0) == 92) {
                                 e = (i[802] | 0) == 0 ? (s[399] | s[400]) << 16 >> 16 == 0 : 0;
                                 break;
                             }
                         }
                     }while (0);
-                    n = o;
+                    n = u;
                     return e | 0;
                 }
                 function k() {
-                    var e = 0, a = 0, r = 0, t = 0, c = 0, n = 0, b = 0, k = 0, l = 0, u = 0, h = 0, d = 0, C = 0, g = 0;
+                    var e = 0, a = 0, r = 0, t = 0, c = 0, n = 0, b = 0, k = 0, l = 0, o = 0, h = 0, d = 0, C = 0, g = 0;
                     k = f[72] | 0;
                     l = f[65] | 0;
                     g = k + 12 | 0;
@@ -817,7 +760,7 @@ var esModuleShims = {};
                                                             case 97:
                                                                 {
                                                                     a = f[72] | 0;
-                                                                    if ((m(a + 2 | 0, 66, 8) | 0) == 0 ? (c = a + 10 | 0, F(s[c >> 1] | 0) | 0) : 0) {
+                                                                    if ((m(a + 2 | 0, 72, 8) | 0) == 0 ? (c = a + 10 | 0, F(s[c >> 1] | 0) | 0) : 0) {
                                                                         f[72] = c;
                                                                         w(0) | 0;
                                                                         C = 22;
@@ -842,7 +785,7 @@ var esModuleShims = {};
                                                                 {}
                                                         }
                                                         r: do {
-                                                            if ((C | 0) == 22 ? (b = f[72] | 0, (m(b + 2 | 0, 74, 14) | 0) == 0) : 0) {
+                                                            if ((C | 0) == 22 ? (b = f[72] | 0, (m(b + 2 | 0, 80, 14) | 0) == 0) : 0) {
                                                                 r = b + 16 | 0;
                                                                 a = s[r >> 1] | 0;
                                                                 if (!(V(a) | 0)) switch(a << 16 >> 16){
@@ -864,8 +807,8 @@ var esModuleShims = {};
                                                                 }
                                                             }
                                                         }while (0);
-                                                        if ((C | 0) == 31 ? (u = f[72] | 0, q(d) | 0, h = f[72] | 0, h >>> 0 > u >>> 0) : 0) {
-                                                            O(e, k, u, h);
+                                                        if ((C | 0) == 31 ? (o = f[72] | 0, q(d) | 0, h = f[72] | 0, h >>> 0 > o >>> 0) : 0) {
+                                                            O(e, k, o, h);
                                                             f[72] = (f[72] | 0) + -2;
                                                             break e;
                                                         }
@@ -975,9 +918,9 @@ var esModuleShims = {};
                             }while (0);
                             g = (w(1) | 0) << 16 >> 16 == 102;
                             e = f[72] | 0;
-                            if (g ? (m(e + 2 | 0, 60, 6) | 0) == 0 : 0) {
+                            if (g ? (m(e + 2 | 0, 66, 6) | 0) == 0 : 0) {
                                 f[72] = e + 8;
-                                o(k, w(1) | 0, 0);
+                                u(k, w(1) | 0, 0);
                                 e = (l | 0) == 0 ? 240 : l + 16 | 0;
                                 while(1){
                                     e = f[e >> 2] | 0;
@@ -1000,7 +943,7 @@ var esModuleShims = {};
                     t = w(1) | 0;
                     a = f[72] | 0;
                     e: do {
-                        if (t << 16 >> 16 != 46) if (t << 16 >> 16 == 115 & a >>> 0 > r >>> 0) if ((m(a + 2 | 0, 50, 10) | 0) == 0 ? (e = a + 12 | 0, V(s[e >> 1] | 0) | 0) : 0) n = 14;
+                        if (t << 16 >> 16 != 46) if (t << 16 >> 16 == 115 & a >>> 0 > r >>> 0) if ((m(a + 2 | 0, 56, 10) | 0) == 0 ? (e = a + 12 | 0, V(s[e >> 1] | 0) | 0) : 0) n = 14;
                         else {
                             a = 6;
                             r = 0;
@@ -1017,7 +960,7 @@ var esModuleShims = {};
                                 case 109:
                                     {
                                         e = f[72] | 0;
-                                        if (m(e + 2 | 0, 44, 6) | 0) break e;
+                                        if (m(e + 2 | 0, 50, 6) | 0) break e;
                                         a = f[69] | 0;
                                         if (!(G(a) | 0) ? (s[a >> 1] | 0) == 46 : 0) break e;
                                         d(c, c, e + 8 | 0, 2);
@@ -1026,7 +969,7 @@ var esModuleShims = {};
                                 case 115:
                                     {
                                         e = f[72] | 0;
-                                        if (m(e + 2 | 0, 50, 10) | 0) break e;
+                                        if (m(e + 2 | 0, 56, 10) | 0) break e;
                                         a = f[69] | 0;
                                         if (!(G(a) | 0) ? (s[a >> 1] | 0) == 46 : 0) break e;
                                         e = e + 12 | 0;
@@ -1144,14 +1087,14 @@ var esModuleShims = {};
                                     if ((n | 0) == 36) f[72] = (f[72] | 0) + 2;
                                     b = (w(1) | 0) << 16 >> 16 == 102;
                                     e = f[72] | 0;
-                                    if (b ? m(e + 2 | 0, 60, 6) | 0 : 0) {
+                                    if (b ? m(e + 2 | 0, 66, 6) | 0 : 0) {
                                         T();
                                         break e;
                                     }
                                     f[72] = e + 8;
                                     e = w(1) | 0;
                                     if (W(e) | 0) {
-                                        o(c, e, 0);
+                                        u(c, e, 0);
                                         break e;
                                     } else {
                                         T();
@@ -1214,7 +1157,7 @@ var esModuleShims = {};
                                 a = b;
                             }
                             if ((n | 0) == 53) {
-                                o(c, t, r);
+                                u(c, t, r);
                                 break;
                             } else if ((n | 0) == 55) {
                                 T();
@@ -1224,143 +1167,7 @@ var esModuleShims = {};
                     }while (0);
                     return;
                 }
-                function u(e) {
-                    e = e | 0;
-                    var a = 0, r = 0;
-                    e: do {
-                        switch(s[e >> 1] | 0){
-                            case 100:
-                                switch(s[e + -2 >> 1] | 0){
-                                    case 105:
-                                        {
-                                            a = $(e + -4 | 0, 98, 2) | 0;
-                                            break e;
-                                        }
-                                    case 108:
-                                        {
-                                            a = $(e + -4 | 0, 102, 3) | 0;
-                                            break e;
-                                        }
-                                    default:
-                                        {
-                                            a = 0;
-                                            break e;
-                                        }
-                                }
-                            case 101:
-                                switch(s[e + -2 >> 1] | 0){
-                                    case 115:
-                                        switch(s[e + -4 >> 1] | 0){
-                                            case 108:
-                                                {
-                                                    a = B(e + -6 | 0, 101) | 0;
-                                                    break e;
-                                                }
-                                            case 97:
-                                                {
-                                                    a = B(e + -6 | 0, 99) | 0;
-                                                    break e;
-                                                }
-                                            default:
-                                                {
-                                                    a = 0;
-                                                    break e;
-                                                }
-                                        }
-                                    case 116:
-                                        {
-                                            a = $(e + -4 | 0, 108, 4) | 0;
-                                            break e;
-                                        }
-                                    case 117:
-                                        {
-                                            a = $(e + -4 | 0, 116, 6) | 0;
-                                            break e;
-                                        }
-                                    default:
-                                        {
-                                            a = 0;
-                                            break e;
-                                        }
-                                }
-                            case 102:
-                                {
-                                    if ((s[e + -2 >> 1] | 0) == 111) {
-                                        r = e + -4 | 0;
-                                        if ((r | 0) != (f[3] | 0) ? (a = s[r >> 1] | 0, !(E(a) | 0)) : 0) if (a << 16 >> 16 == 101) switch(s[e + -6 >> 1] | 0){
-                                            case 99:
-                                                {
-                                                    a = $(e + -8 | 0, 128, 6) | 0;
-                                                    break e;
-                                                }
-                                            case 112:
-                                                {
-                                                    a = $(e + -8 | 0, 140, 2) | 0;
-                                                    break e;
-                                                }
-                                            default:
-                                                {
-                                                    a = 0;
-                                                    break e;
-                                                }
-                                        }
-                                        else a = 0;
-                                        else a = 1;
-                                    } else a = 0;
-                                    break;
-                                }
-                            case 107:
-                                {
-                                    a = $(e + -2 | 0, 144, 4) | 0;
-                                    break;
-                                }
-                            case 110:
-                                {
-                                    a = e + -2 | 0;
-                                    if (B(a, 105) | 0) a = 1;
-                                    else a = $(a, 152, 5) | 0;
-                                    break;
-                                }
-                            case 111:
-                                {
-                                    a = B(e + -2 | 0, 100) | 0;
-                                    break;
-                                }
-                            case 114:
-                                {
-                                    a = $(e + -2 | 0, 162, 7) | 0;
-                                    break;
-                                }
-                            case 116:
-                                {
-                                    a = $(e + -2 | 0, 176, 4) | 0;
-                                    break;
-                                }
-                            case 119:
-                                switch(s[e + -2 >> 1] | 0){
-                                    case 101:
-                                        {
-                                            a = B(e + -4 | 0, 110) | 0;
-                                            break e;
-                                        }
-                                    case 111:
-                                        {
-                                            a = $(e + -4 | 0, 184, 3) | 0;
-                                            break e;
-                                        }
-                                    default:
-                                        {
-                                            a = 0;
-                                            break e;
-                                        }
-                                }
-                            default:
-                                a = 0;
-                        }
-                    }while (0);
-                    return a | 0;
-                }
-                function o(e, a, r) {
+                function u(e, a, r) {
                     e = e | 0;
                     a = a | 0;
                     r = r | 0;
@@ -1391,7 +1198,7 @@ var esModuleShims = {};
                             r = a << 16 >> 16 == 97;
                             if (r) {
                                 i = f[72] | 0;
-                                if (m(i + 2 | 0, 88, 10) | 0) t = 13;
+                                if (m(i + 2 | 0, 94, 10) | 0) t = 13;
                             } else {
                                 i = f[72] | 0;
                                 if (!(((a << 16 >> 16 == 119 ? (s[i + 2 >> 1] | 0) == 105 : 0) ? (s[i + 4 >> 1] | 0) == 116 : 0) ? (s[i + 6 >> 1] | 0) == 104 : 0)) t = 13;
@@ -1490,6 +1297,137 @@ var esModuleShims = {};
                         }
                     }while (0);
                     return;
+                }
+                function o(e) {
+                    e = e | 0;
+                    e: do {
+                        switch(s[e >> 1] | 0){
+                            case 100:
+                                switch(s[e + -2 >> 1] | 0){
+                                    case 105:
+                                        {
+                                            e = $(e + -4 | 0, 104, 2) | 0;
+                                            break e;
+                                        }
+                                    case 108:
+                                        {
+                                            e = $(e + -4 | 0, 108, 3) | 0;
+                                            break e;
+                                        }
+                                    default:
+                                        {
+                                            e = 0;
+                                            break e;
+                                        }
+                                }
+                            case 101:
+                                switch(s[e + -2 >> 1] | 0){
+                                    case 115:
+                                        switch(s[e + -4 >> 1] | 0){
+                                            case 108:
+                                                {
+                                                    e = B(e + -6 | 0, 101) | 0;
+                                                    break e;
+                                                }
+                                            case 97:
+                                                {
+                                                    e = B(e + -6 | 0, 99) | 0;
+                                                    break e;
+                                                }
+                                            default:
+                                                {
+                                                    e = 0;
+                                                    break e;
+                                                }
+                                        }
+                                    case 116:
+                                        {
+                                            e = $(e + -4 | 0, 114, 4) | 0;
+                                            break e;
+                                        }
+                                    case 117:
+                                        {
+                                            e = $(e + -4 | 0, 122, 6) | 0;
+                                            break e;
+                                        }
+                                    default:
+                                        {
+                                            e = 0;
+                                            break e;
+                                        }
+                                }
+                            case 102:
+                                {
+                                    if ((s[e + -2 >> 1] | 0) == 111 ? (s[e + -4 >> 1] | 0) == 101 : 0) switch(s[e + -6 >> 1] | 0){
+                                        case 99:
+                                            {
+                                                e = $(e + -8 | 0, 134, 6) | 0;
+                                                break e;
+                                            }
+                                        case 112:
+                                            {
+                                                e = $(e + -8 | 0, 146, 2) | 0;
+                                                break e;
+                                            }
+                                        default:
+                                            {
+                                                e = 0;
+                                                break e;
+                                            }
+                                    }
+                                    else e = 0;
+                                    break;
+                                }
+                            case 107:
+                                {
+                                    e = $(e + -2 | 0, 150, 4) | 0;
+                                    break;
+                                }
+                            case 110:
+                                {
+                                    e = e + -2 | 0;
+                                    if (B(e, 105) | 0) e = 1;
+                                    else e = $(e, 158, 5) | 0;
+                                    break;
+                                }
+                            case 111:
+                                {
+                                    e = B(e + -2 | 0, 100) | 0;
+                                    break;
+                                }
+                            case 114:
+                                {
+                                    e = $(e + -2 | 0, 168, 7) | 0;
+                                    break;
+                                }
+                            case 116:
+                                {
+                                    e = $(e + -2 | 0, 182, 4) | 0;
+                                    break;
+                                }
+                            case 119:
+                                switch(s[e + -2 >> 1] | 0){
+                                    case 101:
+                                        {
+                                            e = B(e + -4 | 0, 110) | 0;
+                                            break e;
+                                        }
+                                    case 111:
+                                        {
+                                            e = $(e + -4 | 0, 190, 3) | 0;
+                                            break e;
+                                        }
+                                    default:
+                                        {
+                                            e = 0;
+                                            break e;
+                                        }
+                                }
+                            default:
+                                e = 0;
+                        }
+                    }while (0);
+                    return e | 0;
                 }
                 function h() {
                     var e = 0, a = 0, r = 0, i = 0;
@@ -1972,12 +1910,12 @@ var esModuleShims = {};
                     switch(s[e >> 1] | 0){
                         case 107:
                             {
-                                e = $(e + -2 | 0, 144, 4) | 0;
+                                e = $(e + -2 | 0, 150, 4) | 0;
                                 break;
                             }
                         case 101:
                             {
-                                if ((s[e + -2 >> 1] | 0) == 117) e = $(e + -4 | 0, 116, 6) | 0;
+                                if ((s[e + -2 >> 1] | 0) == 117) e = $(e + -4 | 0, 122, 6) | 0;
                                 else e = 0;
                                 break;
                             }
@@ -2070,7 +2008,7 @@ var esModuleShims = {};
                 }
                 function D(e) {
                     e = e | 0;
-                    if (!($(e, 190, 5) | 0) ? !($(e, 200, 3) | 0) : 0) e = $(e, 206, 2) | 0;
+                    if (!($(e, 196, 5) | 0) ? !($(e, 44, 3) | 0) : 0) e = $(e, 206, 2) | 0;
                     else e = 1;
                     return e | 0;
                 }
@@ -2257,7 +2195,7 @@ var esModuleShims = {};
                 ls: i,
                 le: s,
                 n: 34 === f || 39 === f ? b(a + 1, f) : t.slice(a, r),
-                ln: i < 0 ? void 0 : 34 === c || 39 === c ? b(i + 1, c) : t.slice(i, s)
+                ln: i < 0 ? undefined : 34 === c || 39 === c ? b(i + 1, c) : t.slice(i, s)
             });
         }
         return [
@@ -2343,64 +2281,79 @@ var esModuleShims = {};
             idx: n
         });
     }
-    async function _resolve(id, parentUrl) {
+    function _resolve(id, parentUrl) {
+        if (parentUrl === undefined) parentUrl = baseUrl;
         const urlResolved = resolveIfNotPlainOrUrl(id, parentUrl) || asURL(id);
+        const firstResolved = firstImportMap && resolveImportMap(firstImportMap, urlResolved || id, parentUrl);
+        const composedResolved = composedImportMap === firstImportMap ? firstResolved : resolveImportMap(composedImportMap, urlResolved || id, parentUrl);
+        const resolved = composedResolved || firstResolved || throwUnresolved(id, parentUrl);
+        // needsShim, shouldShim per load record to set on parent
+        let n = false, N = false;
+        if (!supportsImportMaps) {
+            // bare specifier -> needs shim
+            if (!urlResolved) n = true;
+            else if (urlResolved !== resolved) N = true;
+        } else if (!supportsMultipleImportMaps) {
+            // bare specifier and not resolved by first import map -> needs shim
+            if (!urlResolved && !firstResolved) n = true;
+            // resolution doesn't match first import map -> should shim
+            if (firstResolved && resolved !== firstResolved) N = true;
+        }
         return {
-            r: resolveImportMap(importMap, urlResolved || id, parentUrl) || throwUnresolved(id, parentUrl),
-            // b = bare specifier
-            b: !urlResolved && !asURL(id)
+            r: resolved,
+            n,
+            N
         };
     }
-    const resolve = resolveHook ? async (id, parentUrl)=>{
-        let result = resolveHook(id, parentUrl, defaultResolve);
-        // will be deprecated in next major
-        if (result && result.then) result = await result;
+    const resolve = resolveHook ? (id, parentUrl)=>{
+        if (parentUrl === undefined) parentUrl = baseUrl;
+        const result = resolveHook(id, parentUrl, defaultResolve);
         return result ? {
             r: result,
-            b: !resolveIfNotPlainOrUrl(id, parentUrl) && !asURL(id)
+            n: true,
+            N: true
         } : _resolve(id, parentUrl);
     } : _resolve;
-    // supports:
-    // import('mod');
-    // import('mod', { opts });
-    // import('mod', { opts }, parentUrl);
-    // import('mod', parentUrl);
-    async function importHandler(id) {
-        for(var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++){
-            args[_key - 1] = arguments[_key];
-        }
-        // parentUrl if present will be the last argument
-        let parentUrl = args[args.length - 1];
-        if (typeof parentUrl !== 'string') parentUrl = baseUrl;
-        // needed for shim check
-        await initPromise;
-        if (importHook) await importHook(id, typeof args[1] !== 'string' ? args[1] : {}, parentUrl);
-        if (acceptingImportMaps || shimMode || !baselinePassthrough) {
-            if (hasDocument) processScriptsAndPreloads(true);
-            if (!shimMode) acceptingImportMaps = false;
+    async function importHandler(id, opts, parentUrl, sourcePhase) {
+        if (parentUrl === undefined) parentUrl = baseUrl;
+        await initPromise; // needed for shim check
+        if (importHook) await importHook(id, opts, parentUrl);
+        if (shimMode || !baselinePassthrough) {
+            if (hasDocument) processScriptsAndPreloads();
+            legacyAcceptingImportMaps = false;
         }
         await importMapPromise;
-        return (await resolve(id, parentUrl)).r;
+        return resolve(id, parentUrl).r;
     }
     // import()
-    async function importShim() {
-        for(var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++){
-            args[_key] = arguments[_key];
+    async function importShim(id, opts, parentUrl) {
+        if (typeof opts === 'string') {
+            parentUrl = opts;
+            opts = undefined;
         }
-        return topLevelLoad(await importHandler(...args), {
+        // we mock import('./x.css', { with: { type: 'css' }}) support via an inline static reexport
+        // because we can't syntactically pass through to dynamic import with a second argument in this libarary
+        let url = await importHandler(id, opts, parentUrl);
+        let source = null;
+        if (typeof opts === 'object' && typeof opts.with === 'object' && typeof opts.with.type === 'string') {
+            source = `export{default}from'${url}'with{type:"${opts.with.type}"}`;
+            url += '?entry';
+        }
+        return topLevelLoad(url, {
             credentials: 'same-origin'
-        });
+        }, source, undefined, undefined);
     }
     // import.source()
-    if (sourcePhaseEnabled) importShim.source = async function importShimSource() {
-        for(var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++){
-            args[_key] = arguments[_key];
+    // (opts not currently supported as no use cases yet)
+    if (shimMode || sourcePhaseEnabled) importShim.source = async function importShimSource(specifier, opts, parentUrl) {
+        if (typeof opts === 'string') {
+            parentUrl = opts;
+            opts = undefined;
         }
-        const url = await importHandler(...args);
+        const url = await importHandler(specifier, opts, parentUrl);
         const load = getOrCreateLoad(url, {
             credentials: 'same-origin'
         }, null, null);
-        lastLoad = undefined;
         if (firstPolyfillLoad && !shimMode && load.n && nativelyLoaded) {
             onpolyfill();
             firstPolyfillLoad = false;
@@ -2410,26 +2363,20 @@ var esModuleShims = {};
     };
     self.importShim = importShim;
     function defaultResolve(id, parentUrl) {
-        return resolveImportMap(importMap, resolveIfNotPlainOrUrl(id, parentUrl) || id, parentUrl) || throwUnresolved(id, parentUrl);
+        return resolveImportMap(composedImportMap, resolveIfNotPlainOrUrl(id, parentUrl) || id, parentUrl) || throwUnresolved(id, parentUrl);
     }
     function throwUnresolved(id, parentUrl) {
         throw Error(`Unable to resolve specifier '${id}'${fromParent(parentUrl)}`);
     }
-    const resolveSync = (id, parentUrl)=>{
-        if (parentUrl === void 0) parentUrl = baseUrl;
-        parentUrl = `${parentUrl}`;
-        const result = resolveHook && resolveHook(id, parentUrl, defaultResolve);
-        return result && !result.then ? result : defaultResolve(id, parentUrl);
-    };
     function metaResolve(id, parentUrl) {
-        if (parentUrl === void 0) parentUrl = this.url;
-        return resolveSync(id, parentUrl);
+        if (parentUrl === undefined) parentUrl = this.url;
+        return resolve(id, `${parentUrl}`).r;
     }
-    importShim.resolve = resolveSync;
-    importShim.getImportMap = ()=>JSON.parse(JSON.stringify(importMap));
+    importShim.resolve = (id, parentUrl)=>resolve(id, parentUrl).r;
+    importShim.getImportMap = ()=>JSON.parse(JSON.stringify(composedImportMap));
     importShim.addImportMap = (importMapIn)=>{
         if (!shimMode) throw new Error('Unsupported in polyfill mode.');
-        importMap = resolveAndComposeImportMap(importMapIn, baseUrl, importMap);
+        composedImportMap = resolveAndComposeImportMap(importMapIn, baseUrl, composedImportMap);
     };
     const registry = importShim._r = {};
     const sourceCache = importShim._s = {};
@@ -2442,17 +2389,20 @@ var esModuleShims = {};
             if (sourcePhase) return dep.f;
             return loadAll(dep, seen);
         }));
-        if (!load.n) load.n = load.d.some((dep)=>dep.l.n);
     }
-    let importMap = {
+    let importMapSrc = false;
+    let multipleImportMaps = false;
+    let firstImportMap = null;
+    // To support polyfilling multiple import maps, we separately track the composed import map from the first import map
+    let composedImportMap = {
         imports: {},
         scopes: {},
         integrity: {}
     };
     let baselinePassthrough;
     const initPromise = featureDetectionPromise.then(()=>{
-        baselinePassthrough = esmsInitOptions.polyfillEnable !== true && supportsDynamicImport && supportsImportMeta && supportsImportMaps && (!jsonModulesEnabled || supportsJsonAssertions) && (!cssModulesEnabled || supportsCssAssertions) && (!wasmModulesEnabled || supportsWasmModules) && (!sourcePhaseEnabled || supportsSourcePhase) && !importMapSrcOrLazy;
-        if (sourcePhaseEnabled && typeof WebAssembly !== 'undefined' && !Object.getPrototypeOf(WebAssembly.Module).name) {
+        baselinePassthrough = esmsInitOptions.polyfillEnable !== true && supportsImportMaps && (!jsonModulesEnabled || supportsJsonType) && (!cssModulesEnabled || supportsCssType) && (!wasmModulesEnabled || supportsWasmModules) && (!sourcePhaseEnabled || supportsSourcePhase) && (!multipleImportMaps || supportsMultipleImportMaps) && !importMapSrc && !typescriptEnabled;
+        if (!shimMode && sourcePhaseEnabled && typeof WebAssembly !== 'undefined' && !Object.getPrototypeOf(WebAssembly.Module).name) {
             const s = Symbol();
             const brand = (m)=>Object.defineProperty(m, s, {
                     writable: false,
@@ -2492,23 +2442,7 @@ var esModuleShims = {};
                 HTMLScriptElement.supports = (type)=>type === 'importmap' || supports(type);
             }
             if (shimMode || !baselinePassthrough) {
-                new MutationObserver((mutations)=>{
-                    for (const mutation of mutations){
-                        if (mutation.type !== 'childList') continue;
-                        for (const node of mutation.addedNodes){
-                            if (node.tagName === 'SCRIPT') {
-                                if (node.type === (shimMode ? 'module-shim' : 'module')) processScript(node, true);
-                                if (node.type === (shimMode ? 'importmap-shim' : 'importmap')) processImportMap(node, true);
-                            } else if (node.tagName === 'LINK' && node.rel === (shimMode ? 'modulepreload-shim' : 'modulepreload')) {
-                                processPreload(node);
-                            }
-                        }
-                    }
-                }).observe(document, {
-                    childList: true,
-                    subtree: true
-                });
-                processScriptsAndPreloads();
+                attachMutationObserver();
                 if (document.readyState === 'complete') {
                     readyStateCompleteCheck();
                 } else {
@@ -2523,14 +2457,37 @@ var esModuleShims = {};
                     document.addEventListener('readystatechange', readyListener);
                 }
             }
+            processScriptsAndPreloads();
         }
         return undefined;
     });
+    function attachMutationObserver() {
+        const observer = new MutationObserver((mutations)=>{
+            for (const mutation of mutations){
+                if (mutation.type !== 'childList') continue;
+                for (const node of mutation.addedNodes){
+                    if (node.tagName === 'SCRIPT') {
+                        if (node.type === (shimMode ? 'module-shim' : 'module') && !node.ep) processScript(node, true);
+                        if (node.type === (shimMode ? 'importmap-shim' : 'importmap') && !node.ep) processImportMap(node, true);
+                    } else if (node.tagName === 'LINK' && node.rel === (shimMode ? 'modulepreload-shim' : 'modulepreload') && !node.ep) {
+                        processPreload(node);
+                    }
+                }
+            }
+        });
+        observer.observe(document, {
+            childList: true
+        });
+        observer.observe(document.head, {
+            childList: true
+        });
+        processScriptsAndPreloads();
+    }
     let importMapPromise = initPromise;
     let firstPolyfillLoad = true;
-    let acceptingImportMaps = true;
+    let legacyAcceptingImportMaps = true;
     async function topLevelLoad(url, fetchOpts, source, nativelyLoaded1, lastStaticLoadPromise) {
-        if (!shimMode) acceptingImportMaps = false;
+        legacyAcceptingImportMaps = false;
         await initPromise;
         await importMapPromise;
         if (importHook) await importHook(url, typeof fetchOpts !== 'string' ? fetchOpts : {}, '');
@@ -2539,33 +2496,29 @@ var esModuleShims = {};
             // for polyfill case, only dynamic import needs a return value here, and dynamic import will never pass nativelyLoaded
             if (nativelyLoaded1) return null;
             await lastStaticLoadPromise;
-            return dynamicImport(source ? createBlob(source) : url, {
-                errUrl: url || source
-            });
+            return dynamicImport(source ? createBlob(source) : url);
         }
         const load = getOrCreateLoad(url, fetchOpts, null, source);
         linkLoad(load, fetchOpts);
         const seen = {};
         await loadAll(load, seen);
-        lastLoad = undefined;
         resolveDeps(load, seen);
         await lastStaticLoadPromise;
-        if (source && !shimMode && !load.n) {
-            if (nativelyLoaded1) return;
-            if (revokeBlobURLs) revokeObjectURLs(Object.keys(seen));
-            return await dynamicImport(createBlob(source), {
-                errUrl: source
-            });
+        if (!shimMode && !load.n) {
+            if (nativelyLoaded1) {
+                return;
+            }
+            if (source) {
+                return await dynamicImport(createBlob(source));
+            }
         }
         if (firstPolyfillLoad && !shimMode && load.n && nativelyLoaded1) {
             onpolyfill();
             firstPolyfillLoad = false;
         }
-        const module = await dynamicImport(!shimMode && !load.n && nativelyLoaded1 ? load.u : load.b, {
-            errUrl: load.u
-        });
+        const module = await (!shimMode && !load.n && !load.N ? import(load.u) : dynamicImport(load.b, load.u));
         // if the top-level load is a shell, run its update function
-        if (load.s) (await dynamicImport(load.s)).u$_(module);
+        if (load.s) (await dynamicImport(load.s, load.u)).u$_(module);
         if (revokeBlobURLs) revokeObjectURLs(Object.keys(seen));
         // when tla is supported, this should return the tla promise as an actual handle
         // so readystate can still correspond to the sync subgraph exec completions
@@ -2581,7 +2534,7 @@ var esModuleShims = {};
             if (batchStartIndex > keysLength) return;
             for (const key of registryKeys.slice(batchStartIndex, batchStartIndex + 100)){
                 const load = registry[key];
-                if (load) URL.revokeObjectURL(load.b);
+                if (load && load.b) URL.revokeObjectURL(load.b);
             }
             batch++;
             schedule(cleanup);
@@ -2590,18 +2543,25 @@ var esModuleShims = {};
     function urlJsString(url) {
         return `'${url.replace(/'/g, "\\'")}'`;
     }
-    let lastLoad;
     function resolveDeps(load, seen) {
         if (load.b || !seen[load.u]) return;
         seen[load.u] = 0;
         for (const { l: dep, s: sourcePhase } of load.d){
             if (!sourcePhase) resolveDeps(dep, seen);
         }
+        if (!load.n) load.n = load.d.some((dep)=>dep.l.n);
+        if (!load.N) load.N = load.d.some((dep)=>dep.l.N);
+        // use native loader whenever possible (n = needs shim) via executable subgraph passthrough
+        // so long as the module doesn't use dynamic import or unsupported URL mappings (N = should shim)
+        if (!shimMode && !load.n && !load.N) {
+            load.b = load.u;
+            load.S = undefined;
+            return;
+        }
         const [imports, exports] = load.a;
         // "execution"
         const source = load.S;
-        // edge doesnt execute sibling in order, so we fix this up by ensuring all previous executions are explicit dependencies
-        let resolvedSource = edge && lastLoad ? `import '${lastLoad}';` : '';
+        let resolvedSource = '';
         // once all deps have loaded we can inline the dependency resolution blobs
         // and define this blob
         let lastIndex = 0, depIndex = 0, dynamicImportEndStack = [];
@@ -2614,7 +2574,7 @@ var esModuleShims = {};
             resolvedSource += source.slice(lastIndex, originalIndex);
             lastIndex = originalIndex;
         }
-        for (const { s: start, ss: statementStart, se: statementEnd, d: dynamicImportIndex, t } of imports){
+        for (const { s: start, e: end, ss: statementStart, se: statementEnd, d: dynamicImportIndex, t, a } of imports){
             // source phase
             if (t === 4) {
                 let { l: depLoad } = load.d[depIndex++];
@@ -2622,8 +2582,8 @@ var esModuleShims = {};
                 resolvedSource += 'import ';
                 lastIndex = statementStart + 14;
                 pushStringTo(start - 1);
-                resolvedSource += `/*${source.slice(start - 1, statementEnd)}*/'${createBlob(`export default importShim._s[${urlJsString(depLoad.r)}]`)}'`;
-                lastIndex = statementEnd;
+                resolvedSource += `/*${source.slice(start - 1, end + 1)}*/'${createBlob(`export default importShim._s[${urlJsString(depLoad.r)}]`)}'`;
+                lastIndex = end + 1;
             } else if (dynamicImportIndex === -1) {
                 let { l: depLoad } = load.d[depIndex++], blobUrl = depLoad.b, cycleShell = !blobUrl;
                 if (cycleShell) {
@@ -2639,14 +2599,16 @@ var esModuleShims = {};
                         }).join(',')}}\n//# sourceURL=${depLoad.r}?cycle`);
                     }
                 }
+                // strip import assertions unless we support them
+                const stripAssertion = !supportsCssType && !supportsJsonType || !(a > 0);
                 pushStringTo(start - 1);
-                resolvedSource += `/*${source.slice(start - 1, statementEnd)}*/'${blobUrl}'`;
+                resolvedSource += `/*${source.slice(start - 1, end + 1)}*/'${blobUrl}'`;
                 // circular shell execution
                 if (!cycleShell && depLoad.s) {
                     resolvedSource += `;import*as m$_${depIndex} from'${depLoad.b}';import{u$_ as u$_${depIndex}}from'${depLoad.s}';u$_${depIndex}(m$_${depIndex})`;
                     depLoad.s = undefined;
                 }
-                lastIndex = statementEnd;
+                lastIndex = stripAssertion ? statementEnd : end + 1;
             } else if (dynamicImportIndex === -2) {
                 load.m = {
                     url: load.r,
@@ -2672,8 +2634,12 @@ var esModuleShims = {};
             const urlStart = commentStart + commentPrefix.length;
             const commentEnd = source.indexOf('\n', urlStart);
             const urlEnd = commentEnd !== -1 ? commentEnd : source.length;
+            let sourceUrl = source.slice(urlStart, urlEnd);
+            try {
+                sourceUrl = new URL(sourceUrl, load.r).href;
+            } catch  {}
             pushStringTo(urlStart);
-            resolvedSource += new URL(source.slice(urlStart, urlEnd), load.r).href;
+            resolvedSource += sourceUrl;
             lastIndex = urlEnd;
         }
         let sourceURLCommentStart = source.lastIndexOf(sourceURLCommentPrefix);
@@ -2693,15 +2659,16 @@ var esModuleShims = {};
         }
         pushStringTo(source.length);
         if (sourceURLCommentStart === -1) resolvedSource += sourceURLCommentPrefix + load.r;
-        load.b = lastLoad = createBlob(resolvedSource);
+        load.b = createBlob(resolvedSource);
         load.S = undefined;
     }
     const sourceURLCommentPrefix = '\n//# sourceURL=';
     const sourceMapURLCommentPrefix = '\n//# sourceMappingURL=';
     const jsContentType = /^(text|application)\/(x-)?javascript(;|$)/;
-    const wasmContentType = /^(application)\/wasm(;|$)/;
+    const wasmContentType = /^application\/wasm(;|$)/;
     const jsonContentType = /^(text|application)\/json(;|$)/;
     const cssContentType = /^(text|application)\/css(;|$)/;
+    const tsContentType = /^application\/typescript(;|$)|/;
     const cssUrlRegEx = /url\(\s*(?:(["'])((?:\\.|[^\n\\"'])+)\1|((?:\\.|[^\s,"'()\\])+))\s*\)/g;
     // restrict in-flight fetches to a pool of 100
     let p = [];
@@ -2732,8 +2699,13 @@ var esModuleShims = {};
         }
         return res;
     }
+    let esmsTsTransform;
+    async function initTs() {
+        const m = await import(tsTransform);
+        if (!esmsTsTransform) esmsTsTransform = m.transform;
+    }
     async function fetchModule(url, fetchOpts, parent) {
-        const mapIntegrity = importMap.integrity[url];
+        const mapIntegrity = composedImportMap.integrity[url];
         const res = await doFetch(url, mapIntegrity && !fetchOpts.integrity ? Object.assign({}, fetchOpts, {
             integrity: mapIntegrity
         }) : fetchOpts, parent);
@@ -2742,7 +2714,6 @@ var esModuleShims = {};
         if (jsContentType.test(contentType)) return {
             r,
             s: await res.text(),
-            sp: null,
             t: 'js'
         };
         else if (wasmContentType.test(contentType)) {
@@ -2767,20 +2738,31 @@ var esModuleShims = {};
         } else if (jsonContentType.test(contentType)) return {
             r,
             s: `export default ${await res.text()}`,
-            sp: null,
             t: 'json'
         };
         else if (cssContentType.test(contentType)) {
             return {
                 r,
                 s: `var s=new CSSStyleSheet();s.replaceSync(${JSON.stringify((await res.text()).replace(cssUrlRegEx, (_match, quotes, relUrl1, relUrl2)=>{
-                    if (quotes === void 0) quotes = '';
+                    if (quotes === undefined) quotes = '';
                     return `url(${quotes}${resolveUrl(relUrl1 || relUrl2, url)}${quotes})`;
                 }))});export default s;`,
-                ss: null,
                 t: 'css'
             };
+        } else if ((shimMode || typescriptEnabled) && (tsContentType.test(contentType) || url.endsWith('.ts') || url.endsWith('.mts'))) {
+            const source = await res.text();
+            if (!esmsTsTransform) await initTs();
+            const transformed = esmsTsTransform(source, url);
+            return {
+                r,
+                s: transformed === undefined ? source : transformed,
+                t: transformed !== undefined ? 'ts' : 'js'
+            };
         } else throw Error(`Unsupported Content-Type "${contentType}" loading ${url}${fromParent(parent)}. Modules must be served with a valid MIME type like application/javascript.`);
+    }
+    function isUnsupportedType(type) {
+        if (type === 'css' && !cssModulesEnabled || type === 'json' && !jsonModulesEnabled || type === 'wasm' && !wasmModulesEnabled || type === 'ts' && !typescriptEnabled) throw featErr(`${type}-modules`);
+        return type === 'css' && !supportsCssType || type === 'json' && !supportsJsonType || type === 'wasm' && !supportsWasmModules || type === 'ts';
     }
     function getOrCreateLoad(url, fetchOpts, parent, source) {
         if (source && registry[url]) {
@@ -2811,6 +2793,8 @@ var esModuleShims = {};
             s: undefined,
             // needsShim
             n: false,
+            // shouldShim
+            N: false,
             // type
             t: null,
             // meta
@@ -2819,11 +2803,9 @@ var esModuleShims = {};
         load.f = (async ()=>{
             if (!load.S) {
                 // preload fetch options override fetch options (race)
-                let t;
-                ({ r: load.r, s: load.S, t } = await (fetchCache[url] || fetchModule(url, fetchOpts, parent)));
-                if (t && !shimMode) {
-                    if (t === 'css' && !cssModulesEnabled || t === 'json' && !jsonModulesEnabled || t === 'wasm' && !wasmModulesEnabled) throw featErr(`${t}-modules`);
-                    if (t === 'css' && !supportsCssAssertions || t === 'json' && !supportsJsonAssertions || t === 'wasm' && !supportsWasmModules) load.n = true;
+                ({ r: load.r, s: load.S, t: load.t } = await (fetchCache[url] || fetchModule(url, fetchOpts, parent)));
+                if (!load.n && load.t !== 'js' && !shimMode && isUnsupportedType(load.t)) {
+                    load.n = true;
                 }
             }
             try {
@@ -2845,18 +2827,25 @@ var esModuleShims = {};
         if (load.L) return;
         load.L = load.f.then(async ()=>{
             let childFetchOpts = fetchOpts;
-            load.d = (await Promise.all(load.a[0].map(async (param)=>{
-                let { n, d, t } = param;
+            load.d = load.a[0].map((param)=>{
+                let { n, d, t, a } = param;
                 const sourcePhase = t >= 4;
-                if (sourcePhase && !sourcePhaseEnabled) throw featErr('source-phase');
-                if (d >= 0 && !supportsDynamicImport || d === -2 && !supportsImportMeta || sourcePhase && !supportsSourcePhase) load.n = true;
+                if (sourcePhase) {
+                    if (!shimMode && !sourcePhaseEnabled) throw featErr('source-phase');
+                    if (!supportsSourcePhase) load.n = true;
+                }
+                if (a > 0) {
+                    if (!shimMode && !cssModulesEnabled && !jsonModulesEnabled) throw featErr('css-modules / json-modules');
+                    if (!supportsCssType && !supportsJsonType) load.n = true;
+                }
                 if (d !== -1 || !n) return;
-                const { r, b } = await resolve(n, load.r || load.u);
-                if (b && (!supportsImportMaps || importMapSrcOrLazy)) load.n = true;
+                const resolved = resolve(n, load.r || load.u);
+                if (resolved.n) load.n = true;
+                if (d >= 0 || resolved.N) load.N = true;
                 if (d !== -1) return;
-                if (skip && skip(r) && !sourcePhase) return {
+                if (skip && skip(resolved.r) && !sourcePhase) return {
                     l: {
-                        b: r
+                        b: resolved.r
                     },
                     s: false
                 };
@@ -2864,20 +2853,27 @@ var esModuleShims = {};
                     integrity: undefined
                 });
                 const child = {
-                    l: getOrCreateLoad(r, childFetchOpts, load.r, null),
+                    l: getOrCreateLoad(resolved.r, childFetchOpts, load.r, null),
                     s: sourcePhase
                 };
                 if (!child.s) linkLoad(child.l, fetchOpts);
                 // load, sourcePhase
                 return child;
-            }))).filter((l)=>l);
+            }).filter((l)=>l);
         });
     }
-    function processScriptsAndPreloads(mapsOnly) {
-        if (mapsOnly === void 0) mapsOnly = false;
-        if (!mapsOnly) for (const link of document.querySelectorAll(shimMode ? 'link[rel=modulepreload-shim]' : 'link[rel=modulepreload]'))processPreload(link);
-        for (const script of document.querySelectorAll(shimMode ? 'script[type=importmap-shim]' : 'script[type=importmap]'))processImportMap(script);
-        if (!mapsOnly) for (const script of document.querySelectorAll(shimMode ? 'script[type=module-shim]' : 'script[type=module]'))processScript(script);
+    function processScriptsAndPreloads() {
+        for (const link of document.querySelectorAll(shimMode ? 'link[rel=modulepreload-shim]' : 'link[rel=modulepreload]')){
+            if (!link.ep) processPreload(link);
+        }
+        for (const script of document.querySelectorAll('script[type]')){
+            if (script.type === 'importmap' + (shimMode ? '-shim' : '')) {
+                if (!script.ep) processImportMap(script);
+            } else if (script.type === 'module' + (shimMode ? '-shim' : '')) {
+                legacyAcceptingImportMaps = false;
+                if (!script.ep) processScript(script);
+            }
+        }
     }
     function getFetchOpts(script) {
         const fetchOpts = {};
@@ -2898,7 +2894,7 @@ var esModuleShims = {};
     }
     let loadCnt = 1;
     function loadCheck() {
-        if (--loadCnt === 0 && globalLoadEventRetrigger && !noLoadEventRetriggers && (shimMode || !baselinePassthrough)) {
+        if (--loadCnt === 0 && !noLoadEventRetriggers && (shimMode || !baselinePassthrough)) {
             window.dispatchEvent(new Event('load'));
         }
     }
@@ -2922,27 +2918,43 @@ var esModuleShims = {};
     const hasNext = (script)=>script.nextSibling || script.parentNode && hasNext(script.parentNode);
     const epCheck = (script, ready)=>script.ep || !ready && (!script.src && !script.innerHTML || !hasNext(script)) || script.getAttribute('noshim') !== null || !(script.ep = true);
     function processImportMap(script, ready) {
-        if (ready === void 0) ready = readyStateCompleteCnt > 0;
+        if (ready === undefined) ready = readyStateCompleteCnt > 0;
         if (epCheck(script, ready)) return;
-        // we dont currently support multiple, external or dynamic imports maps in polyfill mode to match native
+        // we dont currently support external import maps in polyfill mode to match native
         if (script.src) {
             if (!shimMode) return;
-            setImportMapSrcOrLazy();
+            importMapSrc = true;
         }
-        if (acceptingImportMaps) {
-            importMapPromise = importMapPromise.then(async ()=>{
-                importMap = resolveAndComposeImportMap(script.src ? await (await doFetch(script.src, getFetchOpts(script))).json() : JSON.parse(script.innerHTML), script.src || baseUrl, importMap);
-            }).catch((e)=>{
-                console.log(e);
-                if (e instanceof SyntaxError) e = new Error(`Unable to parse import map ${e.message} in: ${script.src || script.innerHTML}`);
-                throwError(e);
-            });
-            if (!shimMode) acceptingImportMaps = false;
+        importMapPromise = importMapPromise.then(async ()=>{
+            composedImportMap = resolveAndComposeImportMap(script.src ? await (await doFetch(script.src, getFetchOpts(script))).json() : JSON.parse(script.innerHTML), script.src || baseUrl, composedImportMap);
+        }).catch((e)=>{
+            if (e instanceof SyntaxError) e = new Error(`Unable to parse import map ${e.message} in: ${script.src || script.innerHTML}`);
+            throwError(e);
+        });
+        if (!firstImportMap && legacyAcceptingImportMaps) importMapPromise.then(()=>firstImportMap = composedImportMap);
+        if (!legacyAcceptingImportMaps && !multipleImportMaps) {
+            multipleImportMaps = true;
+            if (!shimMode && baselinePassthrough && !supportsMultipleImportMaps) {
+                baselinePassthrough = false;
+                if (hasDocument) attachMutationObserver();
+            }
         }
+        legacyAcceptingImportMaps = false;
     }
     function processScript(script, ready) {
-        if (ready === void 0) ready = readyStateCompleteCnt > 0;
+        if (ready === undefined) ready = readyStateCompleteCnt > 0;
         if (epCheck(script, ready)) return;
+        if (script.lang === 'ts' && !script.src) {
+            const source = script.innerHTML;
+            return initTs().then(()=>{
+                const transformed = esmsTsTransform(source, baseUrl);
+                if (transformed !== undefined) {
+                    onpolyfill();
+                    firstPolyfillLoad = false;
+                }
+                return topLevelLoad(baseUrl, getFetchOpts(script), transformed === undefined ? source : transformed, transformed === undefined, undefined);
+            }).catch(throwError);
+        }
         // does this load block readystate complete
         const isBlockingReadyScript = script.getAttribute('async') === null && readyStateCompleteCnt > 0;
         // does this load block DOMContentLoaded
@@ -2959,7 +2971,6 @@ var esModuleShims = {};
     }
     const fetchCache = {};
     function processPreload(link) {
-        if (link.ep) return;
         link.ep = true;
         if (fetchCache[link.href]) return;
         fetchCache[link.href] = fetchModule(link.href, getFetchOpts(link));

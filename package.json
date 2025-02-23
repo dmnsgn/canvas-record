@@ -58,16 +58,16 @@
     "gifenc": "^1.0.3",
     "h264-mp4-encoder": "^1.0.12",
     "media-codecs": "^2.0.2",
-    "mp4-muxer": "^4.3.3",
-    "webm-muxer": "^4.0.1"
+    "mp4-muxer": "^5.2.0",
+    "webm-muxer": "^5.0.3"
   },
   "devDependencies": {
     "@web/rollup-plugin-import-meta-assets": "^2.2.1",
     "canvas-context": "^3.3.0",
-    "es-module-shims": "^1.10.0",
+    "es-module-shims": "^2.0.10",
     "mp4-wasm": "^1.0.6",
-    "rollup": "^4.18.0",
-    "tweakpane": "^4.0.4"
+    "rollup": "^4.34.8",
+    "tweakpane": "^4.0.5"
   },
   "optionalDependencies": {
     "@ffmpeg/core": "^0.12.3",
@@ -76,6 +76,6 @@
   "engines": {
     "node": ">=22.0.0",
     "npm": ">=10.5.1",
-    "snowdev": ">=2.2.x"
+    "snowdev": ">=2.3.x"
   }
 }

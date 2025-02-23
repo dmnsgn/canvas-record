@@ -14,8 +14,7 @@ const readFromBlobOrFile = (blob)=>new Promise((resolve, reject)=>{
             }
         };
         fileReader.onerror = (event)=>{
-            var _event_target_error, _event_target;
-            reject(Error(`File could not be read! Code=${(event == null ? void 0 : (_event_target = event.target) == null ? void 0 : (_event_target_error = _event_target.error) == null ? void 0 : _event_target_error.code) || -1}`));
+            reject(Error(`File could not be read! Code=${event?.target?.error?.code || -1}`));
         };
         fileReader.readAsArrayBuffer(blob);
     });
@@ -84,10 +83,9 @@ const readFromBlobOrFile = (blob)=>new Promise((resolve, reject)=>{
     const resp = await fetch(url);
     let buf;
     try {
-        var _resp_body;
         // Set total to -1 to indicate that there is not Content-Type Header.
         const total = parseInt(resp.headers.get(HeaderContentLength) || "-1");
-        const reader = (_resp_body = resp.body) == null ? void 0 : _resp_body.getReader();
+        const reader = resp.body?.getReader();
         if (!reader) throw ERROR_RESPONSE_BODY_READER;
         const chunks = [];
         let received = 0;
@@ -145,7 +143,7 @@ const readFromBlobOrFile = (blob)=>new Promise((resolve, reject)=>{
  * await toBlobURL("http://localhost:3000/ffmpeg.js", "text/javascript");
  * ```
  */ const toBlobURL = async (url, mimeType, progress, cb)=>{
-    if (progress === void 0) progress = false;
+    if (progress === undefined) progress = false;
     const buf = progress ? await downloadWithProgress(url, cb) : await (await fetch(url)).arrayBuffer();
     const blob = new Blob([
         buf

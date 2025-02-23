@@ -1,16 +1,19 @@
-import { B as Buffer } from '../_chunks/polyfills-DtuN-KmU.js';
+import { B as Buffer } from '../_chunks/polyfills-QWxePbon.js';
 
-/* ES Module Shims Wasm 1.10.0 */ (function() {
+/* ES Module Shims Wasm 2.0.10 */ (function() {
     const hasDocument = typeof document !== 'undefined';
     const noop = ()=>{};
+    const dynamicImport = (u, errUrl)=>import(u);
     const optionsScript = hasDocument ? document.querySelector('script[type=esms-options]') : undefined;
     const esmsInitOptions = optionsScript ? JSON.parse(optionsScript.innerHTML) : {};
     Object.assign(esmsInitOptions, self.esmsInitOptions || {});
-    let shimMode = hasDocument ? !!esmsInitOptions.shimMode : true;
+    // shim mode is determined on initialization, no late shim mode
+    const shimMode = hasDocument ? esmsInitOptions.shimMode || document.querySelectorAll('script[type=module-shim],script[type=importmap-shim],link[rel=modulepreload-shim]').length > 0 : true;
     const importHook = globalHook(shimMode && esmsInitOptions.onimport);
     const resolveHook = globalHook(shimMode && esmsInitOptions.resolve);
     let fetchHook = esmsInitOptions.fetch ? globalHook(esmsInitOptions.fetch) : fetch;
     const metaHook = esmsInitOptions.meta ? globalHook(shimMode && esmsInitOptions.meta) : noop;
+    const tsTransform = esmsInitOptions.tsTransform || hasDocument && document.currentScript && document.currentScript.src.replace(/\.js$/, '-typescript.js') || './es-module-shims-typescript.js';
     const mapOverrides = esmsInitOptions.mapOverrides;
     let nonce = esmsInitOptions.nonce;
     if (!nonce && hasDocument) {
@@ -18,22 +21,24 @@ import { B as Buffer } from '../_chunks/polyfills-DtuN-KmU.js';
         if (nonceElement) nonce = nonceElement.nonce || nonceElement.getAttribute('nonce');
     }
     const onerror = globalHook(esmsInitOptions.onerror || noop);
-    const { revokeBlobURLs, noLoadEventRetriggers, globalLoadEventRetrigger, enforceIntegrity } = esmsInitOptions;
+    const { revokeBlobURLs, noLoadEventRetriggers, enforceIntegrity } = esmsInitOptions;
     function globalHook(name) {
         return typeof name === 'string' ? self[name] : name;
     }
     const enable = Array.isArray(esmsInitOptions.polyfillEnable) ? esmsInitOptions.polyfillEnable : [];
-    const cssModulesEnabled = enable.includes('css-modules');
-    const jsonModulesEnabled = enable.includes('json-modules');
-    const wasmModulesEnabled = enable.includes('wasm-modules');
-    const sourcePhaseEnabled = enable.includes('source-phase');
+    const enableAll = esmsInitOptions.polyfillEnable === 'all' || enable.includes('all');
+    const enableLatest = esmsInitOptions.polyfillEnable === 'latest' || enable.includes('latest');
+    const cssModulesEnabled = enable.includes('css-modules') || enableAll || enableLatest;
+    const jsonModulesEnabled = enable.includes('json-modules') || enableAll || enableLatest;
+    const wasmModulesEnabled = enable.includes('wasm-modules') || enableAll;
+    const sourcePhaseEnabled = enable.includes('source-phase') || enableAll;
+    const typescriptEnabled = enable.includes('typescript') || enableAll;
     const onpolyfill = esmsInitOptions.onpolyfill ? globalHook(esmsInitOptions.onpolyfill) : ()=>{
         console.log(`%c^^ Module error above is polyfilled and can be ignored ^^`, 'font-weight:900;color:#391');
     };
-    const edge = !navigator.userAgentData && !!navigator.userAgent.match(/Edge\/\d+\.\d+/);
     const baseUrl = hasDocument ? document.baseURI : `${location.protocol}//${location.host}${location.pathname.includes('/') ? location.pathname.slice(0, location.pathname.lastIndexOf('/') + 1) : location.pathname}`;
     const createBlob = (source, type)=>{
-        if (type === void 0) type = 'text/javascript';
+        if (type === undefined) type = 'text/javascript';
         return URL.createObjectURL(new Blob([
             source
         ], {
@@ -58,26 +63,6 @@ import { B as Buffer } from '../_chunks/polyfills-DtuN-KmU.js';
     };
     function fromParent(parent) {
         return parent ? ` imported from ${parent}` : '';
-    }
-    let importMapSrcOrLazy = false;
-    function setImportMapSrcOrLazy() {
-        importMapSrcOrLazy = true;
-    }
-    // shim mode is determined on initialization, no late shim mode
-    if (!shimMode) {
-        if (document.querySelectorAll('script[type=module-shim],script[type=importmap-shim],link[rel=modulepreload-shim]').length) {
-            shimMode = true;
-        } else {
-            let seenScript = false;
-            for (const script of document.querySelectorAll('script[type=module],script[type=importmap]')){
-                if (!seenScript) {
-                    if (script.type === 'module' && !script.ep) seenScript = true;
-                } else if (script.type === 'importmap' && seenScript) {
-                    importMapSrcOrLazy = true;
-                    break;
-                }
-            }
-        }
     }
     const backslashRegEx = /\\/g;
     function asURL(url) {
@@ -196,7 +181,8 @@ import { B as Buffer } from '../_chunks/polyfills-DtuN-KmU.js';
         for(let p in packages){
             const resolvedLhs = resolveIfNotPlainOrUrl(p, baseUrl) || p;
             if ((!shimMode || !mapOverrides) && outPackages[resolvedLhs] && outPackages[resolvedLhs] !== packages[resolvedLhs]) {
-                throw Error(`Rejected map override "${resolvedLhs}" from ${outPackages[resolvedLhs]} to ${packages[resolvedLhs]}.`);
+                console.warn(`es-module-shims: Rejected map override "${resolvedLhs}" from ${outPackages[resolvedLhs]} to ${packages[resolvedLhs]}.`);
+                continue;
             }
             let target = packages[p];
             if (typeof target !== 'string') continue;
@@ -205,68 +191,26 @@ import { B as Buffer } from '../_chunks/polyfills-DtuN-KmU.js';
                 outPackages[resolvedLhs] = mapped;
                 continue;
             }
-            console.warn(`Mapping "${p}" -> "${packages[p]}" does not resolve`);
+            console.warn(`es-module-shims: Mapping "${p}" -> "${packages[p]}" does not resolve`);
         }
     }
     function resolveAndComposeIntegrity(integrity, outIntegrity, baseUrl) {
         for(let p in integrity){
             const resolvedLhs = resolveIfNotPlainOrUrl(p, baseUrl) || p;
             if ((!shimMode || !mapOverrides) && outIntegrity[resolvedLhs] && outIntegrity[resolvedLhs] !== integrity[resolvedLhs]) {
-                throw Error(`Rejected map integrity override "${resolvedLhs}" from ${outIntegrity[resolvedLhs]} to ${integrity[resolvedLhs]}.`);
+                console.warn(`es-module-shims: Rejected map integrity override "${resolvedLhs}" from ${outIntegrity[resolvedLhs]} to ${integrity[resolvedLhs]}.`);
             }
             outIntegrity[resolvedLhs] = integrity[p];
         }
     }
-    let dynamicImport = !hasDocument && (0, eval)('u=>import(u)');
-    let supportsDynamicImport;
-    const dynamicImportCheck = hasDocument && new Promise((resolve)=>{
-        const s = Object.assign(document.createElement('script'), {
-            src: createBlob('self._d=u=>import(u)'),
-            ep: true
-        });
-        s.setAttribute('nonce', nonce);
-        s.addEventListener('load', ()=>{
-            if (!(supportsDynamicImport = !!(dynamicImport = self._d))) {
-                let err;
-                window.addEventListener('error', (_err)=>err = _err);
-                dynamicImport = (url, opts)=>new Promise((resolve, reject)=>{
-                        const s = Object.assign(document.createElement('script'), {
-                            type: 'module',
-                            src: createBlob(`import*as m from'${url}';self._esmsi=m`)
-                        });
-                        err = undefined;
-                        s.ep = true;
-                        if (nonce) s.setAttribute('nonce', nonce);
-                        // Safari is unique in supporting module script error events
-                        s.addEventListener('error', cb);
-                        s.addEventListener('load', cb);
-                        function cb(_err) {
-                            document.head.removeChild(s);
-                            if (self._esmsi) {
-                                resolve(self._esmsi, baseUrl);
-                                self._esmsi = undefined;
-                            } else {
-                                reject(!(_err instanceof Event) && _err || err && err.error || new Error(`Error loading ${opts && opts.errUrl || url} (${s.src}).`));
-                                err = undefined;
-                            }
-                        }
-                        document.head.appendChild(s);
-                    });
-            }
-            document.head.removeChild(s);
-            delete self._d;
-            resolve();
-        });
-        document.head.appendChild(s);
-    });
     // support browsers without dynamic import support (eg Firefox 6x)
-    let supportsJsonAssertions = false;
-    let supportsCssAssertions = false;
+    let supportsJsonType = false;
+    let supportsCssType = false;
     const supports = hasDocument && HTMLScriptElement.supports;
     let supportsImportMaps = supports && supports.name === 'supports' && supports('importmap');
-    let supportsImportMeta = supportsDynamicImport;
     let supportsWasmModules = false;
     let supportsSourcePhase = false;
+    let supportsMultipleImportMaps = false;
     const wasmBytes = [
         0,
         97,
@@ -277,14 +221,12 @@ import { B as Buffer } from '../_chunks/polyfills-DtuN-KmU.js';
         0,
         0
     ];
-    let featureDetectionPromise = Promise.resolve(dynamicImportCheck).then(()=>{
-        if (!supportsDynamicImport) return;
+    let featureDetectionPromise = async function() {
         if (!hasDocument) return Promise.all([
-            supportsImportMaps || dynamicImport(createBlob('import.meta')).then(()=>supportsImportMeta = true, noop),
-            cssModulesEnabled && dynamicImport(createBlob(`import"${createBlob('', 'text/css')}"with{type:"css"}`)).then(()=>supportsCssAssertions = true, noop),
-            jsonModulesEnabled && dynamicImport(createBlob(`import"${createBlob('{}', 'text/json')}"with{type:"json"}`)).then(()=>supportsJsonAssertions = true, noop),
-            wasmModulesEnabled && dynamicImport(createBlob(`import"${createBlob(new Uint8Array(wasmBytes), 'application/wasm')}"`)).then(()=>supportsWasmModules = true, noop),
-            wasmModulesEnabled && sourcePhaseEnabled && dynamicImport(createBlob(`import source x from"${createBlob(new Uint8Array(wasmBytes), 'application/wasm')}"`)).then(()=>supportsSourcePhase = true, noop)
+            cssModulesEnabled && import(createBlob(`import"${createBlob('', 'text/css')}"with{type:"css"}`)).then(()=>supportsCssType = true, noop),
+            jsonModulesEnabled && import(createBlob(`import"${createBlob('{}', 'text/json')}"with{type:"json"}`)).then(()=>supportsJsonType = true, noop),
+            wasmModulesEnabled && import(createBlob(`import"${createBlob(new Uint8Array(wasmBytes), 'application/wasm')}"`)).then(()=>supportsWasmModules = true, noop),
+            wasmModulesEnabled && sourcePhaseEnabled && import(createBlob(`import source x from"${createBlob(new Uint8Array(wasmBytes), 'application/wasm')}"`)).then(()=>supportsSourcePhase = true, noop)
         ]);
         return new Promise((resolve)=>{
             const iframe = document.createElement('iframe');
@@ -294,13 +236,13 @@ import { B as Buffer } from '../_chunks/polyfills-DtuN-KmU.js';
                 let { data } = param;
                 const isFeatureDetectionMessage = Array.isArray(data) && data[0] === 'esms';
                 if (!isFeatureDetectionMessage) return;
-                [, supportsImportMaps, supportsImportMeta, supportsCssAssertions, supportsJsonAssertions, supportsWasmModules, supportsSourcePhase] = data;
+                [, supportsImportMaps, supportsMultipleImportMaps, supportsCssType, supportsJsonType, supportsWasmModules, supportsSourcePhase] = data;
                 resolve();
                 document.head.removeChild(iframe);
                 window.removeEventListener('message', cb, false);
             }
             window.addEventListener('message', cb, false);
-            const importMapTest = `<script nonce=${nonce || ''}>b=(s,type='text/javascript')=>URL.createObjectURL(new Blob([s],{type}));document.head.appendChild(Object.assign(document.createElement('script'),{type:'importmap',nonce:"${nonce}",innerText:\`{"imports":{"x":"\${b('')}"}}\`}));Promise.all([${supportsImportMaps ? 'true,true' : `'x',b('import.meta')`}, ${cssModulesEnabled ? `b(\`import"\${b('','text/css')}"with{type:"css"}\`)` : 'false'}, ${jsonModulesEnabled ? `b(\`import"\${b('{}','text/json')\}"with{type:"json"}\`)` : 'false'}, ${wasmModulesEnabled ? `b(\`import"\${b(new Uint8Array(${JSON.stringify(wasmBytes)}),'application/wasm')\}"\`)` : 'false'}, ${wasmModulesEnabled && sourcePhaseEnabled ? `b(\`import source x from "\${b(new Uint8Array(${JSON.stringify(wasmBytes)}),'application/wasm')\}"\`)` : 'false'}].map(x =>typeof x==='string'?import(x).then(()=>true,()=>false):x)).then(a=>parent.postMessage(['esms'].concat(a),'*'))<${''}/script>`;
+            const importMapTest = `<script nonce=${nonce || ''}>b=(s,type='text/javascript')=>URL.createObjectURL(new Blob([s],{type}));i=innerText=>document.head.appendChild(Object.assign(document.createElement('script'),{type:'importmap',nonce:"${nonce}",innerText}));i(\`{"imports":{"x":"\${b('')}"}}\`);i(\`{"imports":{"y":"\${b('')}"}}\`);Promise.all([${supportsImportMaps ? 'true' : "'x'"},${supportsImportMaps ? "'y'" : false},${supportsImportMaps && cssModulesEnabled ? `b(\`import"\${b('','text/css')}"with{type:"css"}\`)` : 'false'}, ${supportsImportMaps && jsonModulesEnabled ? `b(\`import"\${b('{}','text/json')\}"with{type:"json"}\`)` : 'false'},${supportsImportMaps && wasmModulesEnabled ? `b(\`import"\${b(new Uint8Array(${JSON.stringify(wasmBytes)}),'application/wasm')\}"\`)` : 'false'},${supportsImportMaps && wasmModulesEnabled && sourcePhaseEnabled ? `b(\`import source x from "\${b(new Uint8Array(${JSON.stringify(wasmBytes)}),'application/wasm')\}"\`)` : 'false'}].map(x =>typeof x==='string'?import(x).then(()=>true,()=>false):x)).then(a=>parent.postMessage(['esms'].concat(a),'*'))<${''}/script>`;
             // Safari will call onload eagerly on head injection, but we don't want the Wechat
             // path to trigger before setting srcdoc, therefore we track the timing
             let readyForOnload = false, onloadCalledWhileNotReady = false;
@@ -331,8 +273,8 @@ import { B as Buffer } from '../_chunks/polyfills-DtuN-KmU.js';
             // retrigger onload for Safari only if necessary
             if (onloadCalledWhileNotReady) doOnload();
         });
-    });
-    /* es-module-lexer 1.5.2 */ var ImportType;
+    }();
+    /* es-module-lexer 1.6.0 */ var ImportType;
     !function(A) {
         A[A.Static = 1] = "Static", A[A.Dynamic = 2] = "Dynamic", A[A.ImportMeta = 3] = "ImportMeta", A[A.StaticSourcePhase = 4] = "StaticSourcePhase", A[A.DynamicSourcePhase = 5] = "DynamicSourcePhase";
     }(ImportType || (ImportType = {}));
@@ -340,7 +282,7 @@ import { B as Buffer } from '../_chunks/polyfills-DtuN-KmU.js';
         1
     ]).buffer)[0];
     function parse(E, g) {
-        if (g === void 0) g = "@";
+        if (g === undefined) g = "@";
         if (!C) return init.then(()=>parse(E));
         const I = E.length + 1, w = (C.__heap_base.value || C.__heap_base) + 4 * I - C.memory.buffer.byteLength;
         w > 0 && C.memory.grow(Math.ceil(w / 65536));
@@ -364,7 +306,7 @@ import { B as Buffer } from '../_chunks/polyfills-DtuN-KmU.js';
             });
         }
         for(; C.re();){
-            const A = C.es(), Q = C.ee(), B = C.els(), g = C.ele(), I = E.slice(A, Q), w = I[0], K = B < 0 ? void 0 : E.slice(B, g), o = K ? K[0] : "";
+            const A = C.es(), Q = C.ee(), B = C.els(), g = C.ele(), I = E.slice(A, Q), w = I[0], K = B < 0 ? undefined : E.slice(B, g), o = K ? K[0] : "";
             D.push({
                 s: A,
                 e: Q,
@@ -400,69 +342,87 @@ import { B as Buffer } from '../_chunks/polyfills-DtuN-KmU.js';
         for(; C < B;)Q[C] = A.charCodeAt(C++);
     }
     let C;
-    const init = WebAssembly.compile((E = "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", "undefined" != typeof Buffer ? Buffer.from(E, "base64") : Uint8Array.from(atob(E), (A)=>A.charCodeAt(0)))).then(WebAssembly.instantiate).then((param)=>{
+    const E = ()=>{
+        return A = "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", "undefined" != typeof Buffer ? Buffer.from(A, "base64") : Uint8Array.from(atob(A), (A)=>A.charCodeAt(0));
+        var A;
+    };
+    const init = WebAssembly.compile(E()).then(WebAssembly.instantiate).then((param)=>{
         let { exports: A } = param;
         C = A;
     });
-    var E;
-    async function _resolve(id, parentUrl) {
+    function _resolve(id, parentUrl) {
+        if (parentUrl === undefined) parentUrl = baseUrl;
         const urlResolved = resolveIfNotPlainOrUrl(id, parentUrl) || asURL(id);
+        const firstResolved = firstImportMap && resolveImportMap(firstImportMap, urlResolved || id, parentUrl);
+        const composedResolved = composedImportMap === firstImportMap ? firstResolved : resolveImportMap(composedImportMap, urlResolved || id, parentUrl);
+        const resolved = composedResolved || firstResolved || throwUnresolved(id, parentUrl);
+        // needsShim, shouldShim per load record to set on parent
+        let n = false, N = false;
+        if (!supportsImportMaps) {
+            // bare specifier -> needs shim
+            if (!urlResolved) n = true;
+            else if (urlResolved !== resolved) N = true;
+        } else if (!supportsMultipleImportMaps) {
+            // bare specifier and not resolved by first import map -> needs shim
+            if (!urlResolved && !firstResolved) n = true;
+            // resolution doesn't match first import map -> should shim
+            if (firstResolved && resolved !== firstResolved) N = true;
+        }
         return {
-            r: resolveImportMap(importMap, urlResolved || id, parentUrl) || throwUnresolved(id, parentUrl),
-            // b = bare specifier
-            b: !urlResolved && !asURL(id)
+            r: resolved,
+            n,
+            N
         };
     }
-    const resolve = resolveHook ? async (id, parentUrl)=>{
-        let result = resolveHook(id, parentUrl, defaultResolve);
-        // will be deprecated in next major
-        if (result && result.then) result = await result;
+    const resolve = resolveHook ? (id, parentUrl)=>{
+        if (parentUrl === undefined) parentUrl = baseUrl;
+        const result = resolveHook(id, parentUrl, defaultResolve);
         return result ? {
             r: result,
-            b: !resolveIfNotPlainOrUrl(id, parentUrl) && !asURL(id)
+            n: true,
+            N: true
         } : _resolve(id, parentUrl);
     } : _resolve;
-    // supports:
-    // import('mod');
-    // import('mod', { opts });
-    // import('mod', { opts }, parentUrl);
-    // import('mod', parentUrl);
-    async function importHandler(id) {
-        for(var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++){
-            args[_key - 1] = arguments[_key];
-        }
-        // parentUrl if present will be the last argument
-        let parentUrl = args[args.length - 1];
-        if (typeof parentUrl !== 'string') parentUrl = baseUrl;
-        // needed for shim check
-        await initPromise;
-        if (importHook) await importHook(id, typeof args[1] !== 'string' ? args[1] : {}, parentUrl);
-        if (acceptingImportMaps || shimMode || !baselinePassthrough) {
-            if (hasDocument) processScriptsAndPreloads(true);
-            if (!shimMode) acceptingImportMaps = false;
+    async function importHandler(id, opts, parentUrl, sourcePhase) {
+        if (parentUrl === undefined) parentUrl = baseUrl;
+        await initPromise; // needed for shim check
+        if (importHook) await importHook(id, opts, parentUrl);
+        if (shimMode || !baselinePassthrough) {
+            if (hasDocument) processScriptsAndPreloads();
+            legacyAcceptingImportMaps = false;
         }
         await importMapPromise;
-        return (await resolve(id, parentUrl)).r;
+        return resolve(id, parentUrl).r;
     }
     // import()
-    async function importShim() {
-        for(var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++){
-            args[_key] = arguments[_key];
+    async function importShim(id, opts, parentUrl) {
+        if (typeof opts === 'string') {
+            parentUrl = opts;
+            opts = undefined;
         }
-        return topLevelLoad(await importHandler(...args), {
+        // we mock import('./x.css', { with: { type: 'css' }}) support via an inline static reexport
+        // because we can't syntactically pass through to dynamic import with a second argument in this libarary
+        let url = await importHandler(id, opts, parentUrl);
+        let source = null;
+        if (typeof opts === 'object' && typeof opts.with === 'object' && typeof opts.with.type === 'string') {
+            source = `export{default}from'${url}'with{type:"${opts.with.type}"}`;
+            url += '?entry';
+        }
+        return topLevelLoad(url, {
             credentials: 'same-origin'
-        });
+        }, source, undefined, undefined);
     }
     // import.source()
-    if (sourcePhaseEnabled) importShim.source = async function importShimSource() {
-        for(var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++){
-            args[_key] = arguments[_key];
+    // (opts not currently supported as no use cases yet)
+    if (shimMode || sourcePhaseEnabled) importShim.source = async function importShimSource(specifier, opts, parentUrl) {
+        if (typeof opts === 'string') {
+            parentUrl = opts;
+            opts = undefined;
         }
-        const url = await importHandler(...args);
+        const url = await importHandler(specifier, opts, parentUrl);
         const load = getOrCreateLoad(url, {
             credentials: 'same-origin'
         }, null, null);
-        lastLoad = undefined;
         if (firstPolyfillLoad && !shimMode && load.n && nativelyLoaded) {
             onpolyfill();
             firstPolyfillLoad = false;
@@ -472,26 +432,20 @@ import { B as Buffer } from '../_chunks/polyfills-DtuN-KmU.js';
     };
     self.importShim = importShim;
     function defaultResolve(id, parentUrl) {
-        return resolveImportMap(importMap, resolveIfNotPlainOrUrl(id, parentUrl) || id, parentUrl) || throwUnresolved(id, parentUrl);
+        return resolveImportMap(composedImportMap, resolveIfNotPlainOrUrl(id, parentUrl) || id, parentUrl) || throwUnresolved(id, parentUrl);
     }
     function throwUnresolved(id, parentUrl) {
         throw Error(`Unable to resolve specifier '${id}'${fromParent(parentUrl)}`);
     }
-    const resolveSync = (id, parentUrl)=>{
-        if (parentUrl === void 0) parentUrl = baseUrl;
-        parentUrl = `${parentUrl}`;
-        const result = resolveHook && resolveHook(id, parentUrl, defaultResolve);
-        return result && !result.then ? result : defaultResolve(id, parentUrl);
-    };
     function metaResolve(id, parentUrl) {
-        if (parentUrl === void 0) parentUrl = this.url;
-        return resolveSync(id, parentUrl);
+        if (parentUrl === undefined) parentUrl = this.url;
+        return resolve(id, `${parentUrl}`).r;
     }
-    importShim.resolve = resolveSync;
-    importShim.getImportMap = ()=>JSON.parse(JSON.stringify(importMap));
+    importShim.resolve = (id, parentUrl)=>resolve(id, parentUrl).r;
+    importShim.getImportMap = ()=>JSON.parse(JSON.stringify(composedImportMap));
     importShim.addImportMap = (importMapIn)=>{
         if (!shimMode) throw new Error('Unsupported in polyfill mode.');
-        importMap = resolveAndComposeImportMap(importMapIn, baseUrl, importMap);
+        composedImportMap = resolveAndComposeImportMap(importMapIn, baseUrl, composedImportMap);
     };
     const registry = importShim._r = {};
     const sourceCache = importShim._s = {};
@@ -504,17 +458,20 @@ import { B as Buffer } from '../_chunks/polyfills-DtuN-KmU.js';
             if (sourcePhase) return dep.f;
             return loadAll(dep, seen);
         }));
-        if (!load.n) load.n = load.d.some((dep)=>dep.l.n);
     }
-    let importMap = {
+    let importMapSrc = false;
+    let multipleImportMaps = false;
+    let firstImportMap = null;
+    // To support polyfilling multiple import maps, we separately track the composed import map from the first import map
+    let composedImportMap = {
         imports: {},
         scopes: {},
         integrity: {}
     };
     let baselinePassthrough;
     const initPromise = featureDetectionPromise.then(()=>{
-        baselinePassthrough = esmsInitOptions.polyfillEnable !== true && supportsDynamicImport && supportsImportMeta && supportsImportMaps && (!jsonModulesEnabled || supportsJsonAssertions) && (!cssModulesEnabled || supportsCssAssertions) && (!wasmModulesEnabled || supportsWasmModules) && (!sourcePhaseEnabled || supportsSourcePhase) && !importMapSrcOrLazy;
-        if (sourcePhaseEnabled && typeof WebAssembly !== 'undefined' && !Object.getPrototypeOf(WebAssembly.Module).name) {
+        baselinePassthrough = esmsInitOptions.polyfillEnable !== true && supportsImportMaps && (!jsonModulesEnabled || supportsJsonType) && (!cssModulesEnabled || supportsCssType) && (!wasmModulesEnabled || supportsWasmModules) && (!sourcePhaseEnabled || supportsSourcePhase) && (!multipleImportMaps || supportsMultipleImportMaps) && !importMapSrc && !typescriptEnabled;
+        if (!shimMode && sourcePhaseEnabled && typeof WebAssembly !== 'undefined' && !Object.getPrototypeOf(WebAssembly.Module).name) {
             const s = Symbol();
             const brand = (m)=>Object.defineProperty(m, s, {
                     writable: false,
@@ -554,23 +511,7 @@ import { B as Buffer } from '../_chunks/polyfills-DtuN-KmU.js';
                 HTMLScriptElement.supports = (type)=>type === 'importmap' || supports(type);
             }
             if (shimMode || !baselinePassthrough) {
-                new MutationObserver((mutations)=>{
-                    for (const mutation of mutations){
-                        if (mutation.type !== 'childList') continue;
-                        for (const node of mutation.addedNodes){
-                            if (node.tagName === 'SCRIPT') {
-                                if (node.type === (shimMode ? 'module-shim' : 'module')) processScript(node, true);
-                                if (node.type === (shimMode ? 'importmap-shim' : 'importmap')) processImportMap(node, true);
-                            } else if (node.tagName === 'LINK' && node.rel === (shimMode ? 'modulepreload-shim' : 'modulepreload')) {
-                                processPreload(node);
-                            }
-                        }
-                    }
-                }).observe(document, {
-                    childList: true,
-                    subtree: true
-                });
-                processScriptsAndPreloads();
+                attachMutationObserver();
                 if (document.readyState === 'complete') {
                     readyStateCompleteCheck();
                 } else {
@@ -585,14 +526,37 @@ import { B as Buffer } from '../_chunks/polyfills-DtuN-KmU.js';
                     document.addEventListener('readystatechange', readyListener);
                 }
             }
+            processScriptsAndPreloads();
         }
         return init;
     });
+    function attachMutationObserver() {
+        const observer = new MutationObserver((mutations)=>{
+            for (const mutation of mutations){
+                if (mutation.type !== 'childList') continue;
+                for (const node of mutation.addedNodes){
+                    if (node.tagName === 'SCRIPT') {
+                        if (node.type === (shimMode ? 'module-shim' : 'module') && !node.ep) processScript(node, true);
+                        if (node.type === (shimMode ? 'importmap-shim' : 'importmap') && !node.ep) processImportMap(node, true);
+                    } else if (node.tagName === 'LINK' && node.rel === (shimMode ? 'modulepreload-shim' : 'modulepreload') && !node.ep) {
+                        processPreload(node);
+                    }
+                }
+            }
+        });
+        observer.observe(document, {
+            childList: true
+        });
+        observer.observe(document.head, {
+            childList: true
+        });
+        processScriptsAndPreloads();
+    }
     let importMapPromise = initPromise;
     let firstPolyfillLoad = true;
-    let acceptingImportMaps = true;
+    let legacyAcceptingImportMaps = true;
     async function topLevelLoad(url, fetchOpts, source, nativelyLoaded1, lastStaticLoadPromise) {
-        if (!shimMode) acceptingImportMaps = false;
+        legacyAcceptingImportMaps = false;
         await initPromise;
         await importMapPromise;
         if (importHook) await importHook(url, typeof fetchOpts !== 'string' ? fetchOpts : {}, '');
@@ -601,33 +565,29 @@ import { B as Buffer } from '../_chunks/polyfills-DtuN-KmU.js';
             // for polyfill case, only dynamic import needs a return value here, and dynamic import will never pass nativelyLoaded
             if (nativelyLoaded1) return null;
             await lastStaticLoadPromise;
-            return dynamicImport(source ? createBlob(source) : url, {
-                errUrl: url || source
-            });
+            return dynamicImport(source ? createBlob(source) : url);
         }
         const load = getOrCreateLoad(url, fetchOpts, null, source);
         linkLoad(load, fetchOpts);
         const seen = {};
         await loadAll(load, seen);
-        lastLoad = undefined;
         resolveDeps(load, seen);
         await lastStaticLoadPromise;
-        if (source && !shimMode && !load.n) {
-            if (nativelyLoaded1) return;
-            if (revokeBlobURLs) revokeObjectURLs(Object.keys(seen));
-            return await dynamicImport(createBlob(source), {
-                errUrl: source
-            });
+        if (!shimMode && !load.n) {
+            if (nativelyLoaded1) {
+                return;
+            }
+            if (source) {
+                return await dynamicImport(createBlob(source));
+            }
         }
         if (firstPolyfillLoad && !shimMode && load.n && nativelyLoaded1) {
             onpolyfill();
             firstPolyfillLoad = false;
         }
-        const module = await dynamicImport(!shimMode && !load.n && nativelyLoaded1 ? load.u : load.b, {
-            errUrl: load.u
-        });
+        const module = await (!shimMode && !load.n && !load.N ? import(load.u) : dynamicImport(load.b, load.u));
         // if the top-level load is a shell, run its update function
-        if (load.s) (await dynamicImport(load.s)).u$_(module);
+        if (load.s) (await dynamicImport(load.s, load.u)).u$_(module);
         if (revokeBlobURLs) revokeObjectURLs(Object.keys(seen));
         // when tla is supported, this should return the tla promise as an actual handle
         // so readystate can still correspond to the sync subgraph exec completions
@@ -643,7 +603,7 @@ import { B as Buffer } from '../_chunks/polyfills-DtuN-KmU.js';
             if (batchStartIndex > keysLength) return;
             for (const key of registryKeys.slice(batchStartIndex, batchStartIndex + 100)){
                 const load = registry[key];
-                if (load) URL.revokeObjectURL(load.b);
+                if (load && load.b) URL.revokeObjectURL(load.b);
             }
             batch++;
             schedule(cleanup);
@@ -652,18 +612,25 @@ import { B as Buffer } from '../_chunks/polyfills-DtuN-KmU.js';
     function urlJsString(url) {
         return `'${url.replace(/'/g, "\\'")}'`;
     }
-    let lastLoad;
     function resolveDeps(load, seen) {
         if (load.b || !seen[load.u]) return;
         seen[load.u] = 0;
         for (const { l: dep, s: sourcePhase } of load.d){
             if (!sourcePhase) resolveDeps(dep, seen);
         }
+        if (!load.n) load.n = load.d.some((dep)=>dep.l.n);
+        if (!load.N) load.N = load.d.some((dep)=>dep.l.N);
+        // use native loader whenever possible (n = needs shim) via executable subgraph passthrough
+        // so long as the module doesn't use dynamic import or unsupported URL mappings (N = should shim)
+        if (!shimMode && !load.n && !load.N) {
+            load.b = load.u;
+            load.S = undefined;
+            return;
+        }
         const [imports, exports] = load.a;
         // "execution"
         const source = load.S;
-        // edge doesnt execute sibling in order, so we fix this up by ensuring all previous executions are explicit dependencies
-        let resolvedSource = edge && lastLoad ? `import '${lastLoad}';` : '';
+        let resolvedSource = '';
         // once all deps have loaded we can inline the dependency resolution blobs
         // and define this blob
         let lastIndex = 0, depIndex = 0, dynamicImportEndStack = [];
@@ -676,7 +643,7 @@ import { B as Buffer } from '../_chunks/polyfills-DtuN-KmU.js';
             resolvedSource += source.slice(lastIndex, originalIndex);
             lastIndex = originalIndex;
         }
-        for (const { s: start, ss: statementStart, se: statementEnd, d: dynamicImportIndex, t } of imports){
+        for (const { s: start, e: end, ss: statementStart, se: statementEnd, d: dynamicImportIndex, t, a } of imports){
             // source phase
             if (t === 4) {
                 let { l: depLoad } = load.d[depIndex++];
@@ -684,8 +651,8 @@ import { B as Buffer } from '../_chunks/polyfills-DtuN-KmU.js';
                 resolvedSource += 'import ';
                 lastIndex = statementStart + 14;
                 pushStringTo(start - 1);
-                resolvedSource += `/*${source.slice(start - 1, statementEnd)}*/'${createBlob(`export default importShim._s[${urlJsString(depLoad.r)}]`)}'`;
-                lastIndex = statementEnd;
+                resolvedSource += `/*${source.slice(start - 1, end + 1)}*/'${createBlob(`export default importShim._s[${urlJsString(depLoad.r)}]`)}'`;
+                lastIndex = end + 1;
             } else if (dynamicImportIndex === -1) {
                 let { l: depLoad } = load.d[depIndex++], blobUrl = depLoad.b, cycleShell = !blobUrl;
                 if (cycleShell) {
@@ -701,14 +668,16 @@ import { B as Buffer } from '../_chunks/polyfills-DtuN-KmU.js';
                         }).join(',')}}\n//# sourceURL=${depLoad.r}?cycle`);
                     }
                 }
+                // strip import assertions unless we support them
+                const stripAssertion = !supportsCssType && !supportsJsonType || !(a > 0);
                 pushStringTo(start - 1);
-                resolvedSource += `/*${source.slice(start - 1, statementEnd)}*/'${blobUrl}'`;
+                resolvedSource += `/*${source.slice(start - 1, end + 1)}*/'${blobUrl}'`;
                 // circular shell execution
                 if (!cycleShell && depLoad.s) {
                     resolvedSource += `;import*as m$_${depIndex} from'${depLoad.b}';import{u$_ as u$_${depIndex}}from'${depLoad.s}';u$_${depIndex}(m$_${depIndex})`;
                     depLoad.s = undefined;
                 }
-                lastIndex = statementEnd;
+                lastIndex = stripAssertion ? statementEnd : end + 1;
             } else if (dynamicImportIndex === -2) {
                 load.m = {
                     url: load.r,
@@ -734,8 +703,12 @@ import { B as Buffer } from '../_chunks/polyfills-DtuN-KmU.js';
             const urlStart = commentStart + commentPrefix.length;
             const commentEnd = source.indexOf('\n', urlStart);
             const urlEnd = commentEnd !== -1 ? commentEnd : source.length;
+            let sourceUrl = source.slice(urlStart, urlEnd);
+            try {
+                sourceUrl = new URL(sourceUrl, load.r).href;
+            } catch  {}
             pushStringTo(urlStart);
-            resolvedSource += new URL(source.slice(urlStart, urlEnd), load.r).href;
+            resolvedSource += sourceUrl;
             lastIndex = urlEnd;
         }
         let sourceURLCommentStart = source.lastIndexOf(sourceURLCommentPrefix);
@@ -755,15 +728,16 @@ import { B as Buffer } from '../_chunks/polyfills-DtuN-KmU.js';
         }
         pushStringTo(source.length);
         if (sourceURLCommentStart === -1) resolvedSource += sourceURLCommentPrefix + load.r;
-        load.b = lastLoad = createBlob(resolvedSource);
+        load.b = createBlob(resolvedSource);
         load.S = undefined;
     }
     const sourceURLCommentPrefix = '\n//# sourceURL=';
     const sourceMapURLCommentPrefix = '\n//# sourceMappingURL=';
     const jsContentType = /^(text|application)\/(x-)?javascript(;|$)/;
-    const wasmContentType = /^(application)\/wasm(;|$)/;
+    const wasmContentType = /^application\/wasm(;|$)/;
     const jsonContentType = /^(text|application)\/json(;|$)/;
     const cssContentType = /^(text|application)\/css(;|$)/;
+    const tsContentType = /^application\/typescript(;|$)|/;
     const cssUrlRegEx = /url\(\s*(?:(["'])((?:\\.|[^\n\\"'])+)\1|((?:\\.|[^\s,"'()\\])+))\s*\)/g;
     // restrict in-flight fetches to a pool of 100
     let p = [];
@@ -794,8 +768,13 @@ import { B as Buffer } from '../_chunks/polyfills-DtuN-KmU.js';
         }
         return res;
     }
+    let esmsTsTransform;
+    async function initTs() {
+        const m = await import(tsTransform);
+        if (!esmsTsTransform) esmsTsTransform = m.transform;
+    }
     async function fetchModule(url, fetchOpts, parent) {
-        const mapIntegrity = importMap.integrity[url];
+        const mapIntegrity = composedImportMap.integrity[url];
         const res = await doFetch(url, mapIntegrity && !fetchOpts.integrity ? Object.assign({}, fetchOpts, {
             integrity: mapIntegrity
         }) : fetchOpts, parent);
@@ -804,7 +783,6 @@ import { B as Buffer } from '../_chunks/polyfills-DtuN-KmU.js';
         if (jsContentType.test(contentType)) return {
             r,
             s: await res.text(),
-            sp: null,
             t: 'js'
         };
         else if (wasmContentType.test(contentType)) {
@@ -829,20 +807,31 @@ import { B as Buffer } from '../_chunks/polyfills-DtuN-KmU.js';
         } else if (jsonContentType.test(contentType)) return {
             r,
             s: `export default ${await res.text()}`,
-            sp: null,
             t: 'json'
         };
         else if (cssContentType.test(contentType)) {
             return {
                 r,
                 s: `var s=new CSSStyleSheet();s.replaceSync(${JSON.stringify((await res.text()).replace(cssUrlRegEx, (_match, quotes, relUrl1, relUrl2)=>{
-                    if (quotes === void 0) quotes = '';
+                    if (quotes === undefined) quotes = '';
                     return `url(${quotes}${resolveUrl(relUrl1 || relUrl2, url)}${quotes})`;
                 }))});export default s;`,
-                ss: null,
                 t: 'css'
             };
+        } else if ((shimMode || typescriptEnabled) && (tsContentType.test(contentType) || url.endsWith('.ts') || url.endsWith('.mts'))) {
+            const source = await res.text();
+            if (!esmsTsTransform) await initTs();
+            const transformed = esmsTsTransform(source, url);
+            return {
+                r,
+                s: transformed === undefined ? source : transformed,
+                t: transformed !== undefined ? 'ts' : 'js'
+            };
         } else throw Error(`Unsupported Content-Type "${contentType}" loading ${url}${fromParent(parent)}. Modules must be served with a valid MIME type like application/javascript.`);
+    }
+    function isUnsupportedType(type) {
+        if (type === 'css' && !cssModulesEnabled || type === 'json' && !jsonModulesEnabled || type === 'wasm' && !wasmModulesEnabled || type === 'ts' && !typescriptEnabled) throw featErr(`${type}-modules`);
+        return type === 'css' && !supportsCssType || type === 'json' && !supportsJsonType || type === 'wasm' && !supportsWasmModules || type === 'ts';
     }
     function getOrCreateLoad(url, fetchOpts, parent, source) {
         if (source && registry[url]) {
@@ -873,6 +862,8 @@ import { B as Buffer } from '../_chunks/polyfills-DtuN-KmU.js';
             s: undefined,
             // needsShim
             n: false,
+            // shouldShim
+            N: false,
             // type
             t: null,
             // meta
@@ -881,11 +872,9 @@ import { B as Buffer } from '../_chunks/polyfills-DtuN-KmU.js';
         load.f = (async ()=>{
             if (!load.S) {
                 // preload fetch options override fetch options (race)
-                let t;
-                ({ r: load.r, s: load.S, t } = await (fetchCache[url] || fetchModule(url, fetchOpts, parent)));
-                if (t && !shimMode) {
-                    if (t === 'css' && !cssModulesEnabled || t === 'json' && !jsonModulesEnabled || t === 'wasm' && !wasmModulesEnabled) throw featErr(`${t}-modules`);
-                    if (t === 'css' && !supportsCssAssertions || t === 'json' && !supportsJsonAssertions || t === 'wasm' && !supportsWasmModules) load.n = true;
+                ({ r: load.r, s: load.S, t: load.t } = await (fetchCache[url] || fetchModule(url, fetchOpts, parent)));
+                if (!load.n && load.t !== 'js' && !shimMode && isUnsupportedType(load.t)) {
+                    load.n = true;
                 }
             }
             try {
@@ -907,18 +896,25 @@ import { B as Buffer } from '../_chunks/polyfills-DtuN-KmU.js';
         if (load.L) return;
         load.L = load.f.then(async ()=>{
             let childFetchOpts = fetchOpts;
-            load.d = (await Promise.all(load.a[0].map(async (param)=>{
-                let { n, d, t } = param;
+            load.d = load.a[0].map((param)=>{
+                let { n, d, t, a } = param;
                 const sourcePhase = t >= 4;
-                if (sourcePhase && !sourcePhaseEnabled) throw featErr('source-phase');
-                if (d >= 0 && !supportsDynamicImport || d === -2 && !supportsImportMeta || sourcePhase && !supportsSourcePhase) load.n = true;
+                if (sourcePhase) {
+                    if (!shimMode && !sourcePhaseEnabled) throw featErr('source-phase');
+                    if (!supportsSourcePhase) load.n = true;
+                }
+                if (a > 0) {
+                    if (!shimMode && !cssModulesEnabled && !jsonModulesEnabled) throw featErr('css-modules / json-modules');
+                    if (!supportsCssType && !supportsJsonType) load.n = true;
+                }
                 if (d !== -1 || !n) return;
-                const { r, b } = await resolve(n, load.r || load.u);
-                if (b && (!supportsImportMaps || importMapSrcOrLazy)) load.n = true;
+                const resolved = resolve(n, load.r || load.u);
+                if (resolved.n) load.n = true;
+                if (d >= 0 || resolved.N) load.N = true;
                 if (d !== -1) return;
-                if (skip && skip(r) && !sourcePhase) return {
+                if (skip && skip(resolved.r) && !sourcePhase) return {
                     l: {
-                        b: r
+                        b: resolved.r
                     },
                     s: false
                 };
@@ -926,20 +922,27 @@ import { B as Buffer } from '../_chunks/polyfills-DtuN-KmU.js';
                     integrity: undefined
                 });
                 const child = {
-                    l: getOrCreateLoad(r, childFetchOpts, load.r, null),
+                    l: getOrCreateLoad(resolved.r, childFetchOpts, load.r, null),
                     s: sourcePhase
                 };
                 if (!child.s) linkLoad(child.l, fetchOpts);
                 // load, sourcePhase
                 return child;
-            }))).filter((l)=>l);
+            }).filter((l)=>l);
         });
     }
-    function processScriptsAndPreloads(mapsOnly) {
-        if (mapsOnly === void 0) mapsOnly = false;
-        if (!mapsOnly) for (const link of document.querySelectorAll(shimMode ? 'link[rel=modulepreload-shim]' : 'link[rel=modulepreload]'))processPreload(link);
-        for (const script of document.querySelectorAll(shimMode ? 'script[type=importmap-shim]' : 'script[type=importmap]'))processImportMap(script);
-        if (!mapsOnly) for (const script of document.querySelectorAll(shimMode ? 'script[type=module-shim]' : 'script[type=module]'))processScript(script);
+    function processScriptsAndPreloads() {
+        for (const link of document.querySelectorAll(shimMode ? 'link[rel=modulepreload-shim]' : 'link[rel=modulepreload]')){
+            if (!link.ep) processPreload(link);
+        }
+        for (const script of document.querySelectorAll('script[type]')){
+            if (script.type === 'importmap' + (shimMode ? '-shim' : '')) {
+                if (!script.ep) processImportMap(script);
+            } else if (script.type === 'module' + (shimMode ? '-shim' : '')) {
+                legacyAcceptingImportMaps = false;
+                if (!script.ep) processScript(script);
+            }
+        }
     }
     function getFetchOpts(script) {
         const fetchOpts = {};
@@ -960,7 +963,7 @@ import { B as Buffer } from '../_chunks/polyfills-DtuN-KmU.js';
     }
     let loadCnt = 1;
     function loadCheck() {
-        if (--loadCnt === 0 && globalLoadEventRetrigger && !noLoadEventRetriggers && (shimMode || !baselinePassthrough)) {
+        if (--loadCnt === 0 && !noLoadEventRetriggers && (shimMode || !baselinePassthrough)) {
             window.dispatchEvent(new Event('load'));
         }
     }
@@ -984,27 +987,43 @@ import { B as Buffer } from '../_chunks/polyfills-DtuN-KmU.js';
     const hasNext = (script)=>script.nextSibling || script.parentNode && hasNext(script.parentNode);
     const epCheck = (script, ready)=>script.ep || !ready && (!script.src && !script.innerHTML || !hasNext(script)) || script.getAttribute('noshim') !== null || !(script.ep = true);
     function processImportMap(script, ready) {
-        if (ready === void 0) ready = readyStateCompleteCnt > 0;
+        if (ready === undefined) ready = readyStateCompleteCnt > 0;
         if (epCheck(script, ready)) return;
-        // we dont currently support multiple, external or dynamic imports maps in polyfill mode to match native
+        // we dont currently support external import maps in polyfill mode to match native
         if (script.src) {
             if (!shimMode) return;
-            setImportMapSrcOrLazy();
+            importMapSrc = true;
         }
-        if (acceptingImportMaps) {
-            importMapPromise = importMapPromise.then(async ()=>{
-                importMap = resolveAndComposeImportMap(script.src ? await (await doFetch(script.src, getFetchOpts(script))).json() : JSON.parse(script.innerHTML), script.src || baseUrl, importMap);
-            }).catch((e)=>{
-                console.log(e);
-                if (e instanceof SyntaxError) e = new Error(`Unable to parse import map ${e.message} in: ${script.src || script.innerHTML}`);
-                throwError(e);
-            });
-            if (!shimMode) acceptingImportMaps = false;
+        importMapPromise = importMapPromise.then(async ()=>{
+            composedImportMap = resolveAndComposeImportMap(script.src ? await (await doFetch(script.src, getFetchOpts(script))).json() : JSON.parse(script.innerHTML), script.src || baseUrl, composedImportMap);
+        }).catch((e)=>{
+            if (e instanceof SyntaxError) e = new Error(`Unable to parse import map ${e.message} in: ${script.src || script.innerHTML}`);
+            throwError(e);
+        });
+        if (!firstImportMap && legacyAcceptingImportMaps) importMapPromise.then(()=>firstImportMap = composedImportMap);
+        if (!legacyAcceptingImportMaps && !multipleImportMaps) {
+            multipleImportMaps = true;
+            if (!shimMode && baselinePassthrough && !supportsMultipleImportMaps) {
+                baselinePassthrough = false;
+                if (hasDocument) attachMutationObserver();
+            }
         }
+        legacyAcceptingImportMaps = false;
     }
     function processScript(script, ready) {
-        if (ready === void 0) ready = readyStateCompleteCnt > 0;
+        if (ready === undefined) ready = readyStateCompleteCnt > 0;
         if (epCheck(script, ready)) return;
+        if (script.lang === 'ts' && !script.src) {
+            const source = script.innerHTML;
+            return initTs().then(()=>{
+                const transformed = esmsTsTransform(source, baseUrl);
+                if (transformed !== undefined) {
+                    onpolyfill();
+                    firstPolyfillLoad = false;
+                }
+                return topLevelLoad(baseUrl, getFetchOpts(script), transformed === undefined ? source : transformed, transformed === undefined, undefined);
+            }).catch(throwError);
+        }
         // does this load block readystate complete
         const isBlockingReadyScript = script.getAttribute('async') === null && readyStateCompleteCnt > 0;
         // does this load block DOMContentLoaded
@@ -1021,7 +1040,6 @@ import { B as Buffer } from '../_chunks/polyfills-DtuN-KmU.js';
     }
     const fetchCache = {};
     function processPreload(link) {
-        if (link.ep) return;
         link.ep = true;
         if (fetchCache[link.href]) return;
         fetchCache[link.href] = fetchModule(link.href, getFetchOpts(link));

@@ -114,7 +114,7 @@ var fixed_2_30 = (value1)=>{
     ];
 };
 var ascii = (text, nullTerminated)=>{
-    if (nullTerminated === void 0) nullTerminated = false;
+    if (nullTerminated === undefined) nullTerminated = false;
     let bytes2 = Array(text.length).fill(null).map((_, i)=>text.charCodeAt(i));
     if (nullTerminated) bytes2.push(0);
     return bytes2;
@@ -123,7 +123,7 @@ var last = (arr)=>{
     return arr && arr[arr.length - 1];
 };
 var lastPresentedSample = (samples)=>{
-    let result = void 0;
+    let result = undefined;
     for (let sample of samples){
         if (!result || sample.presentationTimestamp > result.presentationTimestamp) {
             result = sample;
@@ -132,7 +132,7 @@ var lastPresentedSample = (samples)=>{
     return result;
 };
 var intoTimescale = (timeInSeconds, timescale, round)=>{
-    if (round === void 0) round = true;
+    if (round === undefined) round = true;
     let value1 = timeInSeconds * timescale;
     return round ? Math.round(value1) : value1;
 };
@@ -224,7 +224,7 @@ var free = (size)=>({
         size
     });
 var moov = (tracks, creationTime, fragmented)=>{
-    if (fragmented === void 0) fragmented = false;
+    if (fragmented === undefined) fragmented = false;
     return box("moov", null, [
         mvhd(creationTime, tracks),
         ...tracks.map((x)=>trak(x, creationTime)),
@@ -415,7 +415,42 @@ var videoSampleDescription = (compressionType, track)=>box(compressionType, [
         // Depth
         i16(65535)
     ], [
-        VIDEO_CODEC_TO_CONFIGURATION_BOX[track.info.codec](track)
+        VIDEO_CODEC_TO_CONFIGURATION_BOX[track.info.codec](track),
+        track.info.decoderConfig.colorSpace ? colr(track) : null
+    ]);
+var COLOR_PRIMARIES_MAP = {
+    "bt709": 1,
+    // ITU-R BT.709
+    "bt470bg": 5,
+    // ITU-R BT.470BG
+    "smpte170m": 6
+};
+var TRANSFER_CHARACTERISTICS_MAP = {
+    "bt709": 1,
+    // ITU-R BT.709
+    "smpte170m": 6,
+    // SMPTE 170M
+    "iec61966-2-1": 13
+};
+var MATRIX_COEFFICIENTS_MAP = {
+    "rgb": 0,
+    // Identity
+    "bt709": 1,
+    // ITU-R BT.709
+    "bt470bg": 5,
+    // ITU-R BT.470BG
+    "smpte170m": 6
+};
+var colr = (track)=>box("colr", [
+        ascii("nclx"),
+        // Colour type
+        u16(COLOR_PRIMARIES_MAP[track.info.decoderConfig.colorSpace.primaries]),
+        // Colour primaries
+        u16(TRANSFER_CHARACTERISTICS_MAP[track.info.decoderConfig.colorSpace.transfer]),
+        // Transfer characteristics
+        u16(MATRIX_COEFFICIENTS_MAP[track.info.decoderConfig.colorSpace.matrix]),
+        // Matrix coefficients
+        u8((track.info.decoderConfig.colorSpace.fullRange ? 1 : 0) << 7)
     ]);
 var avcC = (track)=>track.info.decoderConfig && box("avcC", [
         // For AVC, description is an AVCDecoderConfigurationRecord, so nothing else to do here
@@ -530,19 +565,31 @@ var esds = (track)=>{
         u8(2)
     ]);
 };
-var dOps = (track)=>box("dOps", [
+var dOps = (track)=>{
+    let preskip = 3840;
+    let gain = 0;
+    const description = track.info.decoderConfig?.description;
+    if (description) {
+        if (description.byteLength < 18) {
+            throw new TypeError("Invalid decoder description provided for Opus; must be at least 18 bytes long.");
+        }
+        const view2 = ArrayBuffer.isView(description) ? new DataView(description.buffer, description.byteOffset, description.byteLength) : new DataView(description);
+        preskip = view2.getUint16(10, true);
+        gain = view2.getInt16(14, true);
+    }
+    return box("dOps", [
         u8(0),
         // Version
         u8(track.info.numberOfChannels),
         // OutputChannelCount
-        u16(3840),
-        // PreSkip, should be at least 80 milliseconds worth of playback, measured in 48000 Hz samples
+        u16(preskip),
         u32(track.info.sampleRate),
         // InputSampleRate
-        fixed_8_8(0),
+        fixed_8_8(gain),
         // OutputGain
         u8(0)
     ]);
+};
 var stts = (track)=>{
     return fullBox("stts", 0, 0, [
         u32(track.timeToSampleTable.length),
@@ -790,21 +837,53 @@ var AUDIO_CODEC_TO_CONFIGURATION_BOX = {
     "aac": esds,
     "opus": dOps
 };
-// src/target.ts
-var ArrayBufferTarget = class {
+var Target = class {
+};
+var ArrayBufferTarget = class extends Target {
     constructor(){
+        super(...arguments);
         this.buffer = null;
     }
 };
-var StreamTarget = class {
+var StreamTarget = class extends Target {
     constructor(options){
+        super();
         this.options = options;
+        if (typeof options !== "object") {
+            throw new TypeError("StreamTarget requires an options object to be passed to its constructor.");
+        }
+        if (options.onData) {
+            if (typeof options.onData !== "function") {
+                throw new TypeError("options.onData, when provided, must be a function.");
+            }
+            if (options.onData.length < 2) {
+                throw new TypeError("options.onData, when provided, must be a function that takes in at least two arguments (data and position). Ignoring the position argument, which specifies the byte offset at which the data is to be written, can lead to broken outputs.");
+            }
+        }
+        if (options.chunked !== undefined && typeof options.chunked !== "boolean") {
+            throw new TypeError("options.chunked, when provided, must be a boolean.");
+        }
+        if (options.chunkSize !== undefined && (!Number.isInteger(options.chunkSize) || options.chunkSize <= 0)) {
+            throw new TypeError("options.chunkSize, when provided, must be a positive integer.");
+        }
     }
 };
-var FileSystemWritableFileStreamTarget = class {
+var FileSystemWritableFileStreamTarget = class extends Target {
     constructor(stream, options){
+        super();
         this.stream = stream;
         this.options = options;
+        if (!(stream instanceof FileSystemWritableFileStream)) {
+            throw new TypeError("FileSystemWritableFileStreamTarget requires a FileSystemWritableFileStream instance.");
+        }
+        if (options !== undefined && typeof options !== "object") {
+            throw new TypeError("FileSystemWritableFileStreamTarget's options, when provided, must be an object.");
+        }
+        if (options) {
+            if (options.chunkSize !== undefined && (!Number.isInteger(options.chunkSize) || options.chunkSize <= 0)) {
+                throw new TypeError("options.chunkSize, when provided, must be a positive integer");
+            }
+        }
     }
 };
 // src/writer.ts
@@ -894,7 +973,7 @@ var ArrayBufferTargetWriter = class extends Writer {
     constructor(target){
         super();
         __privateAdd(this, _ensureSize);
-        __privateAdd(this, _target, void 0);
+        __privateAdd(this, _target, undefined);
         __privateAdd(this, _buffer, new ArrayBuffer(2 ** 16));
         __privateAdd(this, _bytes, new Uint8Array(__privateGet(this, _buffer)));
         __privateAdd(this, _maxPos, 0);
@@ -930,7 +1009,7 @@ var _target2, _sections;
 var StreamTargetWriter = class extends Writer {
     constructor(target){
         super();
-        __privateAdd(this, _target2, void 0);
+        __privateAdd(this, _target2, undefined);
         __privateAdd(this, _sections, []);
         __privateSet(this, _target2, target);
     }
@@ -964,14 +1043,13 @@ var StreamTargetWriter = class extends Writer {
             }
         }
         for (let chunk of chunks){
-            var __privateGet_options_onData, __privateGet_options;
             chunk.data = new Uint8Array(chunk.size);
             for (let section of __privateGet(this, _sections)){
                 if (chunk.start <= section.start && section.start < chunk.start + chunk.size) {
                     chunk.data.set(section.data, section.start - chunk.start);
                 }
             }
-            (__privateGet_options_onData = (__privateGet_options = __privateGet(this, _target2).options).onData) == null ? void 0 : __privateGet_options_onData.call(__privateGet_options, chunk.data, chunk.start);
+            __privateGet(this, _target2).options.onData?.(chunk.data, chunk.start);
         }
         __privateGet(this, _sections).length = 0;
     }
@@ -984,20 +1062,19 @@ var MAX_CHUNKS_AT_ONCE = 2;
 var _target3, _chunkSize, _chunks, _writeDataIntoChunks, writeDataIntoChunks_fn, _insertSectionIntoChunk, insertSectionIntoChunk_fn, _createChunk, createChunk_fn, _flushChunks, flushChunks_fn;
 var ChunkedStreamTargetWriter = class extends Writer {
     constructor(target){
-        var _target_options;
         super();
         __privateAdd(this, _writeDataIntoChunks);
         __privateAdd(this, _insertSectionIntoChunk);
         __privateAdd(this, _createChunk);
         __privateAdd(this, _flushChunks);
-        __privateAdd(this, _target3, void 0);
-        __privateAdd(this, _chunkSize, void 0);
+        __privateAdd(this, _target3, undefined);
+        __privateAdd(this, _chunkSize, undefined);
         /**
      * The data is divided up into fixed-size chunks, whose contents are first filled in RAM and then flushed out.
      * A chunk is flushed if all of its contents have been written.
      */ __privateAdd(this, _chunks, []);
         __privateSet(this, _target3, target);
-        __privateSet(this, _chunkSize, ((_target_options = target.options) == null ? void 0 : _target_options.chunkSize) ?? DEFAULT_CHUNK_SIZE);
+        __privateSet(this, _chunkSize, target.options?.chunkSize ?? DEFAULT_CHUNK_SIZE);
         if (!Number.isInteger(__privateGet(this, _chunkSize)) || __privateGet(this, _chunkSize) < 2 ** 10) {
             throw new Error("Invalid StreamTarget options: chunkSize must be an integer not smaller than 1024.");
         }
@@ -1076,39 +1153,37 @@ createChunk_fn = function(includesPosition) {
 };
 _flushChunks = new WeakSet();
 flushChunks_fn = function(force) {
-    if (force === void 0) force = false;
+    if (force === undefined) force = false;
     for(let i = 0; i < __privateGet(this, _chunks).length; i++){
         let chunk = __privateGet(this, _chunks)[i];
         if (!chunk.shouldFlush && !force) continue;
         for (let section of chunk.written){
-            var __privateGet_options_onData, __privateGet_options;
-            (__privateGet_options_onData = (__privateGet_options = __privateGet(this, _target3).options).onData) == null ? void 0 : __privateGet_options_onData.call(__privateGet_options, chunk.data.subarray(section.start, section.end), chunk.start + section.start);
+            __privateGet(this, _target3).options.onData?.(chunk.data.subarray(section.start, section.end), chunk.start + section.start);
         }
         __privateGet(this, _chunks).splice(i--, 1);
     }
 };
 var FileSystemWritableFileStreamTargetWriter = class extends ChunkedStreamTargetWriter {
     constructor(target){
-        var _target_options;
         super(new StreamTarget({
             onData: (data, position)=>target.stream.write({
                     type: "write",
                     data,
                     position
                 }),
-            chunkSize: (_target_options = target.options) == null ? void 0 : _target_options.chunkSize
+            chunkSize: target.options?.chunkSize
         }));
     }
 };
 // src/muxer.ts
 var GLOBAL_TIMESCALE = 1e3;
-var SUPPORTED_VIDEO_CODECS2 = [
+var SUPPORTED_VIDEO_CODECS = [
     "avc",
     "hevc",
     "vp9",
     "av1"
 ];
-var SUPPORTED_AUDIO_CODECS2 = [
+var SUPPORTED_AUDIO_CODECS = [
     "aac",
     "opus"
 ];
@@ -1134,10 +1209,10 @@ var Muxer = class {
         __privateAdd(this, _finalizeFragment);
         __privateAdd(this, _maybeFlushStreamingTargetWriter);
         __privateAdd(this, _ensureNotFinalized);
-        __privateAdd(this, _options, void 0);
-        __privateAdd(this, _writer, void 0);
-        __privateAdd(this, _ftypSize, void 0);
-        __privateAdd(this, _mdat, void 0);
+        __privateAdd(this, _options, undefined);
+        __privateAdd(this, _writer, undefined);
+        __privateAdd(this, _ftypSize, undefined);
+        __privateAdd(this, _mdat, undefined);
         __privateAdd(this, _videoTrack, null);
         __privateAdd(this, _audioTrack, null);
         __privateAdd(this, _creationTime, Math.floor(Date.now() / 1e3) + TIMESTAMP_OFFSET);
@@ -1159,8 +1234,7 @@ var Muxer = class {
         if (options.target instanceof ArrayBufferTarget) {
             __privateSet(this, _writer, new ArrayBufferTargetWriter(options.target));
         } else if (options.target instanceof StreamTarget) {
-            var _options_target_options;
-            __privateSet(this, _writer, ((_options_target_options = options.target.options) == null ? void 0 : _options_target_options.chunked) ? new ChunkedStreamTargetWriter(options.target) : new StreamTargetWriter(options.target));
+            __privateSet(this, _writer, options.target.options?.chunked ? new ChunkedStreamTargetWriter(options.target) : new StreamTargetWriter(options.target));
         } else if (options.target instanceof FileSystemWritableFileStreamTarget) {
             __privateSet(this, _writer, new FileSystemWritableFileStreamTargetWriter(options.target));
         } else {
@@ -1170,11 +1244,41 @@ var Muxer = class {
         __privateMethod(this, _writeHeader, writeHeader_fn).call(this);
     }
     addVideoChunk(sample, meta, timestamp, compositionTimeOffset) {
+        if (!(sample instanceof EncodedVideoChunk)) {
+            throw new TypeError("addVideoChunk's first argument (sample) must be of type EncodedVideoChunk.");
+        }
+        if (meta && typeof meta !== "object") {
+            throw new TypeError("addVideoChunk's second argument (meta), when provided, must be an object.");
+        }
+        if (timestamp !== undefined && (!Number.isFinite(timestamp) || timestamp < 0)) {
+            throw new TypeError("addVideoChunk's third argument (timestamp), when provided, must be a non-negative real number.");
+        }
+        if (compositionTimeOffset !== undefined && !Number.isFinite(compositionTimeOffset)) {
+            throw new TypeError("addVideoChunk's fourth argument (compositionTimeOffset), when provided, must be a real number.");
+        }
         let data = new Uint8Array(sample.byteLength);
         sample.copyTo(data);
         this.addVideoChunkRaw(data, sample.type, timestamp ?? sample.timestamp, sample.duration, meta, compositionTimeOffset);
     }
     addVideoChunkRaw(data, type, timestamp, duration, meta, compositionTimeOffset) {
+        if (!(data instanceof Uint8Array)) {
+            throw new TypeError("addVideoChunkRaw's first argument (data) must be an instance of Uint8Array.");
+        }
+        if (type !== "key" && type !== "delta") {
+            throw new TypeError("addVideoChunkRaw's second argument (type) must be either 'key' or 'delta'.");
+        }
+        if (!Number.isFinite(timestamp) || timestamp < 0) {
+            throw new TypeError("addVideoChunkRaw's third argument (timestamp) must be a non-negative real number.");
+        }
+        if (!Number.isFinite(duration) || duration < 0) {
+            throw new TypeError("addVideoChunkRaw's fourth argument (duration) must be a non-negative real number.");
+        }
+        if (meta && typeof meta !== "object") {
+            throw new TypeError("addVideoChunkRaw's fifth argument (meta), when provided, must be an object.");
+        }
+        if (compositionTimeOffset !== undefined && !Number.isFinite(compositionTimeOffset)) {
+            throw new TypeError("addVideoChunkRaw's sixth argument (compositionTimeOffset), when provided, must be a real number.");
+        }
         __privateMethod(this, _ensureNotFinalized, ensureNotFinalized_fn).call(this);
         if (!__privateGet(this, _options).video) throw new Error("No video track declared.");
         if (typeof __privateGet(this, _options).fastStart === "object" && __privateGet(this, _videoTrack).samples.length === __privateGet(this, _options).fastStart.expectedVideoChunks) {
@@ -1196,11 +1300,35 @@ var Muxer = class {
         }
     }
     addAudioChunk(sample, meta, timestamp) {
+        if (!(sample instanceof EncodedAudioChunk)) {
+            throw new TypeError("addAudioChunk's first argument (sample) must be of type EncodedAudioChunk.");
+        }
+        if (meta && typeof meta !== "object") {
+            throw new TypeError("addAudioChunk's second argument (meta), when provided, must be an object.");
+        }
+        if (timestamp !== undefined && (!Number.isFinite(timestamp) || timestamp < 0)) {
+            throw new TypeError("addAudioChunk's third argument (timestamp), when provided, must be a non-negative real number.");
+        }
         let data = new Uint8Array(sample.byteLength);
         sample.copyTo(data);
         this.addAudioChunkRaw(data, sample.type, timestamp ?? sample.timestamp, sample.duration, meta);
     }
     addAudioChunkRaw(data, type, timestamp, duration, meta) {
+        if (!(data instanceof Uint8Array)) {
+            throw new TypeError("addAudioChunkRaw's first argument (data) must be an instance of Uint8Array.");
+        }
+        if (type !== "key" && type !== "delta") {
+            throw new TypeError("addAudioChunkRaw's second argument (type) must be either 'key' or 'delta'.");
+        }
+        if (!Number.isFinite(timestamp) || timestamp < 0) {
+            throw new TypeError("addAudioChunkRaw's third argument (timestamp) must be a non-negative real number.");
+        }
+        if (!Number.isFinite(duration) || duration < 0) {
+            throw new TypeError("addAudioChunkRaw's fourth argument (duration) must be a non-negative real number.");
+        }
+        if (meta && typeof meta !== "object") {
+            throw new TypeError("addAudioChunkRaw's fifth argument (meta), when provided, must be an object.");
+        }
         __privateMethod(this, _ensureNotFinalized, ensureNotFinalized_fn).call(this);
         if (!__privateGet(this, _options).audio) throw new Error("No audio track declared.");
         if (typeof __privateGet(this, _options).fastStart === "object" && __privateGet(this, _audioTrack).samples.length === __privateGet(this, _options).fastStart.expectedAudioChunks) {
@@ -1306,9 +1434,21 @@ _audioSampleQueue = new WeakMap();
 _finalized = new WeakMap();
 _validateOptions = new WeakSet();
 validateOptions_fn = function(options) {
+    if (typeof options !== "object") {
+        throw new TypeError("The muxer requires an options object to be passed to its constructor.");
+    }
+    if (!(options.target instanceof Target)) {
+        throw new TypeError("The target must be provided and an instance of Target.");
+    }
     if (options.video) {
-        if (!SUPPORTED_VIDEO_CODECS2.includes(options.video.codec)) {
-            throw new Error(`Unsupported video codec: ${options.video.codec}`);
+        if (!SUPPORTED_VIDEO_CODECS.includes(options.video.codec)) {
+            throw new TypeError(`Unsupported video codec: ${options.video.codec}`);
+        }
+        if (!Number.isInteger(options.video.width) || options.video.width <= 0) {
+            throw new TypeError(`Invalid video width: ${options.video.width}. Must be a positive integer.`);
+        }
+        if (!Number.isInteger(options.video.height) || options.video.height <= 0) {
+            throw new TypeError(`Invalid video height: ${options.video.height}. Must be a positive integer.`);
         }
         const videoRotation = options.video.rotation;
         if (typeof videoRotation === "number" && ![
@@ -1317,37 +1457,58 @@ validateOptions_fn = function(options) {
             180,
             270
         ].includes(videoRotation)) {
-            throw new Error(`Invalid video rotation: ${videoRotation}. Has to be 0, 90, 180 or 270.`);
+            throw new TypeError(`Invalid video rotation: ${videoRotation}. Has to be 0, 90, 180 or 270.`);
         } else if (Array.isArray(videoRotation) && (videoRotation.length !== 9 || videoRotation.some((value1)=>typeof value1 !== "number"))) {
-            throw new Error(`Invalid video transformation matrix: ${videoRotation.join()}`);
+            throw new TypeError(`Invalid video transformation matrix: ${videoRotation.join()}`);
+        }
+        if (options.video.frameRate !== undefined && (!Number.isInteger(options.video.frameRate) || options.video.frameRate <= 0)) {
+            throw new TypeError(`Invalid video frame rate: ${options.video.frameRate}. Must be a positive integer.`);
         }
     }
-    if (options.audio && !SUPPORTED_AUDIO_CODECS2.includes(options.audio.codec)) {
-        throw new Error(`Unsupported audio codec: ${options.audio.codec}`);
+    if (options.audio) {
+        if (!SUPPORTED_AUDIO_CODECS.includes(options.audio.codec)) {
+            throw new TypeError(`Unsupported audio codec: ${options.audio.codec}`);
+        }
+        if (!Number.isInteger(options.audio.numberOfChannels) || options.audio.numberOfChannels <= 0) {
+            throw new TypeError(`Invalid number of audio channels: ${options.audio.numberOfChannels}. Must be a positive integer.`);
+        }
+        if (!Number.isInteger(options.audio.sampleRate) || options.audio.sampleRate <= 0) {
+            throw new TypeError(`Invalid audio sample rate: ${options.audio.sampleRate}. Must be a positive integer.`);
+        }
     }
     if (options.firstTimestampBehavior && !FIRST_TIMESTAMP_BEHAVIORS.includes(options.firstTimestampBehavior)) {
-        throw new Error(`Invalid first timestamp behavior: ${options.firstTimestampBehavior}`);
+        throw new TypeError(`Invalid first timestamp behavior: ${options.firstTimestampBehavior}`);
     }
     if (typeof options.fastStart === "object") {
-        if (options.video && options.fastStart.expectedVideoChunks === void 0) {
-            throw new Error(`'fastStart' is an object but is missing property 'expectedVideoChunks'.`);
+        if (options.video) {
+            if (options.fastStart.expectedVideoChunks === undefined) {
+                throw new TypeError(`'fastStart' is an object but is missing property 'expectedVideoChunks'.`);
+            } else if (!Number.isInteger(options.fastStart.expectedVideoChunks) || options.fastStart.expectedVideoChunks < 0) {
+                throw new TypeError(`'expectedVideoChunks' must be a non-negative integer.`);
+            }
         }
-        if (options.audio && options.fastStart.expectedAudioChunks === void 0) {
-            throw new Error(`'fastStart' is an object but is missing property 'expectedAudioChunks'.`);
+        if (options.audio) {
+            if (options.fastStart.expectedAudioChunks === undefined) {
+                throw new TypeError(`'fastStart' is an object but is missing property 'expectedAudioChunks'.`);
+            } else if (!Number.isInteger(options.fastStart.expectedAudioChunks) || options.fastStart.expectedAudioChunks < 0) {
+                throw new TypeError(`'expectedAudioChunks' must be a non-negative integer.`);
+            }
         }
     } else if (![
         false,
         "in-memory",
         "fragmented"
     ].includes(options.fastStart)) {
-        throw new Error(`'fastStart' option must be false, 'in-memory', 'fragmented' or an object.`);
+        throw new TypeError(`'fastStart' option must be false, 'in-memory', 'fragmented' or an object.`);
+    }
+    if (options.minFragmentDuration !== undefined && (!Number.isFinite(options.minFragmentDuration) || options.minFragmentDuration < 0)) {
+        throw new TypeError(`'minFragmentDuration' must be a non-negative number.`);
     }
 };
 _writeHeader = new WeakSet();
 writeHeader_fn = function() {
-    var __privateGet_video;
     __privateGet(this, _writer).writeBox(ftyp({
-        holdsAvc: ((__privateGet_video = __privateGet(this, _options).video) == null ? void 0 : __privateGet_video.codec) === "avc",
+        holdsAvc: __privateGet(this, _options).video?.codec === "avc",
         fragmented: __privateGet(this, _options).fastStart === "fragmented"
     }));
     __privateSet(this, _ftypSize, __privateGet(this, _writer).pos);
@@ -1395,12 +1556,12 @@ prepareTracks_fn = function() {
                 rotation: __privateGet(this, _options).video.rotation ?? 0,
                 decoderConfig: null
             },
-            timescale: 11520,
-            // Timescale used by FFmpeg, contains many common frame rates as factors
+            // The fallback contains many common frame rates as factors
+            timescale: __privateGet(this, _options).video.frameRate ?? 57600,
             samples: [],
             finalizedChunks: [],
             currentChunk: null,
-            firstDecodeTimestamp: void 0,
+            firstDecodeTimestamp: undefined,
             lastDecodeTimestamp: -1,
             timeToSampleTable: [],
             compositionTimeOffsetTable: [],
@@ -1410,8 +1571,6 @@ prepareTracks_fn = function() {
         });
     }
     if (__privateGet(this, _options).audio) {
-        let guessedCodecPrivate = __privateMethod(this, _generateMpeg4AudioSpecificConfig, generateMpeg4AudioSpecificConfig_fn).call(this, 2, // Object type for AAC-LC, since it's the most common
-        __privateGet(this, _options).audio.sampleRate, __privateGet(this, _options).audio.numberOfChannels);
         __privateSet(this, _audioTrack, {
             id: __privateGet(this, _options).video ? 2 : 1,
             info: {
@@ -1419,18 +1578,13 @@ prepareTracks_fn = function() {
                 codec: __privateGet(this, _options).audio.codec,
                 numberOfChannels: __privateGet(this, _options).audio.numberOfChannels,
                 sampleRate: __privateGet(this, _options).audio.sampleRate,
-                decoderConfig: {
-                    codec: __privateGet(this, _options).audio.codec,
-                    description: guessedCodecPrivate,
-                    numberOfChannels: __privateGet(this, _options).audio.numberOfChannels,
-                    sampleRate: __privateGet(this, _options).audio.sampleRate
-                }
+                decoderConfig: null
             },
             timescale: __privateGet(this, _options).audio.sampleRate,
             samples: [],
             finalizedChunks: [],
             currentChunk: null,
-            firstDecodeTimestamp: void 0,
+            firstDecodeTimestamp: undefined,
             lastDecodeTimestamp: -1,
             timeToSampleTable: [],
             compositionTimeOffsetTable: [],
@@ -1438,6 +1592,16 @@ prepareTracks_fn = function() {
             lastSample: null,
             compactlyCodedChunkTable: []
         });
+        if (__privateGet(this, _options).audio.codec === "aac") {
+            let guessedCodecPrivate = __privateMethod(this, _generateMpeg4AudioSpecificConfig, generateMpeg4AudioSpecificConfig_fn).call(this, 2, // Object type for AAC-LC, since it's the most common
+            __privateGet(this, _options).audio.sampleRate, __privateGet(this, _options).audio.numberOfChannels);
+            __privateGet(this, _audioTrack).info.decoderConfig = {
+                codec: __privateGet(this, _options).audio.codec,
+                description: guessedCodecPrivate,
+                numberOfChannels: __privateGet(this, _options).audio.numberOfChannels,
+                sampleRate: __privateGet(this, _options).audio.sampleRate
+            };
+        }
     }
 };
 _generateMpeg4AudioSpecificConfig = new WeakSet();
@@ -1480,7 +1644,7 @@ createSampleForTrack_fn = function(track, data, type, timestamp, duration, meta,
     let adjusted = __privateMethod(this, _validateTimestamp, validateTimestamp_fn).call(this, presentationTimestampInSeconds, decodeTimestampInSeconds, track);
     presentationTimestampInSeconds = adjusted.presentationTimestamp;
     decodeTimestampInSeconds = adjusted.decodeTimestamp;
-    if (meta == null ? void 0 : meta.decoderConfig) {
+    if (meta?.decoderConfig) {
         if (track.info.decoderConfig === null) {
             track.info.decoderConfig = meta.decoderConfig;
         } else {
@@ -1555,7 +1719,8 @@ addSampleToTrack_fn = function(track, sample) {
         let currentChunkDuration = sample.presentationTimestamp - track.currentChunk.startTimestamp;
         if (__privateGet(this, _options).fastStart === "fragmented") {
             let mostImportantTrack = __privateGet(this, _videoTrack) ?? __privateGet(this, _audioTrack);
-            if (track === mostImportantTrack && sample.type === "key" && currentChunkDuration >= 1) {
+            const chunkDuration = __privateGet(this, _options).minFragmentDuration ?? 1;
+            if (track === mostImportantTrack && sample.type === "key" && currentChunkDuration >= chunkDuration) {
                 beginNewChunk = true;
                 __privateMethod(this, _finalizeFragment, finalizeFragment_fn).call(this);
             }
@@ -1585,15 +1750,14 @@ validateTimestamp_fn = function(presentationTimestamp, decodeTimestamp, track) {
 If you want to offset all timestamps of a track such that the first one is zero, set firstTimestampBehavior: 'offset' in the options.
 `);
     } else if (__privateGet(this, _options).firstTimestampBehavior === "offset" || __privateGet(this, _options).firstTimestampBehavior === "cross-track-offset") {
-        if (track.firstDecodeTimestamp === void 0) {
+        if (track.firstDecodeTimestamp === undefined) {
             track.firstDecodeTimestamp = decodeTimestamp;
         }
         let baseDecodeTimestamp;
         if (__privateGet(this, _options).firstTimestampBehavior === "offset") {
             baseDecodeTimestamp = track.firstDecodeTimestamp;
         } else {
-            var __privateGet1, __privateGet2;
-            baseDecodeTimestamp = Math.min(((__privateGet1 = __privateGet(this, _videoTrack)) == null ? void 0 : __privateGet1.firstDecodeTimestamp) ?? Infinity, ((__privateGet2 = __privateGet(this, _audioTrack)) == null ? void 0 : __privateGet2.firstDecodeTimestamp) ?? Infinity);
+            baseDecodeTimestamp = Math.min(__privateGet(this, _videoTrack)?.firstDecodeTimestamp ?? Infinity, __privateGet(this, _audioTrack)?.firstDecodeTimestamp ?? Infinity);
         }
         decodeTimestamp -= baseDecodeTimestamp;
         presentationTimestamp -= baseDecodeTimestamp;
@@ -1610,7 +1774,7 @@ If you want to offset all timestamps of a track such that the first one is zero,
 _finalizeCurrentChunk = new WeakSet();
 finalizeCurrentChunk_fn = function(track) {
     if (__privateGet(this, _options).fastStart === "fragmented") {
-        throw new Error("Can't finalize individual chunks 'fastStart' is set to 'fragmented'.");
+        throw new Error("Can't finalize individual chunks if 'fastStart' is set to 'fragmented'.");
     }
     if (!track.currentChunk) return;
     track.finalizedChunks.push(track.currentChunk);
@@ -1635,7 +1799,7 @@ finalizeCurrentChunk_fn = function(track) {
 };
 _finalizeFragment = new WeakSet();
 finalizeFragment_fn = function(flushStreamingWriter) {
-    if (flushStreamingWriter === void 0) flushStreamingWriter = true;
+    if (flushStreamingWriter === undefined) flushStreamingWriter = true;
     if (__privateGet(this, _options).fastStart !== "fragmented") {
         throw new Error("Can't finalize a fragment unless 'fastStart' is set to 'fragmented'.");
     }

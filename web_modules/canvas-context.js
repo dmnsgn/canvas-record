@@ -16,8 +16,8 @@
  * @param {import("./types.js").CanvasContextOptions} [options={}]
  * @returns {import("./types.js").CanvasContextReturnValue}
  */ function createCanvasContext(contextType, options) {
-    if (contextType === void 0) contextType = "2d";
-    if (options === void 0) options = {};
+    if (contextType === undefined) contextType = "2d";
+    if (options === undefined) options = {};
     // Get options and set defaults
     const { width, height, offscreen = false, worker = false, contextAttributes = {} } = {
         ...options
