@@ -51,6 +51,7 @@ const RecorderStatus = Object.freeze({
  * @property {object} [encoder] A specific encoder. Default encoder based on options.extension: GIF > WebCodecs > H264MP4.
  * @property {object} [encoderOptions] See `src/encoders` or individual packages for a list of options.
  * @property {object} [muxerOptions] See "mp4-muxer" and "webm-muxer" for a list of options.
+ * @property {object} [frameOptions] Options for createImageBitmap(), VideoFrame or canvas-screenshot.
  * @property {onStatusChangeCb} [onStatusChange]
  */
 
@@ -259,12 +260,13 @@ Speedup: x${(this.time / renderTime).toFixed(3)}`,
   async getFrame(frameMethod) {
     switch (frameMethod) {
       case "bitmap": {
-        return await createImageBitmap(this.context.canvas);
+        return await createImageBitmap(this.context.canvas, this.frameOptions);
       }
       case "videoFrame": {
         return new VideoFrame(this.context.canvas, {
           timestamp: this.time * 1_000_000, // in µs
           duration: 1_000_000 / this.frameRate,
+          ...this.frameOptions,
         });
       }
       case "requestFrame": {
@@ -310,6 +312,7 @@ Speedup: x${(this.time / renderTime).toFixed(3)}`,
           useBlob: true,
           download: false,
           filename: `output.${this.encoder.extension}`,
+          ...this.frameOptions,
         });
       }
     }
