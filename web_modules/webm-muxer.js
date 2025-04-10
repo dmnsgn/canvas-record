@@ -116,8 +116,8 @@ var StreamTarget = class extends Target {
         if (options.chunked !== undefined && typeof options.chunked !== "boolean") {
             throw new TypeError("options.chunked, when provided, must be a boolean.");
         }
-        if (options.chunkSize !== undefined && (!Number.isInteger(options.chunkSize) || options.chunkSize <= 0)) {
-            throw new TypeError("options.chunkSize, when provided, must be a positive integer.");
+        if (options.chunkSize !== undefined && (!Number.isInteger(options.chunkSize) || options.chunkSize < 1024)) {
+            throw new TypeError("options.chunkSize, when provided, must be an integer and not smaller than 1024.");
         }
     }
 };
@@ -380,14 +380,25 @@ _trackingWrites = new WeakMap();
 _trackedWrites = new WeakMap();
 _trackedStart = new WeakMap();
 _trackedEnd = new WeakMap();
-var _sections, _lastFlushEnd, _ensureMonotonicity;
+var DEFAULT_CHUNK_SIZE = 2 ** 24;
+var MAX_CHUNKS_AT_ONCE = 2;
+var _sections, _lastFlushEnd, _ensureMonotonicity, _chunked, _chunkSize, _chunks, _writeDataIntoChunks, writeDataIntoChunks_fn, _insertSectionIntoChunk, insertSectionIntoChunk_fn, _createChunk, createChunk_fn, _flushChunks, flushChunks_fn;
 var StreamTargetWriter = class extends BaseStreamTargetWriter {
     constructor(target, ensureMonotonicity){
         super(target);
+        __privateAdd(this, _writeDataIntoChunks);
+        __privateAdd(this, _insertSectionIntoChunk);
+        __privateAdd(this, _createChunk);
+        __privateAdd(this, _flushChunks);
         __privateAdd(this, _sections, []);
         __privateAdd(this, _lastFlushEnd, 0);
         __privateAdd(this, _ensureMonotonicity, undefined);
+        __privateAdd(this, _chunked, undefined);
+        __privateAdd(this, _chunkSize, undefined);
+        __privateAdd(this, _chunks, []);
         __privateSet(this, _ensureMonotonicity, ensureMonotonicity);
+        __privateSet(this, _chunked, target.options?.chunked ?? false);
+        __privateSet(this, _chunkSize, target.options?.chunkSize ?? DEFAULT_CHUNK_SIZE);
     }
     write(data) {
         super.write(data);
@@ -426,53 +437,31 @@ var StreamTargetWriter = class extends BaseStreamTargetWriter {
                     chunk.data.set(section.data, section.start - chunk.start);
                 }
             }
-            if (__privateGet(this, _ensureMonotonicity) && chunk.start < __privateGet(this, _lastFlushEnd)) {
-                throw new Error("Internal error: Monotonicity violation.");
+            if (__privateGet(this, _chunked)) {
+                __privateMethod(this, _writeDataIntoChunks, writeDataIntoChunks_fn).call(this, chunk.data, chunk.start);
+                __privateMethod(this, _flushChunks, flushChunks_fn).call(this);
+            } else {
+                if (__privateGet(this, _ensureMonotonicity) && chunk.start < __privateGet(this, _lastFlushEnd)) {
+                    throw new Error("Internal error: Monotonicity violation.");
+                }
+                this.target.options.onData?.(chunk.data, chunk.start);
+                __privateSet(this, _lastFlushEnd, chunk.start + chunk.data.byteLength);
             }
-            this.target.options.onData?.(chunk.data, chunk.start);
-            __privateSet(this, _lastFlushEnd, chunk.start + chunk.data.byteLength);
         }
         __privateGet(this, _sections).length = 0;
     }
-    finalize() {}
+    finalize() {
+        if (__privateGet(this, _chunked)) {
+            __privateMethod(this, _flushChunks, flushChunks_fn).call(this, true);
+        }
+    }
 };
 _sections = new WeakMap();
 _lastFlushEnd = new WeakMap();
 _ensureMonotonicity = new WeakMap();
-var DEFAULT_CHUNK_SIZE = 2 ** 24;
-var MAX_CHUNKS_AT_ONCE = 2;
-var _chunkSize, _chunks, _lastFlushEnd2, _ensureMonotonicity2, _writeDataIntoChunks, writeDataIntoChunks_fn, _insertSectionIntoChunk, insertSectionIntoChunk_fn, _createChunk, createChunk_fn, _flushChunks, flushChunks_fn;
-var ChunkedStreamTargetWriter = class extends BaseStreamTargetWriter {
-    constructor(target, ensureMonotonicity){
-        super(target);
-        __privateAdd(this, _writeDataIntoChunks);
-        __privateAdd(this, _insertSectionIntoChunk);
-        __privateAdd(this, _createChunk);
-        __privateAdd(this, _flushChunks);
-        __privateAdd(this, _chunkSize, undefined);
-        __privateAdd(this, _chunks, []);
-        __privateAdd(this, _lastFlushEnd2, 0);
-        __privateAdd(this, _ensureMonotonicity2, undefined);
-        __privateSet(this, _chunkSize, target.options?.chunkSize ?? DEFAULT_CHUNK_SIZE);
-        __privateSet(this, _ensureMonotonicity2, ensureMonotonicity);
-        if (!Number.isInteger(__privateGet(this, _chunkSize)) || __privateGet(this, _chunkSize) < 2 ** 10) {
-            throw new Error("Invalid StreamTarget options: chunkSize must be an integer not smaller than 1024.");
-        }
-    }
-    write(data) {
-        super.write(data);
-        __privateMethod(this, _writeDataIntoChunks, writeDataIntoChunks_fn).call(this, data, this.pos);
-        __privateMethod(this, _flushChunks, flushChunks_fn).call(this);
-        this.pos += data.byteLength;
-    }
-    finalize() {
-        __privateMethod(this, _flushChunks, flushChunks_fn).call(this, true);
-    }
-};
+_chunked = new WeakMap();
 _chunkSize = new WeakMap();
 _chunks = new WeakMap();
-_lastFlushEnd2 = new WeakMap();
-_ensureMonotonicity2 = new WeakMap();
 _writeDataIntoChunks = new WeakSet();
 writeDataIntoChunks_fn = function(data, position) {
     let chunkIndex = __privateGet(this, _chunks).findIndex((x)=>x.start <= position && position < x.start + __privateGet(this, _chunkSize));
@@ -540,16 +529,16 @@ flushChunks_fn = function(force) {
         let chunk = __privateGet(this, _chunks)[i];
         if (!chunk.shouldFlush && !force) continue;
         for (let section of chunk.written){
-            if (__privateGet(this, _ensureMonotonicity2) && chunk.start + section.start < __privateGet(this, _lastFlushEnd2)) {
+            if (__privateGet(this, _ensureMonotonicity) && chunk.start + section.start < __privateGet(this, _lastFlushEnd)) {
                 throw new Error("Internal error: Monotonicity violation.");
             }
             this.target.options.onData?.(chunk.data.subarray(section.start, section.end), chunk.start + section.start);
-            __privateSet(this, _lastFlushEnd2, chunk.start + section.end);
+            __privateSet(this, _lastFlushEnd, chunk.start + section.end);
         }
         __privateGet(this, _chunks).splice(i--, 1);
     }
 };
-var FileSystemWritableFileStreamTargetWriter = class extends ChunkedStreamTargetWriter {
+var FileSystemWritableFileStreamTargetWriter = class extends StreamTargetWriter {
     constructor(target, ensureMonotonicity){
         super(new StreamTarget({
             onData: (data, position)=>target.stream.write({
@@ -641,7 +630,7 @@ var Muxer = class {
         if (options.target instanceof ArrayBufferTarget) {
             __privateSet(this, _writer, new ArrayBufferTargetWriter(options.target));
         } else if (options.target instanceof StreamTarget) {
-            __privateSet(this, _writer, options.target.options?.chunked ? new ChunkedStreamTargetWriter(options.target, ensureMonotonicity) : new StreamTargetWriter(options.target, ensureMonotonicity));
+            __privateSet(this, _writer, new StreamTargetWriter(options.target, ensureMonotonicity));
         } else if (options.target instanceof FileSystemWritableFileStreamTarget) {
             __privateSet(this, _writer, new FileSystemWritableFileStreamTargetWriter(options.target, ensureMonotonicity));
         } else {
@@ -790,7 +779,7 @@ var Muxer = class {
         while(__privateGet(this, _subtitleChunkQueue).length > 0 && __privateGet(this, _subtitleChunkQueue)[0].timestamp <= __privateGet(this, _duration)){
             __privateMethod(this, _writeBlock, writeBlock_fn).call(this, __privateGet(this, _subtitleChunkQueue).shift(), false);
         }
-        if (__privateGet(this, _currentCluster) && !__privateGet(this, _options).streaming) {
+        if (__privateGet(this, _currentCluster)) {
             __privateMethod(this, _finalizeCurrentCluster, finalizeCurrentCluster_fn).call(this);
         }
         __privateGet(this, _writer).writeEBML(__privateGet(this, _cues));
@@ -1388,17 +1377,15 @@ writeBlock_fn = function(chunk, canCreateNewCluster) {
         __privateMethod(this, _createSegment, createSegment_fn).call(this);
     }
     let msTimestamp = Math.floor(chunk.timestamp / 1e3);
-    let shouldCreateNewClusterFromKeyFrame = canCreateNewCluster && chunk.type === "key" && msTimestamp - __privateGet(this, _currentClusterTimestamp) >= 1e3;
-    if (!__privateGet(this, _currentCluster) || shouldCreateNewClusterFromKeyFrame) {
-        __privateMethod(this, _createNewCluster, createNewCluster_fn).call(this, msTimestamp);
-    }
     let relativeTimestamp = msTimestamp - __privateGet(this, _currentClusterTimestamp);
+    let shouldCreateNewClusterFromKeyFrame = canCreateNewCluster && chunk.type === "key" && relativeTimestamp >= 1e3;
+    let clusterWouldBeTooLong = relativeTimestamp >= MAX_CHUNK_LENGTH_MS;
+    if (!__privateGet(this, _currentCluster) || shouldCreateNewClusterFromKeyFrame || clusterWouldBeTooLong) {
+        __privateMethod(this, _createNewCluster, createNewCluster_fn).call(this, msTimestamp);
+        relativeTimestamp = 0;
+    }
     if (relativeTimestamp < 0) {
         return;
-    }
-    let clusterIsTooLong = relativeTimestamp >= MAX_CHUNK_LENGTH_MS;
-    if (clusterIsTooLong) {
-        throw new Error(`Current Matroska cluster exceeded its maximum allowed length of ${MAX_CHUNK_LENGTH_MS} milliseconds. In order to produce a correct WebM file, you must pass in a key frame at least every ${MAX_CHUNK_LENGTH_MS} milliseconds.`);
     }
     let prelude = new Uint8Array(4);
     let view = new DataView(prelude.buffer);
@@ -1476,7 +1463,7 @@ writeCodecPrivate_fn = function(element, data) {
 };
 _createNewCluster = new WeakSet();
 createNewCluster_fn = function(timestamp) {
-    if (__privateGet(this, _currentCluster) && !__privateGet(this, _options).streaming) {
+    if (__privateGet(this, _currentCluster)) {
         __privateMethod(this, _finalizeCurrentCluster, finalizeCurrentCluster_fn).call(this);
     }
     if (__privateGet(this, _writer) instanceof BaseStreamTargetWriter && __privateGet(this, _writer).target.options.onCluster) {
@@ -1533,11 +1520,13 @@ createNewCluster_fn = function(timestamp) {
 };
 _finalizeCurrentCluster = new WeakSet();
 finalizeCurrentCluster_fn = function() {
-    let clusterSize = __privateGet(this, _writer).pos - __privateGet(this, _writer).dataOffsets.get(__privateGet(this, _currentCluster));
-    let endPos = __privateGet(this, _writer).pos;
-    __privateGet(this, _writer).seek(__privateGet(this, _writer).offsets.get(__privateGet(this, _currentCluster)) + 4);
-    __privateGet(this, _writer).writeEBMLVarInt(clusterSize, CLUSTER_SIZE_BYTES);
-    __privateGet(this, _writer).seek(endPos);
+    if (!__privateGet(this, _options).streaming) {
+        let clusterSize = __privateGet(this, _writer).pos - __privateGet(this, _writer).dataOffsets.get(__privateGet(this, _currentCluster));
+        let endPos = __privateGet(this, _writer).pos;
+        __privateGet(this, _writer).seek(__privateGet(this, _writer).offsets.get(__privateGet(this, _currentCluster)) + 4);
+        __privateGet(this, _writer).writeEBMLVarInt(clusterSize, CLUSTER_SIZE_BYTES);
+        __privateGet(this, _writer).seek(endPos);
+    }
     if (__privateGet(this, _writer) instanceof BaseStreamTargetWriter && __privateGet(this, _writer).target.options.onCluster) {
         let { data, start } = __privateGet(this, _writer).getTrackedWrites();
         __privateGet(this, _writer).target.options.onCluster(data, start, __privateGet(this, _currentClusterTimestamp));
