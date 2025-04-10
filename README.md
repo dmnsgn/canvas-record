@@ -697,6 +697,7 @@ Options for recording. All optional.
 | [encoder]        | <code>object</code>                                |                                                   | A specific encoder. Default encoder based on options.extension: GIF > WebCodecs > H264MP4.                              |
 | [encoderOptions] | <code>object</code>                                |                                                   | See `src/encoders` or individual packages for a list of options.                                                        |
 | [muxerOptions]   | <code>object</code>                                |                                                   | See "mp4-muxer" and "webm-muxer" for a list of options.                                                                 |
+| [frameOptions]   | <code>object</code>                                |                                                   | Options for createImageBitmap(), VideoFrame or canvas-screenshot.                                                       |
 | [onStatusChange] | [<code>onStatusChangeCb</code>](#onStatusChangeCb) |                                                   |                                                                                                                         |
 
 <a name="RecorderStartOptions"></a>

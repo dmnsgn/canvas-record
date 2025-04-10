@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+# [5.2.0](https://github.com/dmnsgn/canvas-record/compare/v5.1.1...v5.2.0) (2025-04-10)
+
+
+### Bug Fixes
+
+* add duration option to VideoFrame ([779d550](https://github.com/dmnsgn/canvas-record/commit/779d550b051534325b26185b071af7d2223ec00b)), closes [#25](https://github.com/dmnsgn/canvas-record/issues/25)
+
+
+### Features
+
+* add frameOptions ([c95130f](https://github.com/dmnsgn/canvas-record/commit/c95130f1ff27ceb31a3b93abd5b613060001f4ba))
+
+
+
 ## [5.1.1](https://github.com/dmnsgn/canvas-record/compare/v5.1.0...v5.1.1) (2025-02-23)
 
 
