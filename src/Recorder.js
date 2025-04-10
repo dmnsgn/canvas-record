@@ -264,6 +264,7 @@ Speedup: x${(this.time / renderTime).toFixed(3)}`,
       case "videoFrame": {
         return new VideoFrame(this.context.canvas, {
           timestamp: this.time * 1_000_000, // in µs
+          duration: 1_000_000 / this.frameRate,
         });
       }
       case "requestFrame": {
