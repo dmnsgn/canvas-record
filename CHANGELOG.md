@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [5.2.1](https://github.com/dmnsgn/canvas-record/compare/v5.2.0...v5.2.1) (2025-05-04)
+
+
+### Bug Fixes
+
+* handle rounding values to kilobit in estimateBitRate for small resolutions ([21e7316](https://github.com/dmnsgn/canvas-record/commit/21e7316482b89640c74374cad3ad60ca10c894b0)), closes [#27](https://github.com/dmnsgn/canvas-record/issues/27)
+
+
+
 # [5.2.0](https://github.com/dmnsgn/canvas-record/compare/v5.1.1...v5.2.0) (2025-04-10)
 
 
