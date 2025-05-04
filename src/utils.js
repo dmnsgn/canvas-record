@@ -72,16 +72,17 @@ const estimateBitRate = (
   frameRate = 30,
   motionRank = 4,
   bitrateMode = "variable",
-) =>
-  Math.round(
-    (width *
-      height *
-      frameRate *
-      motionRank *
-      0.07 *
-      (bitrateMode === "variable" ? 0.75 : 1)) /
-      1_000_000,
-  ) * 1_000_000;
+) => {
+  const bitrate =
+    width *
+    height *
+    frameRate *
+    motionRank *
+    0.07 *
+    (bitrateMode === "variable" ? 0.75 : 1);
+  const roundingFactor = bitrate < 1_000_000 ? 1000 : 1_000_000;
+  return Math.round(bitrate / roundingFactor) * roundingFactor;
+};
 
 export {
   isWebCodecsSupported,
