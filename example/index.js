@@ -1,10 +1,18 @@
 import { Recorder, RecorderStatus, Encoders } from "../index.js";
 
 import createCanvasContext from "canvas-context";
+import createPexContext from "pex-context";
+import { create as createColor, fromHex } from "pex-color";
 import { Pane } from "tweakpane";
 import { toBlobURL } from "@ffmpeg/util";
 
+import { vert, frag } from "./shaders.js";
+
 const params = new URLSearchParams(window.location.search);
+
+const pixelRatio = devicePixelRatio;
+const width = 512;
+const height = 512;
 
 // GUI
 const CONFIG = {
@@ -14,6 +22,8 @@ const CONFIG = {
   frameRate: 30,
   target: "in-browser",
   filename: "",
+  rect: { x: 0, y: 0, z: width, w: height },
+  contextType: "gl",
   ...Object.fromEntries(params.entries()),
 };
 const pane = new Pane();
@@ -43,14 +53,28 @@ pane.addBinding(CONFIG, "target", {
 pane.addBinding(CONFIG, "duration", { step: 1, min: 1, max: 30 });
 pane.addBinding(CONFIG, "frameRate", { step: 1, min: 1, max: 60 });
 pane.addBinding(CONFIG, "filename");
+pane.addBinding(CONFIG, "rect", {
+  x: { step: 1, min: 0, max: width - 1 },
+  y: { step: 1, min: 0, max: height - 1 },
+  z: { step: 1, min: 1, max: width },
+  w: { step: 1, min: 1, max: height },
+});
+
+pane.addBinding(CONFIG, "contextType", {
+  options: ["2d", "gl"].map((value) => ({ text: value, value })),
+});
 
 const startButton = pane.addButton({ title: "Start Recording" });
 const stopButton = pane.addButton({ title: "Stop Recording" });
 
+// Utils
+const getColor = (name) =>
+  `${window
+    .getComputedStyle(document.documentElement)
+    .getPropertyValue(`--color-${name}`)}`;
+const getPexColor = (name) => fromHex(createColor(), getColor(name));
+
 // Setup
-const pixelRatio = devicePixelRatio;
-const width = 512;
-const height = 512;
 const { context, canvas } = createCanvasContext("2d", {
   width: width * pixelRatio,
   height: height * pixelRatio,
@@ -58,8 +82,21 @@ const { context, canvas } = createCanvasContext("2d", {
 });
 Object.assign(canvas.style, { width: `${width}px`, height: `${height}px` });
 
-const mainElement = document.querySelector("main");
-mainElement.appendChild(canvas);
+const element = document.querySelector(".Canvases");
+element.appendChild(canvas);
+
+const ctx = createPexContext({ width, height, pixelRatio, element });
+const clearCmd = {
+  pass: ctx.pass({ clearColor: getPexColor("dark") }),
+};
+const drawCmd = {
+  pipeline: ctx.pipeline({ vert, frag }),
+  attributes: {
+    aPosition: ctx.vertexBuffer(Float32Array.of(-1, -1, 3, -1, -1, 3)), // Fullscreen triangle
+  },
+  uniforms: { uColor: getPexColor("accent") },
+  count: 3,
+};
 
 const detailElement = document.querySelector(".Detail");
 
@@ -67,49 +104,52 @@ const detailElement = document.querySelector(".Detail");
 let rAFId;
 let canvasRecorder;
 
-const getColor = (name) =>
-  `${window
-    .getComputedStyle(document.documentElement)
-    .getPropertyValue(`--color-${name}`)}`;
-
 function render(canvasRecorder = {}) {
+  const currentFrame = canvasRecorder.frame || 0;
+
+  const t = currentFrame / canvasRecorder.frameTotal || Number.EPSILON;
+
   const width = canvas.width;
   const height = canvas.height;
-
-  // Background
-  context.clearRect(0, 0, width, height);
-  context.fillStyle = getColor("dark");
-  context.fillRect(0, 0, width, height);
-
-  // Interpolated element
-  const t = canvasRecorder.frame / canvasRecorder.frameTotal || Number.EPSILON;
-  context.save();
-  context.translate(width * 0.5, height * 0.5);
-  context.scale(t, t);
-  context.fillStyle = getColor("accent");
-  context.fillRect(-width * 0.5, -height * 0.5, width, height);
-  context.restore();
-
-  // Frame text
-  const text = `Frame: ${canvasRecorder.frame || 0}`;
   const x = width * 0.02;
   const y = height * 0.025;
   const fontSize = 12 * pixelRatio;
   const lineHeight = 1.6;
-  context.font = `${fontSize}px Monaco`;
-  context.textBaseline = "top";
-  const { width: textWidth } = context.measureText(text);
 
-  context.fillStyle = getColor("accent");
-  context.fillRect(
-    0,
-    y - ((lineHeight - 1) / 2) * fontSize,
-    x + textWidth + x,
-    fontSize * lineHeight,
-  );
+  // 2D
+  {
+    // Background
+    context.clearRect(0, 0, width, height);
+    context.fillStyle = getColor("dark");
+    context.fillRect(0, 0, width, height);
 
-  context.fillStyle = getColor("light");
-  context.fillText(text, x, y);
+    // Interpolated element
+    context.save();
+    context.translate(width * 0.5, height * 0.5);
+    context.scale(t, t);
+    context.fillStyle = getColor("accent");
+    context.fillRect(-width * 0.5, -height * 0.5, width, height);
+    context.restore();
+
+    // Frame text
+    const text = currentFrame;
+    context.font = `${fontSize}px Monaco`;
+    context.textBaseline = "top";
+    context.fillStyle = getColor("light");
+    context.fillText(text, x, y);
+  }
+
+  // WebGL
+  {
+    ctx.submit(clearCmd);
+    ctx.submit(drawCmd, {
+      uniforms: {
+        uProgress: t,
+        uTextValue: currentFrame,
+        uTextPosition: [x, height - y - (fontSize / 2) * lineHeight],
+      },
+    });
+  }
 }
 
 const updateStatus = () => {
@@ -190,9 +230,12 @@ const initRecorder = async (encoderName) => {
     };
   }
 
-  canvasRecorder = new Recorder(context, {
-    name: `canvas-record-example-${encoderName || "default"}`,
-    ...CONFIG,
+  const { contextType, rect, ...configOptions } = CONFIG;
+
+  canvasRecorder = new Recorder(contextType === "2d" ? context : ctx.gl, {
+    name: `canvas-record-example-${encoderName || "default"}-${contextType}`,
+    ...configOptions,
+    rect: [rect.x, rect.y, rect.z, rect.w],
     encoder: encoderName ? new Encoders[`${encoderName}`]() : null,
     debug: true,
     encoderOptions,
@@ -204,10 +247,10 @@ const initRecorder = async (encoderName) => {
 const start = async (encoderName) => {
   await initRecorder(encoderName);
 
-  // Start and encode frame 0
-  await canvasRecorder.start({ filename: CONFIG.filename });
+  // Start and initialize
+  await canvasRecorder.start({ filename: CONFIG.filename, initOnly: true });
 
-  // Animate to encode the rest
+  // Animate to start encoding
   tick(canvasRecorder);
 };
 

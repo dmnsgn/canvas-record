@@ -114,7 +114,7 @@ var fixed_2_30 = (value1)=>{
     ];
 };
 var ascii = (text, nullTerminated)=>{
-    if (nullTerminated === undefined) nullTerminated = false;
+    if (nullTerminated === void 0) nullTerminated = false;
     let bytes2 = Array(text.length).fill(null).map((_, i)=>text.charCodeAt(i));
     if (nullTerminated) bytes2.push(0);
     return bytes2;
@@ -123,7 +123,7 @@ var last = (arr)=>{
     return arr && arr[arr.length - 1];
 };
 var lastPresentedSample = (samples)=>{
-    let result = undefined;
+    let result = void 0;
     for (let sample of samples){
         if (!result || sample.presentationTimestamp > result.presentationTimestamp) {
             result = sample;
@@ -132,7 +132,7 @@ var lastPresentedSample = (samples)=>{
     return result;
 };
 var intoTimescale = (timeInSeconds, timescale, round)=>{
-    if (round === undefined) round = true;
+    if (round === void 0) round = true;
     let value1 = timeInSeconds * timescale;
     return round ? Math.round(value1) : value1;
 };
@@ -224,7 +224,7 @@ var free = (size)=>({
         size
     });
 var moov = (tracks, creationTime, fragmented)=>{
-    if (fragmented === undefined) fragmented = false;
+    if (fragmented === void 0) fragmented = false;
     return box("moov", null, [
         mvhd(creationTime, tracks),
         ...tracks.map((x)=>trak(x, creationTime)),
@@ -860,10 +860,10 @@ var StreamTarget = class extends Target {
                 throw new TypeError("options.onData, when provided, must be a function that takes in at least two arguments (data and position). Ignoring the position argument, which specifies the byte offset at which the data is to be written, can lead to broken outputs.");
             }
         }
-        if (options.chunked !== undefined && typeof options.chunked !== "boolean") {
+        if (options.chunked !== void 0 && typeof options.chunked !== "boolean") {
             throw new TypeError("options.chunked, when provided, must be a boolean.");
         }
-        if (options.chunkSize !== undefined && (!Number.isInteger(options.chunkSize) || options.chunkSize < 1024)) {
+        if (options.chunkSize !== void 0 && (!Number.isInteger(options.chunkSize) || options.chunkSize < 1024)) {
             throw new TypeError("options.chunkSize, when provided, must be an integer and not smaller than 1024.");
         }
     }
@@ -876,11 +876,11 @@ var FileSystemWritableFileStreamTarget = class extends Target {
         if (!(stream instanceof FileSystemWritableFileStream)) {
             throw new TypeError("FileSystemWritableFileStreamTarget requires a FileSystemWritableFileStream instance.");
         }
-        if (options !== undefined && typeof options !== "object") {
+        if (options !== void 0 && typeof options !== "object") {
             throw new TypeError("FileSystemWritableFileStreamTarget's options, when provided, must be an object.");
         }
         if (options) {
-            if (options.chunkSize !== undefined && (!Number.isInteger(options.chunkSize) || options.chunkSize <= 0)) {
+            if (options.chunkSize !== void 0 && (!Number.isInteger(options.chunkSize) || options.chunkSize <= 0)) {
                 throw new TypeError("options.chunkSize, when provided, must be a positive integer");
             }
         }
@@ -973,7 +973,7 @@ var ArrayBufferTargetWriter = class extends Writer {
     constructor(target){
         super();
         __privateAdd(this, _ensureSize);
-        __privateAdd(this, _target, undefined);
+        __privateAdd(this, _target, void 0);
         __privateAdd(this, _buffer, new ArrayBuffer(2 ** 16));
         __privateAdd(this, _bytes, new Uint8Array(__privateGet(this, _buffer)));
         __privateAdd(this, _maxPos, 0);
@@ -1015,10 +1015,10 @@ var StreamTargetWriter = class extends Writer {
         __privateAdd(this, _insertSectionIntoChunk);
         __privateAdd(this, _createChunk);
         __privateAdd(this, _flushChunks);
-        __privateAdd(this, _target2, undefined);
+        __privateAdd(this, _target2, void 0);
         __privateAdd(this, _sections, []);
-        __privateAdd(this, _chunked, undefined);
-        __privateAdd(this, _chunkSize, undefined);
+        __privateAdd(this, _chunked, void 0);
+        __privateAdd(this, _chunkSize, void 0);
         /**
      * The data is divided up into fixed-size chunks, whose contents are first filled in RAM and then flushed out.
      * A chunk is flushed if all of its contents have been written.
@@ -1145,7 +1145,7 @@ createChunk_fn = function(includesPosition) {
 };
 _flushChunks = new WeakSet();
 flushChunks_fn = function(force) {
-    if (force === undefined) force = false;
+    if (force === void 0) force = false;
     for(let i = 0; i < __privateGet(this, _chunks).length; i++){
         let chunk = __privateGet(this, _chunks)[i];
         if (!chunk.shouldFlush && !force) continue;
@@ -1202,10 +1202,10 @@ var Muxer = class {
         __privateAdd(this, _finalizeFragment);
         __privateAdd(this, _maybeFlushStreamingTargetWriter);
         __privateAdd(this, _ensureNotFinalized);
-        __privateAdd(this, _options, undefined);
-        __privateAdd(this, _writer, undefined);
-        __privateAdd(this, _ftypSize, undefined);
-        __privateAdd(this, _mdat, undefined);
+        __privateAdd(this, _options, void 0);
+        __privateAdd(this, _writer, void 0);
+        __privateAdd(this, _ftypSize, void 0);
+        __privateAdd(this, _mdat, void 0);
         __privateAdd(this, _videoTrack, null);
         __privateAdd(this, _audioTrack, null);
         __privateAdd(this, _creationTime, Math.floor(Date.now() / 1e3) + TIMESTAMP_OFFSET);
@@ -1243,10 +1243,10 @@ var Muxer = class {
         if (meta && typeof meta !== "object") {
             throw new TypeError("addVideoChunk's second argument (meta), when provided, must be an object.");
         }
-        if (timestamp !== undefined && (!Number.isFinite(timestamp) || timestamp < 0)) {
+        if (timestamp !== void 0 && (!Number.isFinite(timestamp) || timestamp < 0)) {
             throw new TypeError("addVideoChunk's third argument (timestamp), when provided, must be a non-negative real number.");
         }
-        if (compositionTimeOffset !== undefined && !Number.isFinite(compositionTimeOffset)) {
+        if (compositionTimeOffset !== void 0 && !Number.isFinite(compositionTimeOffset)) {
             throw new TypeError("addVideoChunk's fourth argument (compositionTimeOffset), when provided, must be a real number.");
         }
         let data = new Uint8Array(sample.byteLength);
@@ -1269,7 +1269,7 @@ var Muxer = class {
         if (meta && typeof meta !== "object") {
             throw new TypeError("addVideoChunkRaw's fifth argument (meta), when provided, must be an object.");
         }
-        if (compositionTimeOffset !== undefined && !Number.isFinite(compositionTimeOffset)) {
+        if (compositionTimeOffset !== void 0 && !Number.isFinite(compositionTimeOffset)) {
             throw new TypeError("addVideoChunkRaw's sixth argument (compositionTimeOffset), when provided, must be a real number.");
         }
         __privateMethod(this, _ensureNotFinalized, ensureNotFinalized_fn).call(this);
@@ -1299,7 +1299,7 @@ var Muxer = class {
         if (meta && typeof meta !== "object") {
             throw new TypeError("addAudioChunk's second argument (meta), when provided, must be an object.");
         }
-        if (timestamp !== undefined && (!Number.isFinite(timestamp) || timestamp < 0)) {
+        if (timestamp !== void 0 && (!Number.isFinite(timestamp) || timestamp < 0)) {
             throw new TypeError("addAudioChunk's third argument (timestamp), when provided, must be a non-negative real number.");
         }
         let data = new Uint8Array(sample.byteLength);
@@ -1454,7 +1454,7 @@ validateOptions_fn = function(options) {
         } else if (Array.isArray(videoRotation) && (videoRotation.length !== 9 || videoRotation.some((value1)=>typeof value1 !== "number"))) {
             throw new TypeError(`Invalid video transformation matrix: ${videoRotation.join()}`);
         }
-        if (options.video.frameRate !== undefined && (!Number.isInteger(options.video.frameRate) || options.video.frameRate <= 0)) {
+        if (options.video.frameRate !== void 0 && (!Number.isInteger(options.video.frameRate) || options.video.frameRate <= 0)) {
             throw new TypeError(`Invalid video frame rate: ${options.video.frameRate}. Must be a positive integer.`);
         }
     }
@@ -1474,14 +1474,14 @@ validateOptions_fn = function(options) {
     }
     if (typeof options.fastStart === "object") {
         if (options.video) {
-            if (options.fastStart.expectedVideoChunks === undefined) {
+            if (options.fastStart.expectedVideoChunks === void 0) {
                 throw new TypeError(`'fastStart' is an object but is missing property 'expectedVideoChunks'.`);
             } else if (!Number.isInteger(options.fastStart.expectedVideoChunks) || options.fastStart.expectedVideoChunks < 0) {
                 throw new TypeError(`'expectedVideoChunks' must be a non-negative integer.`);
             }
         }
         if (options.audio) {
-            if (options.fastStart.expectedAudioChunks === undefined) {
+            if (options.fastStart.expectedAudioChunks === void 0) {
                 throw new TypeError(`'fastStart' is an object but is missing property 'expectedAudioChunks'.`);
             } else if (!Number.isInteger(options.fastStart.expectedAudioChunks) || options.fastStart.expectedAudioChunks < 0) {
                 throw new TypeError(`'expectedAudioChunks' must be a non-negative integer.`);
@@ -1494,7 +1494,7 @@ validateOptions_fn = function(options) {
     ].includes(options.fastStart)) {
         throw new TypeError(`'fastStart' option must be false, 'in-memory', 'fragmented' or an object.`);
     }
-    if (options.minFragmentDuration !== undefined && (!Number.isFinite(options.minFragmentDuration) || options.minFragmentDuration < 0)) {
+    if (options.minFragmentDuration !== void 0 && (!Number.isFinite(options.minFragmentDuration) || options.minFragmentDuration < 0)) {
         throw new TypeError(`'minFragmentDuration' must be a non-negative number.`);
     }
 };
@@ -1554,7 +1554,7 @@ prepareTracks_fn = function() {
             samples: [],
             finalizedChunks: [],
             currentChunk: null,
-            firstDecodeTimestamp: undefined,
+            firstDecodeTimestamp: void 0,
             lastDecodeTimestamp: -1,
             timeToSampleTable: [],
             compositionTimeOffsetTable: [],
@@ -1577,7 +1577,7 @@ prepareTracks_fn = function() {
             samples: [],
             finalizedChunks: [],
             currentChunk: null,
-            firstDecodeTimestamp: undefined,
+            firstDecodeTimestamp: void 0,
             lastDecodeTimestamp: -1,
             timeToSampleTable: [],
             compositionTimeOffsetTable: [],
@@ -1743,7 +1743,7 @@ validateTimestamp_fn = function(presentationTimestamp, decodeTimestamp, track) {
 If you want to offset all timestamps of a track such that the first one is zero, set firstTimestampBehavior: 'offset' in the options.
 `);
     } else if (__privateGet(this, _options).firstTimestampBehavior === "offset" || __privateGet(this, _options).firstTimestampBehavior === "cross-track-offset") {
-        if (track.firstDecodeTimestamp === undefined) {
+        if (track.firstDecodeTimestamp === void 0) {
             track.firstDecodeTimestamp = decodeTimestamp;
         }
         let baseDecodeTimestamp;
@@ -1792,7 +1792,7 @@ finalizeCurrentChunk_fn = function(track) {
 };
 _finalizeFragment = new WeakSet();
 finalizeFragment_fn = function(flushStreamingWriter) {
-    if (flushStreamingWriter === undefined) flushStreamingWriter = true;
+    if (flushStreamingWriter === void 0) flushStreamingWriter = true;
     if (__privateGet(this, _options).fastStart !== "fragmented") {
         throw new Error("Can't finalize a fragment unless 'fastStart' is set to 'fragmented'.");
     }

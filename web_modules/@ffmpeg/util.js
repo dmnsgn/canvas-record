@@ -143,7 +143,7 @@ const readFromBlobOrFile = (blob)=>new Promise((resolve, reject)=>{
  * await toBlobURL("http://localhost:3000/ffmpeg.js", "text/javascript");
  * ```
  */ const toBlobURL = async (url, mimeType, progress, cb)=>{
-    if (progress === undefined) progress = false;
+    if (progress === void 0) progress = false;
     const buf = progress ? await downloadWithProgress(url, cb) : await (await fetch(url)).arrayBuffer();
     const blob = new Blob([
         buf

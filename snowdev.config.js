@@ -39,6 +39,8 @@ export default {
 
     "canvas-context",
     "es-module-shims",
+    "pex-context",
+    "pex-color",
     "tweakpane",
   ],
   // resolve: {

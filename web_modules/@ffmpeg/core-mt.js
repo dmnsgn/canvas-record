@@ -1,9 +1,9 @@
-import { b as browser$1, g as global, B as Buffer } from '../_chunks/polyfills-QWxePbon.js';
+import { b as browser$1, g as global, B as Buffer } from '../_chunks/polyfills-CAtupzpz.js';
 
 var createFFmpegCore = (()=>{
     var _scriptDir = import.meta.url;
     return async function(createFFmpegCore) {
-        if (createFFmpegCore === undefined) createFFmpegCore = {};
+        if (createFFmpegCore === void 0) createFFmpegCore = {};
         var Module = typeof createFFmpegCore != "undefined" ? createFFmpegCore : {};
         var readyPromiseResolve, readyPromiseReject;
         Module["ready"] = new Promise((resolve, reject)=>{
@@ -124,7 +124,7 @@ var createFFmpegCore = (()=>{
         }
         var read_, readAsync, readBinary;
         if (ENVIRONMENT_IS_NODE) {
-            const { createRequire: createRequire } = await import('../_chunks/polyfills-QWxePbon.js').then(function (n) { return n._; });
+            const { createRequire: createRequire } = await import('../_chunks/polyfills-CAtupzpz.js').then(function (n) { return n._; });
             var require = createRequire(import.meta.url);
             var fs = require("fs");
             var nodePath = require("path");
@@ -145,7 +145,7 @@ var createFFmpegCore = (()=>{
                 return ret;
             };
             readAsync = (filename, onload, onerror, binary)=>{
-                if (binary === undefined) binary = true;
+                if (binary === void 0) binary = true;
                 filename = isFileURI(filename) ? new URL(filename) : nodePath.normalize(filename);
                 fs.readFile(filename, binary ? undefined : "utf8", (err, data)=>{
                     if (err) onerror(err);
@@ -1315,7 +1315,7 @@ var createFFmpegCore = (()=>{
             filesystems: null,
             syncFSRequests: 0,
             lookupPath: (path, opts)=>{
-                if (opts === undefined) opts = {};
+                if (opts === void 0) opts = {};
                 path = PATH_FS.resolve(path);
                 if (!path) return {
                     path: "",
@@ -1538,7 +1538,7 @@ var createFFmpegCore = (()=>{
             },
             getStream: (fd)=>FS.streams[fd],
             createStream: (stream, fd)=>{
-                if (fd === undefined) fd = -1;
+                if (fd === void 0) fd = -1;
                 if (!FS.FSStream) {
                     FS.FSStream = function() {
                         this.shared = {};
@@ -2256,7 +2256,7 @@ var createFFmpegCore = (()=>{
                 return stream.stream_ops.ioctl(stream, cmd, arg);
             },
             readFile: (path, opts)=>{
-                if (opts === undefined) opts = {};
+                if (opts === void 0) opts = {};
                 opts.flags = opts.flags || 0;
                 opts.encoding = opts.encoding || "binary";
                 if (opts.encoding !== "utf8" && opts.encoding !== "binary") {
@@ -2277,7 +2277,7 @@ var createFFmpegCore = (()=>{
                 return ret;
             },
             writeFile: (path, data, opts)=>{
-                if (opts === undefined) opts = {};
+                if (opts === void 0) opts = {};
                 opts.flags = opts.flags || 577;
                 var stream = FS.open(path, opts.flags, opts.mode);
                 if (typeof data == "string") {
@@ -3036,7 +3036,7 @@ var createFFmpegCore = (()=>{
             _exit(returnCode);
         }
         function getValue(ptr, type) {
-            if (type === undefined) type = "i8";
+            if (type === void 0) type = "i8";
             if (type.endsWith("*")) type = "*";
             switch(type){
                 case "i1":
@@ -3072,7 +3072,7 @@ var createFFmpegCore = (()=>{
             PThread.tlsInitFunctions.push(tlsInitFunc);
         }
         function setValue(ptr, value, type) {
-            if (type === undefined) type = "i8";
+            if (type === void 0) type = "i8";
             if (type.endsWith("*")) type = "*";
             switch(type){
                 case "i1":

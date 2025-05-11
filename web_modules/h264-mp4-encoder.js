@@ -1,4 +1,4 @@
-import { a as getDefaultExportFromCjs, r as require$$0, b as browser$1, B as Buffer, d as require$$1, e as require$$2 } from './_chunks/polyfills-QWxePbon.js';
+import { r as require$$0, b as browser$1, B as Buffer, d as require$$1, e as require$$2, a as getDefaultExportFromCjs } from './_chunks/polyfills-CAtupzpz.js';
 
 var h264Mp4Encoder_node = function(A) {
     var B = {};
@@ -49,9 +49,9 @@ var h264Mp4Encoder_node = function(A) {
     },
     function(A, B, Q) {
         (function(B, I) {
-            var g, E = (g = (g = "undefined" != typeof document && document.currentScript ? document.currentScript.src : undefined) || B, function(A) {
+            var g, E = (g = (g = "undefined" != typeof document && document.currentScript ? document.currentScript.src : void 0) || B, function(A) {
                 var B;
-                A = A || {}, B || (B = undefined !== A ? A : {});
+                A = A || {}, B || (B = void 0 !== A ? A : {});
                 var E, C = {};
                 for(E in B)B.hasOwnProperty(E) && (C[E] = B[E]);
                 var D, i, y, F, U = "./this.program";
@@ -100,7 +100,7 @@ var h264Mp4Encoder_node = function(A) {
                 function a(A, B) {
                     A || FA("Assertion failed: " + B);
                 }
-                var S = "undefined" != typeof TextDecoder ? new TextDecoder("utf8") : undefined;
+                var S = "undefined" != typeof TextDecoder ? new TextDecoder("utf8") : void 0;
                 function M(A, B, Q) {
                     var I = B + Q;
                     for(Q = B; A[Q] && !(Q >= I);)++Q;
@@ -119,7 +119,7 @@ var h264Mp4Encoder_node = function(A) {
                     return I;
                 }
                 function J(A) {
-                    return A ? M(d, A, undefined) : "";
+                    return A ? M(d, A, void 0) : "";
                 }
                 function V(A, B, Q, I) {
                     if (!(0 < I)) return 0;
@@ -156,7 +156,7 @@ var h264Mp4Encoder_node = function(A) {
                     }
                     return B;
                 }
-                var t, n, d, r, e, l, x, Z, f, b = "undefined" != typeof TextDecoder ? new TextDecoder("utf-16le") : undefined;
+                var t, n, d, r, e, l, x, Z, f, b = "undefined" != typeof TextDecoder ? new TextDecoder("utf-16le") : void 0;
                 function p(A) {
                     var B;
                     for(B = A >> 1; r[B];)++B;
@@ -169,7 +169,7 @@ var h264Mp4Encoder_node = function(A) {
                     }
                 }
                 function q(A, B, Q) {
-                    if (undefined === Q && (Q = 2147483647), 2 > Q) return 0;
+                    if (void 0 === Q && (Q = 2147483647), 2 > Q) return 0;
                     var I = B;
                     Q = (Q -= 2) < 2 * A.length ? Q / 2 : A.length;
                     for(var g = 0; g < Q; ++g)r[B >> 1] = A.charCodeAt(g), B += 2;
@@ -186,7 +186,7 @@ var h264Mp4Encoder_node = function(A) {
                     }
                 }
                 function m(A, B, Q) {
-                    if (undefined === Q && (Q = 2147483647), 4 > Q) return 0;
+                    if (void 0 === Q && (Q = 2147483647), 4 > Q) return 0;
                     var I = B;
                     Q = I + Q - 4;
                     for(var g = 0; g < A.length; ++g){
@@ -212,7 +212,7 @@ var h264Mp4Encoder_node = function(A) {
                         if ("function" == typeof Q) Q(B);
                         else {
                             var I = Q.ob;
-                            "number" == typeof I ? undefined === Q.ua ? B.dynCall_v(I) : B.dynCall_vi(I, Q.ua) : I(undefined === Q.ua ? null : Q.ua);
+                            "number" == typeof I ? void 0 === Q.ua ? B.dynCall_v(I) : B.dynCall_vi(I, Q.ua) : I(void 0 === Q.ua ? null : Q.ua);
                         }
                     }
                 }
@@ -360,7 +360,7 @@ var h264Mp4Encoder_node = function(A) {
                             } catch (A) {
                                 throw new fA.b(29);
                             }
-                            if (undefined === C && 0 === g) throw new fA.b(6);
+                            if (void 0 === C && 0 === g) throw new fA.b(6);
                             if (null == C) break;
                             g++, B[Q + E] = C;
                         }
@@ -493,7 +493,7 @@ var h264Mp4Encoder_node = function(A) {
                             return B.dev = fA.ya(A.mode) ? A.id : 1, B.ino = A.id, B.mode = A.mode, B.nlink = 1, B.uid = 0, B.gid = 0, B.rdev = A.rdev, fA.v(A.mode) ? B.size = 4096 : fA.isFile(A.mode) ? B.size = A.l : fA.ma(A.mode) ? B.size = A.link.length : B.size = 0, B.atime = new Date(A.timestamp), B.mtime = new Date(A.timestamp), B.ctime = new Date(A.timestamp), B.Hb = 4096, B.blocks = Math.ceil(B.size / B.Hb), B;
                         },
                         A: function(A, B) {
-                            undefined !== B.mode && (A.mode = B.mode), undefined !== B.timestamp && (A.timestamp = B.timestamp), undefined !== B.size && ZA.oc(A, B.size);
+                            void 0 !== B.mode && (A.mode = B.mode), void 0 !== B.timestamp && (A.timestamp = B.timestamp), void 0 !== B.size && ZA.oc(A, B.size);
                         },
                         lookup: function() {
                             throw fA.Na[44];
@@ -631,7 +631,7 @@ var h264Mp4Encoder_node = function(A) {
                             Ma: true,
                             Za: 0
                         };
-                        for(Q in I) undefined === B[Q] && (B[Q] = I[Q]);
+                        for(Q in I) void 0 === B[Q] && (B[Q] = I[Q]);
                         if (8 < B.Za) throw new fA.b(32);
                         A = aA(A.split("/").filter(function(A) {
                             return !!A;
@@ -737,7 +737,7 @@ var h264Mp4Encoder_node = function(A) {
                     },
                     dc: function(A) {
                         var B = fA.Vb[A];
-                        if (undefined === B) throw Error("Unknown file open mode: " + A);
+                        if (void 0 === B) throw Error("Unknown file open mode: " + A);
                         return B;
                     },
                     mb: function(A) {
@@ -897,10 +897,10 @@ var h264Mp4Encoder_node = function(A) {
                         return I.g.R(I, A, B, Q);
                     },
                     create: function(A, B) {
-                        return fA.R(A, 4095 & (undefined !== B ? B : 438) | 32768, 0);
+                        return fA.R(A, 4095 & (void 0 !== B ? B : 438) | 32768, 0);
                     },
                     mkdir: function(A, B) {
-                        return fA.R(A, 1023 & (undefined !== B ? B : 511) | 16384, 0);
+                        return fA.R(A, 1023 & (void 0 !== B ? B : 511) | 16384, 0);
                     },
                     Pc: function(A, B) {
                         A = A.split("/");
@@ -914,7 +914,7 @@ var h264Mp4Encoder_node = function(A) {
                         }
                     },
                     Da: function(A, B, Q) {
-                        return undefined === Q && (Q = B, B = 438), fA.R(A, 8192 | B, Q);
+                        return void 0 === Q && (Q = B, B = 438), fA.R(A, 8192 | B, Q);
                     },
                     symlink: function(A, B) {
                         if (!tA(A)) throw new fA.b(44);
@@ -1092,7 +1092,7 @@ var h264Mp4Encoder_node = function(A) {
                     },
                     open: function(A, Q, I, g, E) {
                         if ("" === A) throw new fA.b(44);
-                        if (I = 64 & (Q = "string" == typeof Q ? fA.dc(Q) : Q) ? 4095 & (undefined === I ? 438 : I) | 32768 : 0, "object" == typeof A) var C = A;
+                        if (I = 64 & (Q = "string" == typeof Q ? fA.dc(Q) : Q) ? 4095 & (void 0 === I ? 438 : I) | 32768 : 0, "object" == typeof A) var C = A;
                         else {
                             A = SA(A);
                             try {
@@ -1152,7 +1152,7 @@ var h264Mp4Encoder_node = function(A) {
                         if (1 == (2097155 & A.flags)) throw new fA.b(8);
                         if (fA.v(A.node.mode)) throw new fA.b(31);
                         if (!A.h.read) throw new fA.b(28);
-                        var E = undefined !== g;
+                        var E = void 0 !== g;
                         if (E) {
                             if (!A.seekable) throw new fA.b(70);
                         } else g = A.position;
@@ -1165,7 +1165,7 @@ var h264Mp4Encoder_node = function(A) {
                         if (fA.v(A.node.mode)) throw new fA.b(31);
                         if (!A.h.write) throw new fA.b(28);
                         A.seekable && 1024 & A.flags && fA.K(A, 0, 2);
-                        var C = undefined !== g;
+                        var C = void 0 !== g;
                         if (C) {
                             if (!A.seekable) throw new fA.b(70);
                         } else g = A.position;
@@ -1211,10 +1211,10 @@ var h264Mp4Encoder_node = function(A) {
                     writeFile: function(A, B, Q) {
                         if ((Q = Q || {}).flags = Q.flags || "w", A = fA.open(A, Q.flags, Q.mode), "string" == typeof B) {
                             var I = new Uint8Array(K(B) + 1);
-                            B = V(B, I, 0, I.length), fA.write(A, I, 0, B, undefined, Q.Jb);
+                            B = V(B, I, 0, I.length), fA.write(A, I, 0, B, void 0, Q.Jb);
                         } else {
                             if (!ArrayBuffer.isView(B)) throw Error("Unsupported data type");
-                            fA.write(A, B, 0, B.byteLength, undefined, Q.Jb);
+                            fA.write(A, B, 0, B.byteLength, void 0, Q.Jb);
                         }
                         fA.close(A);
                     },
@@ -1400,7 +1400,7 @@ var h264Mp4Encoder_node = function(A) {
                                     } catch (A) {
                                         throw new fA.b(29);
                                     }
-                                    if (undefined === D && 0 === E) throw new fA.b(6);
+                                    if (void 0 === D && 0 === E) throw new fA.b(6);
                                     if (null == D) break;
                                     E++, B[I + C] = D;
                                 }
@@ -1452,15 +1452,15 @@ var h264Mp4Encoder_node = function(A) {
                             var C = this;
                             C.Ib(function(A) {
                                 var B = A * E, g = (A + 1) * E - 1;
-                                if (g = Math.min(g, I - 1), undefined === C.S[A]) {
+                                if (g = Math.min(g, I - 1), void 0 === C.S[A]) {
                                     var D = C.S;
                                     if (B > g) throw Error("invalid range (" + B + ", " + g + ") or no bytes requested!");
                                     if (g > I - 1) throw Error("only " + I + " bytes available! programmer error!");
                                     var i = new XMLHttpRequest;
                                     if (i.open("GET", Q, false), I !== E && i.setRequestHeader("Range", "bytes=" + B + "-" + g), "undefined" != typeof Uint8Array && (i.responseType = "arraybuffer"), i.overrideMimeType && i.overrideMimeType("text/plain; charset=x-user-defined"), i.send(null), !(200 <= i.status && 300 > i.status || 304 === i.status)) throw Error("Couldn't load " + Q + ". Status: " + i.status);
-                                    B = undefined !== i.response ? new Uint8Array(i.response || []) : vB(i.responseText || "", true), D[A] = B;
+                                    B = void 0 !== i.response ? new Uint8Array(i.response || []) : vB(i.responseText || "", true), D[A] = B;
                                 }
-                                if (undefined === C.S[A]) throw Error("doXHR failed!");
+                                if (void 0 === C.S[A]) throw Error("doXHR failed!");
                                 return C.S[A];
                             }), !A && I || (E = I = 1, E = I = this.rb(0).length, w("LazyFiles on gzip forces download of the whole file when length is accessed")), this.Fb = I, this.Eb = E, this.Ua = true;
                         }, "undefined" != typeof XMLHttpRequest) {
@@ -1520,9 +1520,9 @@ var h264Mp4Encoder_node = function(A) {
                                 }), N = true);
                             }), N || U(I);
                         }
-                        (undefined).ka();
+                        (void 0).ka();
                         var c = Q ? tA(KA(A, Q)) : A;
-                        iA(), "string" == typeof I ? (undefined).yc(I, function(A) {
+                        iA(), "string" == typeof I ? (void 0).yc(I, function(A) {
                             U(A);
                         }, D) : U(I);
                     },
@@ -1585,7 +1585,7 @@ var h264Mp4Encoder_node = function(A) {
                             }), E.onerror = Q;
                         }, g.onerror = Q;
                     }
-                }, bA = {}, pA = undefined;
+                }, bA = {}, pA = void 0;
                 function qA() {
                     return l[(pA += 4) - 4 >> 2];
                 }
@@ -1607,14 +1607,14 @@ var h264Mp4Encoder_node = function(A) {
                             throw new TypeError("Unknown type size: " + A);
                     }
                 }
-                var mA = undefined;
+                var mA = void 0;
                 function WA(A) {
                     for(var B = ""; d[A];)B += mA[d[A++]];
                     return B;
                 }
                 var XA = {}, jA = {}, zA = {};
                 function vA(A) {
-                    if (undefined === A) return "_unknown";
+                    if (void 0 === A) return "_unknown";
                     var B = (A = A.replace(/[^a-zA-Z0-9_]/g, "$")).charCodeAt(0);
                     return 48 <= B && 57 >= B ? "_" + A : A;
                 }
@@ -1623,17 +1623,17 @@ var h264Mp4Encoder_node = function(A) {
                 }
                 function PA(A) {
                     var B = Error, Q = TA(A, function(B) {
-                        this.name = A, this.message = B, undefined !== (B = Error(B).stack) && (this.stack = this.toString() + "\n" + B.replace(/^Error(:[^\n]*)?\n/, ""));
+                        this.name = A, this.message = B, void 0 !== (B = Error(B).stack) && (this.stack = this.toString() + "\n" + B.replace(/^Error(:[^\n]*)?\n/, ""));
                     });
                     return Q.prototype = Object.create(B.prototype), Q.prototype.constructor = Q, Q.prototype.toString = function() {
-                        return undefined === this.message ? this.name : this.name + ": " + this.message;
+                        return void 0 === this.message ? this.name : this.name + ": " + this.message;
                     }, Q;
                 }
-                var _A = undefined;
+                var _A = void 0;
                 function $A(A) {
                     throw new _A(A);
                 }
-                var AB = undefined;
+                var AB = void 0;
                 function BB(A) {
                     throw new AB(A);
                 }
@@ -1693,7 +1693,7 @@ var h264Mp4Encoder_node = function(A) {
                         return CB.register(A, A.c, A.c), A;
                     })(A));
                 }
-                var FB = undefined, UB = [];
+                var FB = void 0, UB = [];
                 function cB() {
                     for(; UB.length;){
                         var A = UB.pop();
@@ -1703,7 +1703,7 @@ var h264Mp4Encoder_node = function(A) {
                 function NB() {}
                 var HB = {};
                 function GB(A, B, Q) {
-                    if (undefined === A[B].N) {
+                    if (void 0 === A[B].N) {
                         var I = A[B];
                         A[B] = function() {
                             return A[B].N.hasOwnProperty(arguments.length) || $A("Function '" + Q + "' called with an invalid number of arguments (" + arguments.length + ") - expects one of (" + A[B].N + ")!"), A[B].N[arguments.length].apply(this, arguments);
@@ -1728,7 +1728,7 @@ var h264Mp4Encoder_node = function(A) {
                         }
                         return 0;
                     }
-                    if (B.c || $A('Cannot pass "' + lB(B) + '" as a ' + this.name), B.c.j || $A("Cannot pass deleted object as a pointer of type " + this.name), !this.za && B.c.o.za && $A("Cannot convert argument of type " + (B.c.F ? B.c.F.name : B.c.o.name) + " to parameter type " + this.name), Q = wB(B.c.j, B.c.o.i, this.i), this.Ba) switch(undefined === B.c.D && $A("Passing raw pointer to smart pointer is illegal"), this.qc){
+                    if (B.c || $A('Cannot pass "' + lB(B) + '" as a ' + this.name), B.c.j || $A("Cannot pass deleted object as a pointer of type " + this.name), !this.za && B.c.o.za && $A("Cannot convert argument of type " + (B.c.F ? B.c.F.name : B.c.o.name) + " to parameter type " + this.name), Q = wB(B.c.j, B.c.o.i, this.i), this.Ba) switch(void 0 === B.c.D && $A("Passing raw pointer to smart pointer is illegal"), this.qc){
                         case 0:
                             B.c.F === this ? Q = B.c.D : $A("Cannot convert argument of type " + (B.c.F ? B.c.F.name : B.c.o.name) + " to parameter type " + this.name);
                             break;
@@ -1766,14 +1766,14 @@ var h264Mp4Encoder_node = function(A) {
                     }));
                 }
                 function aB(A, B, Q, I) {
-                    this.name = A, this.i = B, this.Ta = Q, this.za = I, this.Ba = false, this.$ = this.nc = this.mc = this.xb = this.qc = this.kc = undefined, undefined !== B.G ? this.toWireType = sB : (this.toWireType = I ? YB : LB, this.O = null);
+                    this.name = A, this.i = B, this.Ta = Q, this.za = I, this.Ba = false, this.$ = this.nc = this.mc = this.xb = this.qc = this.kc = void 0, void 0 !== B.G ? this.toWireType = sB : (this.toWireType = I ? YB : LB, this.O = null);
                 }
                 function SB(A, Q) {
                     A = WA(A);
                     for(var I = B["dynCall_" + A], g = [], E = 1; E < A.length; ++E)g.push("a" + E);
                     return E = "return function dynCall_" + A + "_" + Q + "(" + g.join(", ") + ") {\n", E += "    return dynCall(rawFunction" + (g.length ? ", " : "") + g.join(", ") + ");\n", "function" != typeof (I = new Function("dynCall", "rawFunction", E + "};\n")(I, Q)) && $A("unknown function pointer with signature " + A + ": " + Q), I;
                 }
-                var MB = undefined;
+                var MB = void 0;
                 function JB(A) {
                     var B = WA(A = yQ(A));
                     return IQ(A), B;
@@ -1802,7 +1802,7 @@ var h264Mp4Encoder_node = function(A) {
                 var dB = [], rB = [
                     {},
                     {
-                        value: undefined
+                        value: void 0
                     },
                     {
                         value: null
@@ -1816,7 +1816,7 @@ var h264Mp4Encoder_node = function(A) {
                 ];
                 function eB(A) {
                     switch(A){
-                        case undefined:
+                        case void 0:
                             return 1;
                         case null:
                             return 2;
@@ -1997,7 +1997,7 @@ var h264Mp4Encoder_node = function(A) {
                     }));
                     return A.c.count.value += 1, A.c.aa = false, A;
                 }, NB.prototype.delete = function() {
-                    this.c.j || EB(this), this.c.aa && !this.c.qa && $A("Object already scheduled for deletion"), DB(this), iB(this.c), this.c.qa || (this.c.D = undefined, this.c.j = undefined);
+                    this.c.j || EB(this), this.c.aa && !this.c.qa && $A("Object already scheduled for deletion"), DB(this), iB(this.c), this.c.qa || (this.c.D = void 0, this.c.j = void 0);
                 }, NB.prototype.isDeleted = function() {
                     return !this.c.j;
                 }, NB.prototype.deleteLater = function() {
@@ -2023,14 +2023,14 @@ var h264Mp4Encoder_node = function(A) {
                     var Q = this.Yb(A);
                     if (!Q) return this.ja(A), null;
                     var I = function(A, B) {
-                        for(undefined === B && $A("ptr should not be undefined"); A.G;)B = A.ta(B), A = A.G;
+                        for(void 0 === B && $A("ptr should not be undefined"); A.G;)B = A.ta(B), A = A.G;
                         return hB[B];
                     }(this.i, Q);
-                    if (undefined !== I) return 0 === I.c.count.value ? (I.c.j = Q, I.c.D = A, I.clone()) : (I = I.clone(), this.ja(A), I);
+                    if (void 0 !== I) return 0 === I.c.count.value ? (I.c.j = Q, I.c.D = A, I.clone()) : (I = I.clone(), this.ja(A), I);
                     if (I = this.i.Wb(Q), !(I = HB[I])) return B.call(this);
                     I = this.za ? I.Mb : I.pointerType;
                     var g = function A(B, Q, I) {
-                        return Q === I ? B : undefined === I.G || null === (B = A(B, Q, I.G)) ? null : I.Tb(B);
+                        return Q === I ? B : void 0 === I.G || null === (B = A(B, Q, I.G)) ? null : I.Tb(B);
                     }(Q, this.i, I.i);
                     return null === g ? B.call(this) : this.Ba ? kB(I.i.U, {
                         o: I,
@@ -2050,10 +2050,10 @@ var h264Mp4Encoder_node = function(A) {
                 }, B.flushPendingDeletes = cB, B.setDelayFunction = function(A) {
                     FB = A, UB.length && FB && FB(cB);
                 }, MB = B.UnboundTypeError = PA("UnboundTypeError"), B.count_emval_handles = function() {
-                    for(var A = 0, B = 5; B < rB.length; ++B) undefined !== rB[B] && ++A;
+                    for(var A = 0, B = 5; B < rB.length; ++B) void 0 !== rB[B] && ++A;
                     return A;
                 }, B.get_first_emval = function() {
-                    for(var A = 5; A < rB.length; ++A)if (undefined !== rB[A]) return rB[A];
+                    for(var A = 5; A < rB.length; ++A)if (void 0 !== rB[A]) return rB[A];
                     return null;
                 };
                 var PB = "function" == typeof atob ? atob : function(A) {
@@ -2213,7 +2213,7 @@ var h264Mp4Encoder_node = function(A) {
                                     return -28;
                             }
                         } catch (A) {
-                            return undefined !== fA && A instanceof fA.b || FA(A), -A.B;
+                            return void 0 !== fA && A instanceof fA.b || FA(A), -A.B;
                         }
                     },
                     __sys_ioctl: function(A, B, Q) {
@@ -2246,7 +2246,7 @@ var h264Mp4Encoder_node = function(A) {
                                     FA("bad ioctl syscall " + B);
                             }
                         } catch (A) {
-                            return undefined !== fA && A instanceof fA.b || FA(A), -A.B;
+                            return void 0 !== fA && A instanceof fA.b || FA(A), -A.B;
                         }
                     },
                     __sys_munmap: function(A, B) {
@@ -2266,7 +2266,7 @@ var h264Mp4Encoder_node = function(A) {
                             }
                             return Q;
                         } catch (A) {
-                            return undefined !== fA && A instanceof fA.b || FA(A), -A.B;
+                            return void 0 !== fA && A instanceof fA.b || FA(A), -A.B;
                         }
                     },
                     __sys_open: function(A, B, Q) {
@@ -2275,7 +2275,7 @@ var h264Mp4Encoder_node = function(A) {
                             var I = J(A), g = qA();
                             return fA.open(I, B, g).fd;
                         } catch (A) {
-                            return undefined !== fA && A instanceof fA.b || FA(A), -A.B;
+                            return void 0 !== fA && A instanceof fA.b || FA(A), -A.B;
                         }
                     },
                     __sys_stat64: function(A, B) {
@@ -2302,7 +2302,7 @@ var h264Mp4Encoder_node = function(A) {
                             }
                             return g;
                         } catch (A) {
-                            return undefined !== fA && A instanceof fA.b || FA(A), -A.B;
+                            return void 0 !== fA && A instanceof fA.b || FA(A), -A.B;
                         }
                     },
                     _embind_register_bool: function(A, B, Q, I, g) {
@@ -2332,7 +2332,7 @@ var h264Mp4Encoder_node = function(A) {
                         U = WA(U), C = SB(E, C), i && (i = SB(D, i)), F && (F = SB(y, F)), N = SB(c, N);
                         var H = vA(U);
                         !function(A, Q) {
-                            B.hasOwnProperty(A) ? ($A("Cannot register public name '" + A + "' twice"), GB(B, A, A), B.hasOwnProperty(undefined) && $A("Cannot register multiple overloads of a function with the same number of arguments (undefined)!"), B[A].N[undefined] = Q) : B[A] = Q;
+                            B.hasOwnProperty(A) ? ($A("Cannot register public name '" + A + "' twice"), GB(B, A, A), B.hasOwnProperty(void 0) && $A("Cannot register multiple overloads of a function with the same number of arguments (undefined)!"), B[A].N[void 0] = Q) : B[A] = Q;
                         }(H, function() {
                             VB("Cannot construct " + U + " due to unbound types", [
                                 g
@@ -2348,9 +2348,9 @@ var h264Mp4Encoder_node = function(A) {
                             else E = NB.prototype;
                             Q = TA(H, function() {
                                 if (Object.getPrototypeOf(this) !== D) throw new _A("Use 'new' to construct " + U);
-                                if (undefined === y.V) throw new _A(U + " has no accessible constructor");
+                                if (void 0 === y.V) throw new _A(U + " has no accessible constructor");
                                 var A = y.V[arguments.length];
-                                if (undefined === A) throw new _A("Tried to invoke ctor of " + U + " with invalid number of parameters (" + arguments.length + ") - expected (" + Object.keys(y.V).toString() + ") parameters instead!");
+                                if (void 0 === A) throw new _A("Tried to invoke ctor of " + U + " with invalid number of parameters (" + arguments.length + ") - expected (" + Object.keys(y.V).toString() + ") parameters instead!");
                                 return A.apply(this, arguments);
                             });
                             var D = Object.create(E, {
@@ -2366,7 +2366,7 @@ var h264Mp4Encoder_node = function(A) {
                                 pointerType: E,
                                 Mb: c
                             }, function(A, Q) {
-                                B.hasOwnProperty(A) || BB("Replacing nonexistant public symbol"), B[A] = Q, B[A].va = undefined;
+                                B.hasOwnProperty(A) || BB("Replacing nonexistant public symbol"), B[A] = Q, B[A].va = void 0;
                             }(H, Q), [
                                 I,
                                 E,
@@ -2385,7 +2385,7 @@ var h264Mp4Encoder_node = function(A) {
                             A
                         ], function(A) {
                             var Q = "constructor " + (A = A[0]).name;
-                            if (undefined === A.i.V && (A.i.V = []), undefined !== A.i.V[B - 1]) throw new _A("Cannot register multiple constructors with identical number of parameters (" + (B - 1) + ") for class '" + A.name + "'! Overload resolution is currently only performed using the parameter count, not actual type info!");
+                            if (void 0 === A.i.V && (A.i.V = []), void 0 !== A.i.V[B - 1]) throw new _A("Cannot register multiple constructors with identical number of parameters (" + (B - 1) + ") for class '" + A.name + "'! Overload resolution is currently only performed using the parameter count, not actual type info!");
                             return A.i.V[B - 1] = function() {
                                 VB("Cannot construct " + A.name + " due to unbound types", C);
                             }, QB([], C, function(I) {
@@ -2408,11 +2408,11 @@ var h264Mp4Encoder_node = function(A) {
                             var g = (A = A[0]).name + "." + B;
                             D && A.i.lc.push(B);
                             var y = A.i.U, F = y[B];
-                            return undefined === F || undefined === F.N && F.className !== A.name && F.va === Q - 2 ? (I.va = Q - 2, I.className = A.name, y[B] = I) : (GB(y, B, g), y[B].N[Q - 2] = I), QB([], i, function(I) {
+                            return void 0 === F || void 0 === F.N && F.className !== A.name && F.va === Q - 2 ? (I.va = Q - 2, I.className = A.name, y[B] = I) : (GB(y, B, g), y[B].N[Q - 2] = I), QB([], i, function(I) {
                                 var D = g, i = A, F = E, U = I.length;
                                 2 > U && $A("argTypes array size mismatch! Must at least get return value and 'this' types!");
                                 var c = null !== I[1] && null !== i, N = false;
-                                for(i = 1; i < I.length; ++i)if (null !== I[i] && undefined === I[i].O) {
+                                for(i = 1; i < I.length; ++i)if (null !== I[i] && void 0 === I[i].O) {
                                     N = true;
                                     break;
                                 }
@@ -2435,7 +2435,7 @@ var h264Mp4Encoder_node = function(A) {
                                     if (!(B instanceof Function)) throw new TypeError("new_ called with constructor type " + typeof B + " which is not a function");
                                     var Q = TA(B.name || "unknownFunctionName", function() {});
                                     return Q.prototype = B.prototype, Q = new Q, (A = B.apply(Q, A)) instanceof Object ? A : Q;
-                                })(G).apply(null, F), undefined === y[B].N ? (I.va = Q - 2, y[B] = I) : y[B].N[Q - 2] = I, [];
+                                })(G).apply(null, F), void 0 === y[B].N ? (I.va = Q - 2, y[B] = I) : y[B].N[Q - 2] = I, [];
                             }), [];
                         });
                     },
@@ -2490,7 +2490,7 @@ var h264Mp4Encoder_node = function(A) {
                             name: B = WA(B),
                             fromWireType: function(A) {
                                 var B = rB[A].value;
-                                return 4 < A && 0 == --rB[A].ra && (rB[A] = undefined, dB.push(A)), B;
+                                return 4 < A && 0 == --rB[A].ra && (rB[A] = void 0, dB.push(A)), B;
                             },
                             toWireType: function(A, B) {
                                 return eB(B);
@@ -2578,7 +2578,7 @@ var h264Mp4Encoder_node = function(A) {
                                     for(I = 0; I <= B; ++I){
                                         var C = A + 4 + I;
                                         if (0 == d[C]) {
-                                            if (E = J(E), undefined === D) var D = E;
+                                            if (E = J(E), void 0 === D) var D = E;
                                             else D += String.fromCharCode(0), D += E;
                                             E = C + 1;
                                         }
@@ -2630,7 +2630,7 @@ var h264Mp4Encoder_node = function(A) {
                                 for(E = 0; E <= Q; ++E){
                                     var F = A + 4 + E * B;
                                     if (0 == g[F >> D]) {
-                                        if (y = I(y), undefined === U) var U = y;
+                                        if (y = I(y), void 0 === U) var U = y;
                                         else U += String.fromCharCode(0), U += y;
                                         y = F + B;
                                     }
@@ -2680,7 +2680,7 @@ var h264Mp4Encoder_node = function(A) {
                                     var g = 1;
                                     break A;
                                 } catch (A) {}
-                                g = undefined;
+                                g = void 0;
                             }
                             if (g) return true;
                         }
@@ -2707,7 +2707,7 @@ var h264Mp4Encoder_node = function(A) {
                             var B = uA(A);
                             return fA.close(B), 0;
                         } catch (A) {
-                            return undefined !== fA && A instanceof fA.b || FA(A), A.B;
+                            return void 0 !== fA && A instanceof fA.b || FA(A), A.B;
                         }
                     },
                     fd_read: function(A, B, Q, I) {
@@ -2725,7 +2725,7 @@ var h264Mp4Encoder_node = function(A) {
                             }
                             return l[I >> 2] = i, 0;
                         } catch (A) {
-                            return undefined !== fA && A instanceof fA.b || FA(A), A.B;
+                            return void 0 !== fA && A instanceof fA.b || FA(A), A.B;
                         }
                     },
                     fd_seek: function(A, B, Q, I, g) {
@@ -2736,7 +2736,7 @@ var h264Mp4Encoder_node = function(A) {
                                 (cA = E.position, 1 <= +BA(cA) ? 0 < cA ? (0 | gA(+IA(cA / 4294967296), 4294967295)) >>> 0 : ~~+QA((cA - +(~~cA >>> 0)) / 4294967296) >>> 0 : 0)
                             ], l[g >> 2] = NA[0], l[g + 4 >> 2] = NA[1], E.Oa && 0 === A && 0 === I && (E.Oa = null), 0);
                         } catch (A) {
-                            return undefined !== fA && A instanceof fA.b || FA(A), A.B;
+                            return void 0 !== fA && A instanceof fA.b || FA(A), A.B;
                         }
                     },
                     fd_write: function(A, B, Q, I) {
@@ -2754,7 +2754,7 @@ var h264Mp4Encoder_node = function(A) {
                             }
                             return l[I >> 2] = D, 0;
                         } catch (A) {
-                            return undefined !== fA && A instanceof fA.b || FA(A), A.B;
+                            return void 0 !== fA && A instanceof fA.b || FA(A), A.B;
                         }
                     },
                     getTempRet0: function() {
@@ -3468,7 +3468,7 @@ var h264Mp4Encoder_node = function(A) {
             E.then(()=>{
                 A();
             });
-        }), D = ()=>g(undefined, undefined, undefined, function*() {
+        }), D = ()=>g(void 0, void 0, void 0, function*() {
                 yield C;
                 const A = new E.H264MP4Encoder;
                 return A.FS = E.FS, A;

@@ -1,4 +1,4 @@
-import { B as Buffer } from '../_chunks/polyfills-QWxePbon.js';
+import { B as Buffer } from '../_chunks/polyfills-CAtupzpz.js';
 
 /* ES Module Shims Wasm 2.0.10 */ (function() {
     const hasDocument = typeof document !== 'undefined';
@@ -38,7 +38,7 @@ import { B as Buffer } from '../_chunks/polyfills-QWxePbon.js';
     };
     const baseUrl = hasDocument ? document.baseURI : `${location.protocol}//${location.host}${location.pathname.includes('/') ? location.pathname.slice(0, location.pathname.lastIndexOf('/') + 1) : location.pathname}`;
     const createBlob = (source, type)=>{
-        if (type === undefined) type = 'text/javascript';
+        if (type === void 0) type = 'text/javascript';
         return URL.createObjectURL(new Blob([
             source
         ], {
@@ -282,7 +282,7 @@ import { B as Buffer } from '../_chunks/polyfills-QWxePbon.js';
         1
     ]).buffer)[0];
     function parse(E, g) {
-        if (g === undefined) g = "@";
+        if (g === void 0) g = "@";
         if (!C) return init.then(()=>parse(E));
         const I = E.length + 1, w = (C.__heap_base.value || C.__heap_base) + 4 * I - C.memory.buffer.byteLength;
         w > 0 && C.memory.grow(Math.ceil(w / 65536));
@@ -306,7 +306,7 @@ import { B as Buffer } from '../_chunks/polyfills-QWxePbon.js';
             });
         }
         for(; C.re();){
-            const A = C.es(), Q = C.ee(), B = C.els(), g = C.ele(), I = E.slice(A, Q), w = I[0], K = B < 0 ? undefined : E.slice(B, g), o = K ? K[0] : "";
+            const A = C.es(), Q = C.ee(), B = C.els(), g = C.ele(), I = E.slice(A, Q), w = I[0], K = B < 0 ? void 0 : E.slice(B, g), o = K ? K[0] : "";
             D.push({
                 s: A,
                 e: Q,
@@ -351,7 +351,7 @@ import { B as Buffer } from '../_chunks/polyfills-QWxePbon.js';
         C = A;
     });
     function _resolve(id, parentUrl) {
-        if (parentUrl === undefined) parentUrl = baseUrl;
+        if (parentUrl === void 0) parentUrl = baseUrl;
         const urlResolved = resolveIfNotPlainOrUrl(id, parentUrl) || asURL(id);
         const firstResolved = firstImportMap && resolveImportMap(firstImportMap, urlResolved || id, parentUrl);
         const composedResolved = composedImportMap === firstImportMap ? firstResolved : resolveImportMap(composedImportMap, urlResolved || id, parentUrl);
@@ -375,7 +375,7 @@ import { B as Buffer } from '../_chunks/polyfills-QWxePbon.js';
         };
     }
     const resolve = resolveHook ? (id, parentUrl)=>{
-        if (parentUrl === undefined) parentUrl = baseUrl;
+        if (parentUrl === void 0) parentUrl = baseUrl;
         const result = resolveHook(id, parentUrl, defaultResolve);
         return result ? {
             r: result,
@@ -384,7 +384,7 @@ import { B as Buffer } from '../_chunks/polyfills-QWxePbon.js';
         } : _resolve(id, parentUrl);
     } : _resolve;
     async function importHandler(id, opts, parentUrl, sourcePhase) {
-        if (parentUrl === undefined) parentUrl = baseUrl;
+        if (parentUrl === void 0) parentUrl = baseUrl;
         await initPromise; // needed for shim check
         if (importHook) await importHook(id, opts, parentUrl);
         if (shimMode || !baselinePassthrough) {
@@ -438,7 +438,7 @@ import { B as Buffer } from '../_chunks/polyfills-QWxePbon.js';
         throw Error(`Unable to resolve specifier '${id}'${fromParent(parentUrl)}`);
     }
     function metaResolve(id, parentUrl) {
-        if (parentUrl === undefined) parentUrl = this.url;
+        if (parentUrl === void 0) parentUrl = this.url;
         return resolve(id, `${parentUrl}`).r;
     }
     importShim.resolve = (id, parentUrl)=>resolve(id, parentUrl).r;
@@ -813,7 +813,7 @@ import { B as Buffer } from '../_chunks/polyfills-QWxePbon.js';
             return {
                 r,
                 s: `var s=new CSSStyleSheet();s.replaceSync(${JSON.stringify((await res.text()).replace(cssUrlRegEx, (_match, quotes, relUrl1, relUrl2)=>{
-                    if (quotes === undefined) quotes = '';
+                    if (quotes === void 0) quotes = '';
                     return `url(${quotes}${resolveUrl(relUrl1 || relUrl2, url)}${quotes})`;
                 }))});export default s;`,
                 t: 'css'
@@ -987,7 +987,7 @@ import { B as Buffer } from '../_chunks/polyfills-QWxePbon.js';
     const hasNext = (script)=>script.nextSibling || script.parentNode && hasNext(script.parentNode);
     const epCheck = (script, ready)=>script.ep || !ready && (!script.src && !script.innerHTML || !hasNext(script)) || script.getAttribute('noshim') !== null || !(script.ep = true);
     function processImportMap(script, ready) {
-        if (ready === undefined) ready = readyStateCompleteCnt > 0;
+        if (ready === void 0) ready = readyStateCompleteCnt > 0;
         if (epCheck(script, ready)) return;
         // we dont currently support external import maps in polyfill mode to match native
         if (script.src) {
@@ -1011,7 +1011,7 @@ import { B as Buffer } from '../_chunks/polyfills-QWxePbon.js';
         legacyAcceptingImportMaps = false;
     }
     function processScript(script, ready) {
-        if (ready === undefined) ready = readyStateCompleteCnt > 0;
+        if (ready === void 0) ready = readyStateCompleteCnt > 0;
         if (epCheck(script, ready)) return;
         if (script.lang === 'ts' && !script.src) {
             const source = script.innerHTML;

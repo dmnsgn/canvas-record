@@ -113,10 +113,10 @@ var StreamTarget = class extends Target {
         if (options.onCluster && typeof options.onCluster !== "function") {
             throw new TypeError("options.onCluster, when provided, must be a function.");
         }
-        if (options.chunked !== undefined && typeof options.chunked !== "boolean") {
+        if (options.chunked !== void 0 && typeof options.chunked !== "boolean") {
             throw new TypeError("options.chunked, when provided, must be a boolean.");
         }
-        if (options.chunkSize !== undefined && (!Number.isInteger(options.chunkSize) || options.chunkSize < 1024)) {
+        if (options.chunkSize !== void 0 && (!Number.isInteger(options.chunkSize) || options.chunkSize < 1024)) {
             throw new TypeError("options.chunkSize, when provided, must be an integer and not smaller than 1024.");
         }
     }
@@ -129,11 +129,11 @@ var FileSystemWritableFileStreamTarget = class extends Target {
         if (!(stream instanceof FileSystemWritableFileStream)) {
             throw new TypeError("FileSystemWritableFileStreamTarget requires a FileSystemWritableFileStream instance.");
         }
-        if (options !== undefined && typeof options !== "object") {
+        if (options !== void 0 && typeof options !== "object") {
             throw new TypeError("FileSystemWritableFileStreamTarget's options, when provided, must be an object.");
         }
         if (options) {
-            if (options.chunkSize !== undefined && (!Number.isInteger(options.chunkSize) || options.chunkSize <= 0)) {
+            if (options.chunkSize !== void 0 && (!Number.isInteger(options.chunkSize) || options.chunkSize <= 0)) {
                 throw new TypeError("options.chunkSize, when provided, must be a positive integer");
             }
         }
@@ -158,7 +158,7 @@ var Writer = class {
         this.pos = newPos;
     }
     writeEBMLVarInt(value, width) {
-        if (width === undefined) width = measureEBMLVarInt(value);
+        if (width === void 0) width = measureEBMLVarInt(value);
         let pos = 0;
         switch(width){
             case 1:
@@ -267,7 +267,7 @@ writeFloat64_fn = function(value) {
 };
 _writeUnsignedInt = new WeakSet();
 writeUnsignedInt_fn = function(value, width) {
-    if (width === undefined) width = measureUnsignedInt(value);
+    if (width === void 0) width = measureUnsignedInt(value);
     let pos = 0;
     switch(width){
         case 6:
@@ -297,7 +297,7 @@ var ArrayBufferTargetWriter = class extends Writer {
     constructor(target){
         super();
         __privateAdd(this, _ensureSize);
-        __privateAdd(this, _target, undefined);
+        __privateAdd(this, _target, void 0);
         __privateAdd(this, _buffer, new ArrayBuffer(2 ** 16));
         __privateAdd(this, _bytes, new Uint8Array(__privateGet(this, _buffer)));
         __privateSet(this, _target, target);
@@ -332,9 +332,9 @@ var BaseStreamTargetWriter = class extends Writer {
         super();
         this.target = target;
         __privateAdd(this, _trackingWrites, false);
-        __privateAdd(this, _trackedWrites, undefined);
-        __privateAdd(this, _trackedStart, undefined);
-        __privateAdd(this, _trackedEnd, undefined);
+        __privateAdd(this, _trackedWrites, void 0);
+        __privateAdd(this, _trackedStart, void 0);
+        __privateAdd(this, _trackedEnd, void 0);
     }
     write(data) {
         if (!__privateGet(this, _trackingWrites)) return;
@@ -371,7 +371,7 @@ var BaseStreamTargetWriter = class extends Writer {
             start: __privateGet(this, _trackedStart),
             end: __privateGet(this, _trackedEnd)
         };
-        __privateSet(this, _trackedWrites, undefined);
+        __privateSet(this, _trackedWrites, void 0);
         __privateSet(this, _trackingWrites, false);
         return result;
     }
@@ -392,9 +392,9 @@ var StreamTargetWriter = class extends BaseStreamTargetWriter {
         __privateAdd(this, _flushChunks);
         __privateAdd(this, _sections, []);
         __privateAdd(this, _lastFlushEnd, 0);
-        __privateAdd(this, _ensureMonotonicity, undefined);
-        __privateAdd(this, _chunked, undefined);
-        __privateAdd(this, _chunkSize, undefined);
+        __privateAdd(this, _ensureMonotonicity, void 0);
+        __privateAdd(this, _chunked, void 0);
+        __privateAdd(this, _chunkSize, void 0);
         __privateAdd(this, _chunks, []);
         __privateSet(this, _ensureMonotonicity, ensureMonotonicity);
         __privateSet(this, _chunked, target.options?.chunked ?? false);
@@ -524,7 +524,7 @@ createChunk_fn = function(includesPosition) {
 };
 _flushChunks = new WeakSet();
 flushChunks_fn = function(force) {
-    if (force === undefined) force = false;
+    if (force === void 0) force = false;
     for(let i = 0; i < __privateGet(this, _chunks).length; i++){
         let chunk = __privateGet(this, _chunks)[i];
         if (!chunk.shouldFlush && !force) continue;
@@ -594,30 +594,30 @@ var Muxer = class {
         __privateAdd(this, _createNewCluster);
         __privateAdd(this, _finalizeCurrentCluster);
         __privateAdd(this, _ensureNotFinalized);
-        __privateAdd(this, _options, undefined);
-        __privateAdd(this, _writer, undefined);
-        __privateAdd(this, _segment, undefined);
-        __privateAdd(this, _segmentInfo, undefined);
-        __privateAdd(this, _seekHead, undefined);
-        __privateAdd(this, _tracksElement, undefined);
-        __privateAdd(this, _segmentDuration, undefined);
-        __privateAdd(this, _colourElement, undefined);
-        __privateAdd(this, _videoCodecPrivate, undefined);
-        __privateAdd(this, _audioCodecPrivate, undefined);
-        __privateAdd(this, _subtitleCodecPrivate, undefined);
-        __privateAdd(this, _cues, undefined);
-        __privateAdd(this, _currentCluster, undefined);
-        __privateAdd(this, _currentClusterTimestamp, undefined);
+        __privateAdd(this, _options, void 0);
+        __privateAdd(this, _writer, void 0);
+        __privateAdd(this, _segment, void 0);
+        __privateAdd(this, _segmentInfo, void 0);
+        __privateAdd(this, _seekHead, void 0);
+        __privateAdd(this, _tracksElement, void 0);
+        __privateAdd(this, _segmentDuration, void 0);
+        __privateAdd(this, _colourElement, void 0);
+        __privateAdd(this, _videoCodecPrivate, void 0);
+        __privateAdd(this, _audioCodecPrivate, void 0);
+        __privateAdd(this, _subtitleCodecPrivate, void 0);
+        __privateAdd(this, _cues, void 0);
+        __privateAdd(this, _currentCluster, void 0);
+        __privateAdd(this, _currentClusterTimestamp, void 0);
         __privateAdd(this, _duration, 0);
         __privateAdd(this, _videoChunkQueue, []);
         __privateAdd(this, _audioChunkQueue, []);
         __privateAdd(this, _subtitleChunkQueue, []);
-        __privateAdd(this, _firstVideoTimestamp, undefined);
-        __privateAdd(this, _firstAudioTimestamp, undefined);
+        __privateAdd(this, _firstVideoTimestamp, void 0);
+        __privateAdd(this, _firstAudioTimestamp, void 0);
         __privateAdd(this, _lastVideoTimestamp, -1);
         __privateAdd(this, _lastAudioTimestamp, -1);
         __privateAdd(this, _lastSubtitleTimestamp, -1);
-        __privateAdd(this, _colorSpace, undefined);
+        __privateAdd(this, _colorSpace, void 0);
         __privateAdd(this, _finalized, false);
         __privateMethod(this, _validateOptions, validateOptions_fn).call(this, options);
         __privateSet(this, _options, {
@@ -645,7 +645,7 @@ var Muxer = class {
         if (meta && typeof meta !== "object") {
             throw new TypeError("addVideoChunk's second argument (meta), when provided, must be an object.");
         }
-        if (timestamp !== undefined && (!Number.isFinite(timestamp) || timestamp < 0)) {
+        if (timestamp !== void 0 && (!Number.isFinite(timestamp) || timestamp < 0)) {
             throw new TypeError("addVideoChunk's third argument (timestamp), when provided, must be a non-negative real number.");
         }
         let data = new Uint8Array(chunk.byteLength);
@@ -667,7 +667,7 @@ var Muxer = class {
         }
         __privateMethod(this, _ensureNotFinalized, ensureNotFinalized_fn).call(this);
         if (!__privateGet(this, _options).video) throw new Error("No video track declared.");
-        if (__privateGet(this, _firstVideoTimestamp) === undefined) __privateSet(this, _firstVideoTimestamp, timestamp);
+        if (__privateGet(this, _firstVideoTimestamp) === void 0) __privateSet(this, _firstVideoTimestamp, timestamp);
         if (meta) __privateMethod(this, _writeVideoDecoderConfig, writeVideoDecoderConfig_fn).call(this, meta);
         let videoChunk = __privateMethod(this, _createInternalChunk, createInternalChunk_fn).call(this, data, type, timestamp, VIDEO_TRACK_NUMBER);
         if (__privateGet(this, _options).video.codec === "V_VP9") __privateMethod(this, _fixVP9ColorSpace, fixVP9ColorSpace_fn).call(this, videoChunk);
@@ -691,7 +691,7 @@ var Muxer = class {
         if (meta && typeof meta !== "object") {
             throw new TypeError("addAudioChunk's second argument (meta), when provided, must be an object.");
         }
-        if (timestamp !== undefined && (!Number.isFinite(timestamp) || timestamp < 0)) {
+        if (timestamp !== void 0 && (!Number.isFinite(timestamp) || timestamp < 0)) {
             throw new TypeError("addAudioChunk's third argument (timestamp), when provided, must be a non-negative real number.");
         }
         let data = new Uint8Array(chunk.byteLength);
@@ -713,7 +713,7 @@ var Muxer = class {
         }
         __privateMethod(this, _ensureNotFinalized, ensureNotFinalized_fn).call(this);
         if (!__privateGet(this, _options).audio) throw new Error("No audio track declared.");
-        if (__privateGet(this, _firstAudioTimestamp) === undefined) __privateSet(this, _firstAudioTimestamp, timestamp);
+        if (__privateGet(this, _firstAudioTimestamp) === void 0) __privateSet(this, _firstAudioTimestamp, timestamp);
         if (meta?.decoderConfig) {
             if (__privateGet(this, _options).streaming) {
                 __privateSet(this, _audioCodecPrivate, __privateMethod(this, _createCodecPrivateElement, createCodecPrivateElement_fn).call(this, meta.decoderConfig.description));
@@ -846,12 +846,12 @@ validateOptions_fn = function(options) {
         if (!Number.isInteger(options.video.height) || options.video.height <= 0) {
             throw new TypeError(`Invalid video height: ${options.video.height}. Must be a positive integer.`);
         }
-        if (options.video.frameRate !== undefined) {
+        if (options.video.frameRate !== void 0) {
             if (!Number.isFinite(options.video.frameRate) || options.video.frameRate <= 0) {
                 throw new TypeError(`Invalid video frame rate: ${options.video.frameRate}. Must be a positive number.`);
             }
         }
-        if (options.video.alpha !== undefined && typeof options.video.alpha !== "boolean") {
+        if (options.video.alpha !== void 0 && typeof options.video.alpha !== "boolean") {
             throw new TypeError(`Invalid video alpha: ${options.video.alpha}. Must be a boolean.`);
         }
     }
@@ -865,7 +865,7 @@ validateOptions_fn = function(options) {
         if (!Number.isInteger(options.audio.sampleRate) || options.audio.sampleRate <= 0) {
             throw new TypeError(`Invalid audio sample rate: ${options.audio.sampleRate}. Must be a positive integer.`);
         }
-        if (options.audio.bitDepth !== undefined) {
+        if (options.audio.bitDepth !== void 0) {
             if (!Number.isInteger(options.audio.bitDepth) || options.audio.bitDepth <= 0) {
                 throw new TypeError(`Invalid audio bit depth: ${options.audio.bitDepth}. Must be a positive integer.`);
             }
@@ -876,7 +876,7 @@ validateOptions_fn = function(options) {
             throw new TypeError(`Invalid subtitles codec: ${options.subtitles.codec}. Must be a string.`);
         }
     }
-    if (options.type !== undefined && ![
+    if (options.type !== void 0 && ![
         "webm",
         "matroska"
     ].includes(options.type)) {
@@ -885,7 +885,7 @@ validateOptions_fn = function(options) {
     if (options.firstTimestampBehavior && !FIRST_TIMESTAMP_BEHAVIORS.includes(options.firstTimestampBehavior)) {
         throw new TypeError(`Invalid first timestamp behavior: ${options.firstTimestampBehavior}`);
     }
-    if (options.streaming !== undefined && typeof options.streaming !== "boolean") {
+    if (options.streaming !== void 0 && typeof options.streaming !== "boolean") {
         throw new TypeError(`Invalid streaming option: ${options.streaming}. Must be a boolean.`);
     }
 };
@@ -1391,7 +1391,7 @@ writeBlock_fn = function(chunk, canCreateNewCluster) {
     let view = new DataView(prelude.buffer);
     view.setUint8(0, 128 | chunk.trackNumber);
     view.setInt16(1, relativeTimestamp, false);
-    if (chunk.duration === undefined && !chunk.additions) {
+    if (chunk.duration === void 0 && !chunk.additions) {
         view.setUint8(3, Number(chunk.type === "key") << 7);
         let simpleBlock = {
             id: 163 /* SimpleBlock */ ,
@@ -1413,7 +1413,7 @@ writeBlock_fn = function(chunk, canCreateNewCluster) {
                         chunk.data
                     ]
                 },
-                chunk.duration !== undefined ? {
+                chunk.duration !== void 0 ? {
                     id: 155 /* BlockDuration */ ,
                     data: msDuration
                 } : null,
@@ -1549,10 +1549,10 @@ var SubtitleEncoder = class {
     constructor(options){
         __privateAdd(this, _parseTimestamp);
         __privateAdd(this, _formatTimestamp);
-        __privateAdd(this, _options2, undefined);
-        __privateAdd(this, _config, undefined);
+        __privateAdd(this, _options2, void 0);
+        __privateAdd(this, _config, void 0);
         __privateAdd(this, _preambleSeen, false);
-        __privateAdd(this, _preambleBytes, undefined);
+        __privateAdd(this, _preambleBytes, void 0);
         __privateAdd(this, _preambleEmitted, false);
         __privateSet(this, _options2, options);
     }
@@ -1614,7 +1614,7 @@ ${notes}`;
             cueBlockHeaderRegex.lastIndex = 0;
             let chunk = {
                 body: textEncoder.encode(body),
-                additions: additions.trim() === "" ? undefined : textEncoder.encode(additions),
+                additions: additions.trim() === "" ? void 0 : textEncoder.encode(additions),
                 timestamp: startTime * 1e3,
                 duration: duration * 1e3
             };

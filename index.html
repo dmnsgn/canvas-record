@@ -7,7 +7,7 @@
     <title>canvas-record by Damien Seguin (https://github.com/dmnsgn)</title>
     <style>
       :root {
-        --color-dark: #404040;
+        --color-dark: #1a1a1a;
         --color-light: #f2f2f2;
         --color-accent: #fd5e62;
       }
@@ -43,12 +43,17 @@
         color: var(--color-light);
         background-color: var(--color-dark);
       }
+      .Canvases {
+        display: flex;
+        gap: 10px;
+      }
     </style>
   </head>
   <body>
     <main>
       <h1>canvas-record</h1>
       <pre class="Detail">Details</pre>
+      <div class="Canvases"></div>
     </main>
 
     <script async src="web_modules/es-module-shims.js" type="module"></script>

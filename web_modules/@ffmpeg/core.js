@@ -1,9 +1,9 @@
-import { b as browser$1, g as global, B as Buffer } from '../_chunks/polyfills-QWxePbon.js';
+import { b as browser$1, g as global, B as Buffer } from '../_chunks/polyfills-CAtupzpz.js';
 
 var createFFmpegCore = (()=>{
     var _scriptDir = import.meta.url;
     return async function(createFFmpegCore) {
-        if (createFFmpegCore === undefined) createFFmpegCore = {};
+        if (createFFmpegCore === void 0) createFFmpegCore = {};
         var Module = typeof createFFmpegCore != "undefined" ? createFFmpegCore : {};
         var readyPromiseResolve, readyPromiseReject;
         Module["ready"] = new Promise((resolve, reject)=>{
@@ -123,7 +123,7 @@ var createFFmpegCore = (()=>{
         }
         var read_, readAsync, readBinary;
         if (ENVIRONMENT_IS_NODE) {
-            const { createRequire: createRequire } = await import('../_chunks/polyfills-QWxePbon.js').then(function (n) { return n._; });
+            const { createRequire: createRequire } = await import('../_chunks/polyfills-CAtupzpz.js').then(function (n) { return n._; });
             var require = createRequire(import.meta.url);
             var fs = require("fs");
             var nodePath = require("path");
@@ -144,7 +144,7 @@ var createFFmpegCore = (()=>{
                 return ret;
             };
             readAsync = (filename, onload, onerror, binary)=>{
-                if (binary === undefined) binary = true;
+                if (binary === void 0) binary = true;
                 filename = isFileURI(filename) ? new URL(filename) : nodePath.normalize(filename);
                 fs.readFile(filename, binary ? undefined : "utf8", (err, data)=>{
                     if (err) onerror(err);
@@ -214,7 +214,7 @@ var createFFmpegCore = (()=>{
         if (Module["quit"]) quit_ = Module["quit"];
         var wasmBinary;
         if (Module["wasmBinary"]) wasmBinary = Module["wasmBinary"];
-        var noExitRuntime = Module["noExitRuntime"] || true;
+        Module["noExitRuntime"] || true;
         if (typeof WebAssembly != "object") {
             abort("no native wasm support detected");
         }
@@ -243,9 +243,6 @@ var createFFmpegCore = (()=>{
         var __ATPRERUN__ = [];
         var __ATINIT__ = [];
         var __ATPOSTRUN__ = [];
-        function keepRuntimeAlive() {
-            return noExitRuntime;
-        }
         function preRun() {
             if (Module["preRun"]) {
                 if (typeof Module["preRun"] == "function") Module["preRun"] = [
@@ -458,7 +455,7 @@ var createFFmpegCore = (()=>{
             return func;
         }
         function getValue(ptr, type) {
-            if (type === undefined) type = "i8";
+            if (type === void 0) type = "i8";
             if (type.endsWith("*")) type = "*";
             switch(type){
                 case "i1":
@@ -482,7 +479,7 @@ var createFFmpegCore = (()=>{
             }
         }
         function setValue(ptr, value, type) {
-            if (type === undefined) type = "i8";
+            if (type === void 0) type = "i8";
             if (type.endsWith("*")) type = "*";
             switch(type){
                 case "i1":
@@ -1299,7 +1296,7 @@ var createFFmpegCore = (()=>{
             filesystems: null,
             syncFSRequests: 0,
             lookupPath: (path, opts)=>{
-                if (opts === undefined) opts = {};
+                if (opts === void 0) opts = {};
                 path = PATH_FS.resolve(path);
                 if (!path) return {
                     path: "",
@@ -1522,7 +1519,7 @@ var createFFmpegCore = (()=>{
             },
             getStream: (fd)=>FS.streams[fd],
             createStream: (stream, fd)=>{
-                if (fd === undefined) fd = -1;
+                if (fd === void 0) fd = -1;
                 if (!FS.FSStream) {
                     FS.FSStream = function() {
                         this.shared = {};
@@ -2240,7 +2237,7 @@ var createFFmpegCore = (()=>{
                 return stream.stream_ops.ioctl(stream, cmd, arg);
             },
             readFile: (path, opts)=>{
-                if (opts === undefined) opts = {};
+                if (opts === void 0) opts = {};
                 opts.flags = opts.flags || 0;
                 opts.encoding = opts.encoding || "binary";
                 if (opts.encoding !== "utf8" && opts.encoding !== "binary") {
@@ -2261,7 +2258,7 @@ var createFFmpegCore = (()=>{
                 return ret;
             },
             writeFile: (path, data, opts)=>{
-                if (opts === undefined) opts = {};
+                if (opts === void 0) opts = {};
                 opts.flags = opts.flags || 577;
                 var stream = FS.open(path, opts.flags, opts.mode);
                 if (typeof data == "string") {
@@ -4323,10 +4320,6 @@ var createFFmpegCore = (()=>{
             return 0;
         }
         function _proc_exit(code) {
-            if (!keepRuntimeAlive()) {
-                if (Module["onExit"]) Module["onExit"](code);
-                ABORT = true;
-            }
             quit_(code, new ExitStatus(code));
         }
         function exitJS(status, implicit) {

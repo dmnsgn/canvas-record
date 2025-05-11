@@ -1,4 +1,4 @@
-import { c as commonjsGlobal } from '../_chunks/polyfills-QWxePbon.js';
+import { c as commonjsGlobal } from '../_chunks/polyfills-CAtupzpz.js';
 
 var esModuleShims_debug = {};
 
@@ -40,7 +40,7 @@ var esModuleShims_debug = {};
     };
     const baseUrl = hasDocument ? document.baseURI : `${location.protocol}//${location.host}${location.pathname.includes('/') ? location.pathname.slice(0, location.pathname.lastIndexOf('/') + 1) : location.pathname}`;
     const createBlob = (source, type)=>{
-        if (type === undefined) type = 'text/javascript';
+        if (type === void 0) type = 'text/javascript';
         return URL.createObjectURL(new Blob([
             source
         ], {
@@ -306,7 +306,7 @@ var esModuleShims_debug = {};
     }, f = "xportmportlassforetaourceromsyncunctionssertvoyiedelecontininstantybreareturdebuggeawaithrwhileifcatcfinallels";
     let t, c$1, n;
     function parse(k, l) {
-        if (l === undefined) l = "@";
+        if (l === void 0) l = "@";
         t = k, c$1 = l;
         const u = 2 * t.length + (2 << 18);
         if (u > i || !e) {
@@ -2208,7 +2208,7 @@ var esModuleShims_debug = {};
                 ls: i,
                 le: s,
                 n: 34 === f || 39 === f ? b(a + 1, f) : t.slice(a, r),
-                ln: i < 0 ? undefined : 34 === c || 39 === c ? b(i + 1, c) : t.slice(i, s)
+                ln: i < 0 ? void 0 : 34 === c || 39 === c ? b(i + 1, c) : t.slice(i, s)
             });
         }
         return [
@@ -2295,7 +2295,7 @@ var esModuleShims_debug = {};
         });
     }
     function _resolve(id, parentUrl) {
-        if (parentUrl === undefined) parentUrl = baseUrl;
+        if (parentUrl === void 0) parentUrl = baseUrl;
         const urlResolved = resolveIfNotPlainOrUrl(id, parentUrl) || asURL(id);
         const firstResolved = firstImportMap && resolveImportMap(firstImportMap, urlResolved || id, parentUrl);
         const composedResolved = composedImportMap === firstImportMap ? firstResolved : resolveImportMap(composedImportMap, urlResolved || id, parentUrl);
@@ -2319,7 +2319,7 @@ var esModuleShims_debug = {};
         };
     }
     const resolve = resolveHook ? (id, parentUrl)=>{
-        if (parentUrl === undefined) parentUrl = baseUrl;
+        if (parentUrl === void 0) parentUrl = baseUrl;
         const result = resolveHook(id, parentUrl, defaultResolve);
         return result ? {
             r: result,
@@ -2328,7 +2328,7 @@ var esModuleShims_debug = {};
         } : _resolve(id, parentUrl);
     } : _resolve;
     async function importHandler(id, opts, parentUrl, sourcePhase) {
-        if (parentUrl === undefined) parentUrl = baseUrl;
+        if (parentUrl === void 0) parentUrl = baseUrl;
         await initPromise; // needed for shim check
         console.info(`es-module-shims: importShim${sourcePhase ? '.source' : ''}("${id}"${opts ? ', ' + JSON.stringify(opts) : ''})`);
         if (importHook) await importHook(id, opts, parentUrl);
@@ -2383,7 +2383,7 @@ var esModuleShims_debug = {};
         throw Error(`Unable to resolve specifier '${id}'${fromParent(parentUrl)}`);
     }
     function metaResolve(id, parentUrl) {
-        if (parentUrl === undefined) parentUrl = this.url;
+        if (parentUrl === void 0) parentUrl = this.url;
         return resolve(id, `${parentUrl}`).r;
     }
     importShim.resolve = (id, parentUrl)=>resolve(id, parentUrl).r;
@@ -2761,7 +2761,7 @@ var esModuleShims_debug = {};
             return {
                 r,
                 s: `var s=new CSSStyleSheet();s.replaceSync(${JSON.stringify((await res.text()).replace(cssUrlRegEx, (_match, quotes, relUrl1, relUrl2)=>{
-                    if (quotes === undefined) quotes = '';
+                    if (quotes === void 0) quotes = '';
                     return `url(${quotes}${resolveUrl(relUrl1 || relUrl2, url)}${quotes})`;
                 }))});export default s;`,
                 t: 'css'
@@ -2938,7 +2938,7 @@ var esModuleShims_debug = {};
     const hasNext = (script)=>script.nextSibling || script.parentNode && hasNext(script.parentNode);
     const epCheck = (script, ready)=>script.ep || !ready && (!script.src && !script.innerHTML || !hasNext(script)) || script.getAttribute('noshim') !== null || !(script.ep = true);
     function processImportMap(script, ready) {
-        if (ready === undefined) ready = readyStateCompleteCnt > 0;
+        if (ready === void 0) ready = readyStateCompleteCnt > 0;
         if (epCheck(script, ready)) return;
         console.info(`es-module-shims: reading import map`);
         // we dont currently support external import maps in polyfill mode to match native
@@ -2964,7 +2964,7 @@ var esModuleShims_debug = {};
         legacyAcceptingImportMaps = false;
     }
     function processScript(script, ready) {
-        if (ready === undefined) ready = readyStateCompleteCnt > 0;
+        if (ready === void 0) ready = readyStateCompleteCnt > 0;
         if (epCheck(script, ready)) return;
         if (script.lang === 'ts' && !script.src) {
             const source = script.innerHTML;

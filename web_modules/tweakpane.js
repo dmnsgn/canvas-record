@@ -86,7 +86,7 @@ class TpError {
     }
     constructor(config){
         var _a;
-        this.message = (_a = CREATE_MESSAGE_MAP[config.type](forceCast(config.context))) !== null && _a !== undefined ? _a : 'Unexpected error';
+        this.message = (_a = CREATE_MESSAGE_MAP[config.type](forceCast(config.context))) !== null && _a !== void 0 ? _a : 'Unexpected error';
         this.name = this.constructor.name;
         this.stack = new Error(this.message).stack;
         this.type = config.type;
@@ -138,7 +138,7 @@ class Emitter {
         }
         observers.push({
             handler: handler,
-            key: (_a = opt_options === null || opt_options === undefined ? undefined : opt_options.key) !== null && _a !== undefined ? _a : handler
+            key: (_a = opt_options === null || opt_options === void 0 ? void 0 : opt_options.key) !== null && _a !== void 0 ? _a : handler
         });
         return this;
     }
@@ -164,8 +164,8 @@ class Emitter {
 class ComplexValue {
     constructor(initialValue, config){
         var _a;
-        this.constraint_ = config === null || config === undefined ? undefined : config.constraint;
-        this.equals_ = (_a = config === null || config === undefined ? undefined : config.equals) !== null && _a !== undefined ? _a : (v1, v2)=>v1 === v2;
+        this.constraint_ = config === null || config === void 0 ? void 0 : config.constraint;
+        this.equals_ = (_a = config === null || config === void 0 ? void 0 : config.equals) !== null && _a !== void 0 ? _a : (v1, v2)=>v1 === v2;
         this.emitter = new Emitter();
         this.rawValue_ = initialValue;
     }
@@ -182,7 +182,7 @@ class ComplexValue {
         });
     }
     setRawValue(rawValue, options) {
-        const opts = options !== null && options !== undefined ? options : {
+        const opts = options !== null && options !== void 0 ? options : {
             forceEmit: false,
             last: true
         };
@@ -219,7 +219,7 @@ class PrimitiveValue {
         });
     }
     setRawValue(value, options) {
-        const opts = options !== null && options !== undefined ? options : {
+        const opts = options !== null && options !== void 0 ? options : {
             forceEmit: false,
             last: true
         };
@@ -263,8 +263,8 @@ class ReadonlyPrimitiveValue {
     }
 }
 function createValue(initialValue, config) {
-    const constraint = config === null || config === undefined ? undefined : config.constraint;
-    const equals = config === null || config === undefined ? undefined : config.equals;
+    const constraint = config === null || config === void 0 ? void 0 : config.constraint;
+    const equals = config === null || config === void 0 ? void 0 : config.equals;
     if (!constraint && !equals) {
         return new PrimitiveValue(initialValue);
     }
@@ -446,7 +446,7 @@ function combineReader(parsers) {
 function readWhitespace(text, cursor) {
     var _a;
     const m = text.substr(cursor).match(/^\s+/);
-    return (_a = m && m[0]) !== null && _a !== undefined ? _a : '';
+    return (_a = m && m[0]) !== null && _a !== void 0 ? _a : '';
 }
 function readNonZeroDigit(text, cursor) {
     const ch = text.substr(cursor, 1);
@@ -455,7 +455,7 @@ function readNonZeroDigit(text, cursor) {
 function readDecimalDigits(text, cursor) {
     var _a;
     const m = text.substr(cursor).match(/^[0-9]+/);
-    return (_a = m && m[0]) !== null && _a !== undefined ? _a : '';
+    return (_a = m && m[0]) !== null && _a !== void 0 ? _a : '';
 }
 function readSignedInteger(text, cursor) {
     const ds = readDecimalDigits(text, cursor);
@@ -541,7 +541,7 @@ const readDecimalLiteral = combineReader([
 function parseBinaryDigits(text, cursor) {
     var _a;
     const m = text.substr(cursor).match(/^[01]+/);
-    return (_a = m && m[0]) !== null && _a !== undefined ? _a : '';
+    return (_a = m && m[0]) !== null && _a !== void 0 ? _a : '';
 }
 function readBinaryIntegerLiteral(text, cursor) {
     const prefix = text.substr(cursor, 2);
@@ -558,7 +558,7 @@ function readBinaryIntegerLiteral(text, cursor) {
 function readOctalDigits(text, cursor) {
     var _a;
     const m = text.substr(cursor).match(/^[0-7]+/);
-    return (_a = m && m[0]) !== null && _a !== undefined ? _a : '';
+    return (_a = m && m[0]) !== null && _a !== void 0 ? _a : '';
 }
 function readOctalIntegerLiteral(text, cursor) {
     const prefix = text.substr(cursor, 2);
@@ -575,7 +575,7 @@ function readOctalIntegerLiteral(text, cursor) {
 function readHexDigits(text, cursor) {
     var _a;
     const m = text.substr(cursor).match(/^[0-9a-f]+/i);
-    return (_a = m && m[0]) !== null && _a !== undefined ? _a : '';
+    return (_a = m && m[0]) !== null && _a !== void 0 ? _a : '';
 }
 function readHexIntegerLiteral(text, cursor) {
     const prefix = text.substr(cursor, 2);
@@ -633,7 +633,7 @@ function parseParenthesizedExpression(text, cursor) {
 }
 function parsePrimaryExpression(text, cursor) {
     var _a;
-    return (_a = parseLiteral(text, cursor)) !== null && _a !== undefined ? _a : parseParenthesizedExpression(text, cursor);
+    return (_a = parseLiteral(text, cursor)) !== null && _a !== void 0 ? _a : parseParenthesizedExpression(text, cursor);
 }
 function parseUnaryExpression(text, cursor) {
     const expr = parsePrimaryExpression(text, cursor);
@@ -743,7 +743,7 @@ function parseEcmaNumberExpression(text) {
 function parseNumber(text) {
     var _a;
     const r = parseEcmaNumberExpression(text);
-    return (_a = r === null || r === undefined ? undefined : r.evaluate()) !== null && _a !== undefined ? _a : null;
+    return (_a = r === null || r === void 0 ? void 0 : r.evaluate()) !== null && _a !== void 0 ? _a : null;
 }
 function numberFromUnknown(value) {
     if (typeof value === 'number') {
@@ -785,11 +785,11 @@ function getSuitableDecimalDigits(params, rawValue) {
 }
 function getSuitableKeyScale(params) {
     var _a;
-    return (_a = params.step) !== null && _a !== undefined ? _a : 1;
+    return (_a = params.step) !== null && _a !== void 0 ? _a : 1;
 }
 function getSuitablePointerScale(params, rawValue) {
     var _a;
-    const base = Math.abs((_a = params.step) !== null && _a !== undefined ? _a : rawValue);
+    const base = Math.abs((_a = params.step) !== null && _a !== void 0 ? _a : rawValue);
     return base === 0 ? 0.1 : Math.pow(10, Math.floor(Math.log10(base)) - 1);
 }
 function createStepConstraint(params, initialValue) {
@@ -816,9 +816,9 @@ function createRangeConstraint(params) {
 function createNumberTextPropsObject(params, initialValue) {
     var _a, _b, _c;
     return {
-        formatter: (_a = params.format) !== null && _a !== undefined ? _a : createNumberFormatter(getSuitableDecimalDigits(params, initialValue)),
-        keyScale: (_b = params.keyScale) !== null && _b !== undefined ? _b : getSuitableKeyScale(params),
-        pointerScale: (_c = params.pointerScale) !== null && _c !== undefined ? _c : getSuitablePointerScale(params, initialValue)
+        formatter: (_a = params.format) !== null && _a !== void 0 ? _a : createNumberFormatter(getSuitableDecimalDigits(params, initialValue)),
+        keyScale: (_b = params.keyScale) !== null && _b !== void 0 ? _b : getSuitableKeyScale(params),
+        pointerScale: (_c = params.pointerScale) !== null && _c !== void 0 ? _c : getSuitablePointerScale(params, initialValue)
     };
 }
 function createNumberTextInputParamsParser(p) {
@@ -875,7 +875,7 @@ class TpChangeEvent extends TpEvent {
     constructor(target, value, last){
         super(target);
         this.value = value;
-        this.last = last !== null && last !== undefined ? last : true;
+        this.last = last !== null && last !== void 0 ? last : true;
     }
 }
 class TpFoldEvent extends TpEvent {
@@ -1083,7 +1083,7 @@ function importBladeState(state, superImport, parser, callback) {
 }
 function exportBladeState(superExport, thisState) {
     var _a;
-    return deepMerge((_a = superExport === null || superExport === undefined ? undefined : superExport()) !== null && _a !== undefined ? _a : {}, thisState);
+    return deepMerge((_a = superExport === null || superExport === void 0 ? void 0 : superExport()) !== null && _a !== void 0 ? _a : {}, thisState);
 }
 function isValueBladeController(bc) {
     return 'value' in bc;
@@ -1328,7 +1328,7 @@ class LabeledValueBladeController extends BladeController {
     importState(state) {
         return importBladeState(state, (s)=>{
             var _a, _b, _c;
-            return super.importState(s) && this.labelController.importProps(s) && ((_c = (_b = (_a = this.valueController).importProps) === null || _b === undefined ? undefined : _b.call(_a, state)) !== null && _c !== undefined ? _c : true);
+            return super.importState(s) && this.labelController.importProps(s) && ((_c = (_b = (_a = this.valueController).importProps) === null || _b === void 0 ? void 0 : _b.call(_a, state)) !== null && _c !== void 0 ? _c : true);
         }, (p)=>({
                 value: p.optional.raw
             }), (result)=>{
@@ -1342,7 +1342,7 @@ class LabeledValueBladeController extends BladeController {
         var _a, _b, _c;
         return exportBladeState(()=>super.exportState(), Object.assign(Object.assign({
             value: this.value.rawValue
-        }, this.labelController.exportProps()), (_c = (_b = (_a = this.valueController).exportProps) === null || _b === undefined ? undefined : _b.call(_a)) !== null && _c !== undefined ? _c : {}));
+        }, this.labelController.exportProps()), (_c = (_b = (_a = this.valueController).exportProps) === null || _b === void 0 ? void 0 : _b.call(_a)) !== null && _c !== void 0 ? _c : {}));
     }
 }
 function excludeValue(state) {
@@ -1486,7 +1486,7 @@ class ButtonApi extends BladeApi {
     }
     get title() {
         var _a;
-        return (_a = this.controller.buttonController.props.get('title')) !== null && _a !== undefined ? _a : '';
+        return (_a = this.controller.buttonController.props.get('title')) !== null && _a !== void 0 ? _a : '';
     }
     set title(title) {
         this.controller.buttonController.props.set('title', title);
@@ -1519,7 +1519,7 @@ function valueToClassName(elem, className) {
 }
 function bindValueToTextContent(value, elem) {
     bindValue(value, (text)=>{
-        elem.textContent = text !== null && text !== undefined ? text : '';
+        elem.textContent = text !== null && text !== void 0 ? text : '';
     });
 }
 const cn$p = ClassName('btn');
@@ -1604,7 +1604,7 @@ class Semver {
         this.major = parseInt(coreComps[0], 10);
         this.minor = parseInt(coreComps[1], 10);
         this.patch = parseInt(coreComps[2], 10);
-        this.prerelease = prerelease !== null && prerelease !== undefined ? prerelease : null;
+        this.prerelease = prerelease !== null && prerelease !== void 0 ? prerelease : null;
     }
     toString() {
         const core = [
@@ -1696,7 +1696,7 @@ class RackApi {
         return this.controller_.rack.children.map((bc)=>this.pool_.createApi(bc));
     }
     addBinding(object, key, opt_params) {
-        const params = opt_params !== null && opt_params !== undefined ? opt_params : {};
+        const params = opt_params !== null && opt_params !== void 0 ? opt_params : {};
         const doc = this.controller_.element.ownerDocument;
         const bc = this.pool_.createBinding(doc, createBindingTarget(object, key), params);
         const api = this.pool_.createBindingApi(bc);
@@ -1902,8 +1902,8 @@ class Rack {
         this.onChildViewPropsChange_ = this.onChildViewPropsChange_.bind(this);
         this.onRackLayout_ = this.onRackLayout_.bind(this);
         this.onRackValueChange_ = this.onRackValueChange_.bind(this);
-        this.blade_ = (_a = config.blade) !== null && _a !== undefined ? _a : null;
-        (_b = this.blade_) === null || _b === undefined ? undefined : _b.value('positions').emitter.on('change', this.onBladePositionsChange_);
+        this.blade_ = (_a = config.blade) !== null && _a !== void 0 ? _a : null;
+        (_b = this.blade_) === null || _b === void 0 ? void 0 : _b.value('positions').emitter.on('change', this.onBladePositionsChange_);
         this.viewProps = config.viewProps;
         this.bcSet_ = new NestedOrderedSet(findSubBladeControllerSet);
         this.bcSet_.emitter.on('add', this.onSetAdd_);
@@ -1914,7 +1914,7 @@ class Rack {
     }
     add(bc, opt_index) {
         var _a;
-        (_a = bc.parent) === null || _a === undefined ? undefined : _a.remove(bc);
+        (_a = bc.parent) === null || _a === void 0 ? void 0 : _a.remove(bc);
         bc.parent = this;
         this.bcSet_.add(bc, opt_index);
     }
@@ -2101,7 +2101,7 @@ class Foldable extends ValueMap {
     }
     get styleExpanded() {
         var _a;
-        return (_a = this.get('temporaryExpanded')) !== null && _a !== undefined ? _a : this.get('expanded');
+        return (_a = this.get('temporaryExpanded')) !== null && _a !== void 0 ? _a : this.get('expanded');
     }
     get styleHeight() {
         if (!this.styleExpanded) {
@@ -2234,7 +2234,7 @@ const bladeContainerClassName = ClassName('cnt');
 class FolderView {
     constructor(doc, config){
         var _a;
-        this.className_ = ClassName((_a = config.viewName) !== null && _a !== undefined ? _a : 'fld');
+        this.className_ = ClassName((_a = config.viewName) !== null && _a !== void 0 ? _a : 'fld');
         this.element = doc.createElement('div');
         this.element.classList.add(this.className_(), bladeContainerClassName());
         config.viewProps.bindClassModifiers(this.element);
@@ -2273,7 +2273,7 @@ class FolderView {
 class FolderController extends ContainerBladeController {
     constructor(doc, config){
         var _a;
-        const foldable = Foldable.create((_a = config.expanded) !== null && _a !== undefined ? _a : true);
+        const foldable = Foldable.create((_a = config.expanded) !== null && _a !== void 0 ? _a : true);
         const view = new FolderView(doc, {
             foldable: foldable,
             props: config.props,
@@ -2368,16 +2368,16 @@ class ViewProps extends ValueMap {
         [this.globalDisabled_, this.setGlobalDisabled_] = createReadonlyValue(createValue(this.getGlobalDisabled_()));
         this.value('disabled').emitter.on('change', this.onDisabledChange_);
         this.value('parent').emitter.on('change', this.onParentChange_);
-        (_a = this.get('parent')) === null || _a === undefined ? undefined : _a.globalDisabled.emitter.on('change', this.onParentGlobalDisabledChange_);
+        (_a = this.get('parent')) === null || _a === void 0 ? void 0 : _a.globalDisabled.emitter.on('change', this.onParentGlobalDisabledChange_);
     }
     static create(opt_initialValue) {
         var _a, _b, _c;
-        const initialValue = opt_initialValue !== null && opt_initialValue !== undefined ? opt_initialValue : {};
+        const initialValue = opt_initialValue !== null && opt_initialValue !== void 0 ? opt_initialValue : {};
         return new ViewProps(ValueMap.createCore({
-            disabled: (_a = initialValue.disabled) !== null && _a !== undefined ? _a : false,
+            disabled: (_a = initialValue.disabled) !== null && _a !== void 0 ? _a : false,
             disposed: false,
-            hidden: (_b = initialValue.hidden) !== null && _b !== undefined ? _b : false,
-            parent: (_c = initialValue.parent) !== null && _c !== undefined ? _c : null
+            hidden: (_b = initialValue.hidden) !== null && _b !== void 0 ? _b : false,
+            parent: (_c = initialValue.parent) !== null && _c !== void 0 ? _c : null
         }));
     }
     get globalDisabled() {
@@ -2431,8 +2431,8 @@ class ViewProps extends ValueMap {
     onParentChange_(ev) {
         var _a;
         const prevParent = ev.previousRawValue;
-        prevParent === null || prevParent === undefined ? undefined : prevParent.globalDisabled.emitter.off('change', this.onParentGlobalDisabledChange_);
-        (_a = this.get('parent')) === null || _a === undefined ? undefined : _a.globalDisabled.emitter.on('change', this.onParentGlobalDisabledChange_);
+        prevParent === null || prevParent === void 0 ? void 0 : prevParent.globalDisabled.emitter.off('change', this.onParentGlobalDisabledChange_);
+        (_a = this.get('parent')) === null || _a === void 0 ? void 0 : _a.globalDisabled.emitter.on('change', this.onParentGlobalDisabledChange_);
         this.updateGlobalDisabled_();
     }
 }
@@ -2592,7 +2592,7 @@ class TabApi extends ContainerBladeApi {
 class TabPageApi extends ContainerBladeApi {
     get title() {
         var _a;
-        return (_a = this.controller.itemController.props.get('title')) !== null && _a !== undefined ? _a : '';
+        return (_a = this.controller.itemController.props.get('title')) !== null && _a !== void 0 ? _a : '';
     }
     set title(title) {
         this.controller.itemController.props.set('title', title);
@@ -2637,7 +2637,7 @@ class Tab {
         this.items_ = [];
     }
     add(item, opt_index) {
-        const index = opt_index !== null && opt_index !== undefined ? opt_index : this.items_.length;
+        const index = opt_index !== null && opt_index !== void 0 ? opt_index : this.items_.length;
         this.items_.splice(index, 0, item);
         item.emitter.on('change', this.onItemSelectedChange_);
         this.keepSelection_();
@@ -2812,12 +2812,12 @@ function createBladeController(plugin, args) {
         blade: createBlade(),
         document: args.document,
         params: forceCast(Object.assign(Object.assign({}, ac.params), {
-            disabled: params === null || params === undefined ? undefined : params.disabled,
-            hidden: params === null || params === undefined ? undefined : params.hidden
+            disabled: params === null || params === void 0 ? void 0 : params.disabled,
+            hidden: params === null || params === void 0 ? void 0 : params.hidden
         })),
         viewProps: ViewProps.create({
-            disabled: params === null || params === undefined ? undefined : params.disabled,
-            hidden: params === null || params === undefined ? undefined : params.hidden
+            disabled: params === null || params === void 0 ? void 0 : params.disabled,
+            hidden: params === null || params === void 0 ? void 0 : params.hidden
         })
     });
 }
@@ -2952,7 +2952,7 @@ function parseListOptions(value) {
                     text: p.required.string,
                     value: p.required.raw
                 }))
-            }))) === null || _a === undefined ? undefined : _a.items;
+            }))) === null || _a === void 0 ? void 0 : _a.items;
     }
     if (typeof value === 'object') {
         return p.required.raw(value).value;
@@ -3212,8 +3212,8 @@ function computeOffset$1(ev, elem) {
     const win = elem.ownerDocument.defaultView;
     const rect = elem.getBoundingClientRect();
     return {
-        x: ev.pageX - (((_a = win && win.scrollX) !== null && _a !== undefined ? _a : 0) + rect.left),
-        y: ev.pageY - (((_b = win && win.scrollY) !== null && _b !== undefined ? _b : 0) + rect.top)
+        x: ev.pageX - (((_a = win && win.scrollX) !== null && _a !== void 0 ? _a : 0) + rect.left),
+        y: ev.pageY - (((_b = win && win.scrollY) !== null && _b !== void 0 ? _b : 0) + rect.top)
     };
 }
 class PointerHandler {
@@ -3252,7 +3252,7 @@ class PointerHandler {
     onMouseDown_(ev) {
         var _a;
         ev.preventDefault();
-        (_a = ev.currentTarget) === null || _a === undefined ? undefined : _a.focus();
+        (_a = ev.currentTarget) === null || _a === void 0 ? void 0 : _a.focus();
         const doc = this.elem_.ownerDocument;
         doc.addEventListener('mousemove', this.onDocumentMouseMove_);
         doc.addEventListener('mouseup', this.onDocumentMouseUp_);
@@ -3313,7 +3313,7 @@ class PointerHandler {
     }
     onTouchEnd_(ev) {
         var _a;
-        const touch = (_a = ev.targetTouches.item(0)) !== null && _a !== undefined ? _a : this.lastTouch_;
+        const touch = (_a = ev.targetTouches.item(0)) !== null && _a !== void 0 ? _a : this.lastTouch_;
         const rect = this.elem_.getBoundingClientRect();
         this.emitter.emit('up', {
             altKey: ev.altKey,
@@ -3410,7 +3410,7 @@ class NumberTextController {
         this.onPointerUp_ = this.onPointerUp_.bind(this);
         this.parser_ = config.parser;
         this.props = config.props;
-        this.sliderProps_ = (_a = config.sliderProps) !== null && _a !== undefined ? _a : null;
+        this.sliderProps_ = (_a = config.sliderProps) !== null && _a !== void 0 ? _a : null;
         this.value = config.value;
         this.viewProps = config.viewProps;
         this.dragging_ = createValue(null);
@@ -3431,8 +3431,8 @@ class NumberTextController {
     }
     constrainValue_(value) {
         var _a, _b;
-        const min = (_a = this.sliderProps_) === null || _a === undefined ? undefined : _a.get('min');
-        const max = (_b = this.sliderProps_) === null || _b === undefined ? undefined : _b.get('max');
+        const min = (_a = this.sliderProps_) === null || _a === void 0 ? void 0 : _a.get('min');
+        const max = (_b = this.sliderProps_) === null || _b === void 0 ? void 0 : _b.get('max');
         let v = value;
         if (min !== undefined) {
             v = Math.max(v, min);
@@ -4090,7 +4090,7 @@ function constrainColorComponents(components, mode, type) {
         mode === 'rgb' ? constrainRange(components[0], 0, ms[0]) : loopHueRange(components[0], ms[0]),
         constrainRange(components[1], 0, ms[1]),
         constrainRange(components[2], 0, ms[2]),
-        constrainRange((_a = components[3]) !== null && _a !== undefined ? _a : 1, 0, 1)
+        constrainRange((_a = components[3]) !== null && _a !== void 0 ? _a : 1, 0, 1)
     ];
 }
 function convertColorType(comps, mode, from, to) {
@@ -4121,7 +4121,7 @@ class IntColor {
             mode: this.mode,
             type: this.type
         }, {
-            mode: opt_mode !== null && opt_mode !== undefined ? opt_mode : this.mode,
+            mode: opt_mode !== null && opt_mode !== void 0 ? opt_mode : this.mode,
             type: this.type
         }), this.comps_[3]);
     }
@@ -4210,7 +4210,7 @@ function getKeyScaleForColor(forAlpha) {
 }
 function extractColorType(params) {
     var _a;
-    return (_a = params.color) === null || _a === undefined ? undefined : _a.type;
+    return (_a = params.color) === null || _a === void 0 ? void 0 : _a.type;
 }
 class FloatColor {
     constructor(comps, mode){
@@ -4223,7 +4223,7 @@ class FloatColor {
             mode: this.mode,
             type: this.type
         }, {
-            mode: opt_mode !== null && opt_mode !== undefined ? opt_mode : this.mode,
+            mode: opt_mode !== null && opt_mode !== void 0 ? opt_mode : this.mode,
             type: this.type
         }), this.comps_[3]);
     }
@@ -4552,7 +4552,7 @@ function detectStringColor(text) {
     }, null);
 }
 function detectStringColorFormat(text, type) {
-    if (type === undefined) type = 'int';
+    if (type === void 0) type = 'int';
     const r = detectStringColor(text);
     if (!r) {
         return null;
@@ -4593,19 +4593,19 @@ function readIntColorString(value) {
         return IntColor.black();
     }
     const result = parser(value);
-    return result !== null && result !== undefined ? result : IntColor.black();
+    return result !== null && result !== void 0 ? result : IntColor.black();
 }
 function zerofill(comp) {
     const hex = constrainRange(Math.floor(comp), 0, 255).toString(16);
     return hex.length === 1 ? `0${hex}` : hex;
 }
 function colorToHexRgbString(value, prefix) {
-    if (prefix === undefined) prefix = '#';
+    if (prefix === void 0) prefix = '#';
     const hexes = removeAlphaComponent(value.getComponents('rgb')).map(zerofill).join('');
     return `${prefix}${hexes}`;
 }
 function colorToHexRgbaString(value, prefix) {
-    if (prefix === undefined) prefix = '#';
+    if (prefix === void 0) prefix = '#';
     const rgbaComps = value.getComponents('rgb');
     const hexes = [
         rgbaComps[0],
@@ -5690,7 +5690,7 @@ function createColorObjectWriter(supportsAlpha, type) {
 }
 function shouldSupportAlpha$1(inputParams) {
     var _a;
-    if ((_a = inputParams === null || inputParams === undefined ? undefined : inputParams.color) === null || _a === undefined ? undefined : _a.alpha) {
+    if ((_a = inputParams === null || inputParams === void 0 ? void 0 : inputParams.color) === null || _a === void 0 ? void 0 : _a.alpha) {
         return true;
     }
     return false;
@@ -5738,10 +5738,10 @@ const NumberColorInputPlugin = createPlugin({
         var _a, _b;
         return new ColorController(args.document, {
             colorType: 'int',
-            expanded: (_a = args.params.expanded) !== null && _a !== undefined ? _a : false,
+            expanded: (_a = args.params.expanded) !== null && _a !== void 0 ? _a : false,
             formatter: createFormatter$1(args.params.supportsAlpha),
             parser: createColorStringParser('int'),
-            pickerLayout: (_b = args.params.picker) !== null && _b !== undefined ? _b : 'popup',
+            pickerLayout: (_b = args.params.picker) !== null && _b !== void 0 ? _b : 'popup',
             supportsAlpha: args.params.supportsAlpha,
             value: args.value,
             viewProps: args.viewProps
@@ -5791,7 +5791,7 @@ const ObjectColorInputPlugin = createPlugin({
         return result ? {
             initialValue: value,
             params: Object.assign(Object.assign({}, result), {
-                colorType: (_a = extractColorType(params)) !== null && _a !== undefined ? _a : 'int'
+                colorType: (_a = extractColorType(params)) !== null && _a !== void 0 ? _a : 'int'
             })
         } : null;
     },
@@ -5805,10 +5805,10 @@ const ObjectColorInputPlugin = createPlugin({
         const supportsAlpha = isRgbaColorObject(args.initialValue);
         return new ColorController(args.document, {
             colorType: args.params.colorType,
-            expanded: (_a = args.params.expanded) !== null && _a !== undefined ? _a : false,
+            expanded: (_a = args.params.expanded) !== null && _a !== void 0 ? _a : false,
             formatter: createColorObjectFormatter(supportsAlpha, args.params.colorType),
             parser: createColorStringParser('int'),
-            pickerLayout: (_b = args.params.picker) !== null && _b !== undefined ? _b : 'popup',
+            pickerLayout: (_b = args.params.picker) !== null && _b !== void 0 ? _b : 'popup',
             supportsAlpha: supportsAlpha,
             value: args.value,
             viewProps: args.viewProps
@@ -5857,10 +5857,10 @@ const StringColorInputPlugin = createPlugin({
         var _a, _b;
         return new ColorController(args.document, {
             colorType: args.params.format.type,
-            expanded: (_a = args.params.expanded) !== null && _a !== undefined ? _a : false,
+            expanded: (_a = args.params.expanded) !== null && _a !== void 0 ? _a : false,
             formatter: args.params.stringifier,
             parser: createColorStringParser('int'),
-            pickerLayout: (_b = args.params.picker) !== null && _b !== undefined ? _b : 'popup',
+            pickerLayout: (_b = args.params.picker) !== null && _b !== void 0 ? _b : 'popup',
             supportsAlpha: args.params.format.alpha,
             value: args.value,
             viewProps: args.viewProps
@@ -5875,7 +5875,7 @@ class PointNdConstraint {
     constrain(value) {
         const comps = this.asm_.toComponents(value).map((comp, index)=>{
             var _a, _b;
-            return (_b = (_a = this.components[index]) === null || _a === undefined ? undefined : _a.constrain(comp)) !== null && _b !== undefined ? _b : comp;
+            return (_b = (_a = this.components[index]) === null || _a === void 0 ? void 0 : _a.constrain(comp)) !== null && _b !== void 0 ? _b : comp;
         });
         return this.asm_.fromComponents(comps);
     }
@@ -6298,8 +6298,8 @@ class Point2dController {
             viewProps: this.viewProps
         });
         this.view.textElement.appendChild(this.textC_.view.element);
-        (_a = this.view.buttonElement) === null || _a === undefined ? undefined : _a.addEventListener('blur', this.onPadButtonBlur_);
-        (_b = this.view.buttonElement) === null || _b === undefined ? undefined : _b.addEventListener('click', this.onPadButtonClick_);
+        (_a = this.view.buttonElement) === null || _a === void 0 ? void 0 : _a.addEventListener('blur', this.onPadButtonBlur_);
+        (_b = this.view.buttonElement) === null || _b === void 0 ? void 0 : _b.addEventListener('click', this.onPadButtonClick_);
         if (this.popC_) {
             this.view.element.appendChild(this.popC_.view.element);
             this.popC_.view.element.appendChild(this.pickerC_.view.element);
@@ -6378,15 +6378,15 @@ function createConstraint$3(params, initialValue) {
 function getSuitableMaxDimensionValue(params, rawValue) {
     var _a, _b;
     if (!isEmpty(params.min) || !isEmpty(params.max)) {
-        return Math.max(Math.abs((_a = params.min) !== null && _a !== undefined ? _a : 0), Math.abs((_b = params.max) !== null && _b !== undefined ? _b : 0));
+        return Math.max(Math.abs((_a = params.min) !== null && _a !== void 0 ? _a : 0), Math.abs((_b = params.max) !== null && _b !== void 0 ? _b : 0));
     }
     const step = getSuitableKeyScale(params);
     return Math.max(Math.abs(step) * 10, Math.abs(rawValue) * 10);
 }
 function getSuitableMax(params, initialValue) {
     var _a, _b;
-    const xr = getSuitableMaxDimensionValue(deepMerge(params, (_a = params.x) !== null && _a !== undefined ? _a : {}), initialValue.x);
-    const yr = getSuitableMaxDimensionValue(deepMerge(params, (_b = params.y) !== null && _b !== undefined ? _b : {}), initialValue.y);
+    const xr = getSuitableMaxDimensionValue(deepMerge(params, (_a = params.x) !== null && _a !== void 0 ? _a : {}), initialValue.x);
+    const yr = getSuitableMaxDimensionValue(deepMerge(params, (_b = params.y) !== null && _b !== void 0 ? _b : {}), initialValue.y);
     return Math.max(xr, yr);
 }
 function shouldInvertY(params) {
@@ -6441,14 +6441,14 @@ const Point2dInputPlugin = createPlugin({
                 return createPointAxis({
                     constraint: c.components[i],
                     initialValue: comp,
-                    params: deepMerge(args.params, (_a = dParams[i]) !== null && _a !== undefined ? _a : {})
+                    params: deepMerge(args.params, (_a = dParams[i]) !== null && _a !== void 0 ? _a : {})
                 });
             }),
-            expanded: (_a = args.params.expanded) !== null && _a !== undefined ? _a : false,
+            expanded: (_a = args.params.expanded) !== null && _a !== void 0 ? _a : false,
             invertsY: shouldInvertY(args.params),
             max: getSuitableMax(args.params, value.rawValue),
             parser: parseNumber,
-            pickerLayout: (_b = args.params.picker) !== null && _b !== undefined ? _b : 'popup',
+            pickerLayout: (_b = args.params.picker) !== null && _b !== void 0 ? _b : 'popup',
             value: value,
             viewProps: args.viewProps
         });
@@ -6551,7 +6551,7 @@ const Point3dInputPlugin = createPlugin({
                 return createPointAxis({
                     constraint: c.components[i],
                     initialValue: comp,
-                    params: deepMerge(args.params, (_a = dParams[i]) !== null && _a !== undefined ? _a : {})
+                    params: deepMerge(args.params, (_a = dParams[i]) !== null && _a !== void 0 ? _a : {})
                 });
             }),
             parser: parseNumber,
@@ -6665,7 +6665,7 @@ const Point4dInputPlugin = createPlugin({
                 return createPointAxis({
                     constraint: c.components[i],
                     initialValue: comp,
-                    params: deepMerge(args.params, (_a = dParams[i]) !== null && _a !== undefined ? _a : {})
+                    params: deepMerge(args.params, (_a = dParams[i]) !== null && _a !== void 0 ? _a : {})
                 });
             }),
             parser: parseNumber,
@@ -6860,7 +6860,7 @@ const BooleanMonitorPlugin = createPlugin({
         }
         return new MultiLogController(args.document, {
             formatter: BooleanFormatter,
-            rows: (_a = args.params.rows) !== null && _a !== undefined ? _a : Constants.monitor.defaultRows,
+            rows: (_a = args.params.rows) !== null && _a !== void 0 ? _a : Constants.monitor.defaultRows,
             value: args.value,
             viewProps: args.viewProps
         });
@@ -7033,7 +7033,7 @@ function createTextMonitor(args) {
     }
     return new MultiLogController(args.document, {
         formatter: createFormatter(args.params),
-        rows: (_a = args.params.rows) !== null && _a !== undefined ? _a : Constants.monitor.defaultRows,
+        rows: (_a = args.params.rows) !== null && _a !== void 0 ? _a : Constants.monitor.defaultRows,
         value: args.value,
         viewProps: args.viewProps
     });
@@ -7042,10 +7042,10 @@ function createGraphMonitor(args) {
     var _a, _b, _c;
     return new GraphLogController(args.document, {
         formatter: createFormatter(args.params),
-        rows: (_a = args.params.rows) !== null && _a !== undefined ? _a : Constants.monitor.defaultRows,
+        rows: (_a = args.params.rows) !== null && _a !== void 0 ? _a : Constants.monitor.defaultRows,
         props: ValueMap.fromObject({
-            max: (_b = args.params.max) !== null && _b !== undefined ? _b : 100,
-            min: (_c = args.params.min) !== null && _c !== undefined ? _c : 0
+            max: (_b = args.params.max) !== null && _b !== void 0 ? _b : 100,
+            min: (_c = args.params.min) !== null && _c !== void 0 ? _c : 0
         }),
         value: args.value,
         viewProps: args.viewProps
@@ -7118,7 +7118,7 @@ const StringMonitorPlugin = createPlugin({
         if (multiline) {
             return new MultiLogController(args.document, {
                 formatter: formatString,
-                rows: (_a = args.params.rows) !== null && _a !== undefined ? _a : Constants.monitor.defaultRows,
+                rows: (_a = args.params.rows) !== null && _a !== void 0 ? _a : Constants.monitor.defaultRows,
                 value: value,
                 viewProps: args.viewProps
             });
@@ -7136,7 +7136,7 @@ class BladeApiCache {
     }
     get(bc) {
         var _a;
-        return (_a = this.map_.get(bc)) !== null && _a !== undefined ? _a : null;
+        return (_a = this.map_.get(bc)) !== null && _a !== void 0 ? _a : null;
     }
     has(bc) {
         return this.map_.has(bc);
@@ -7200,16 +7200,16 @@ function createInputBindingController(plugin, args) {
         params: result.params,
         value: value,
         viewProps: ViewProps.create({
-            disabled: params === null || params === undefined ? undefined : params.disabled,
-            hidden: params === null || params === undefined ? undefined : params.hidden
+            disabled: params === null || params === void 0 ? void 0 : params.disabled,
+            hidden: params === null || params === void 0 ? void 0 : params.hidden
         })
     });
     return new InputBindingController(args.document, {
         blade: createBlade(),
         props: ValueMap.fromObject({
-            label: 'label' in args.params ? (_a = params === null || params === undefined ? undefined : params.label) !== null && _a !== undefined ? _a : null : args.target.key
+            label: 'label' in args.params ? (_a = params === null || params === void 0 ? void 0 : params.label) !== null && _a !== void 0 ? _a : null : args.target.key
         }),
-        tag: params === null || params === undefined ? undefined : params.tag,
+        tag: params === null || params === void 0 ? void 0 : params.tag,
         value: value,
         valueController: controller
     });
@@ -7224,7 +7224,7 @@ class ReadonlyBinding {
     }
 }
 function createTicker(document, interval) {
-    return interval === 0 ? new ManualTicker() : new IntervalTicker(document, interval !== null && interval !== undefined ? interval : Constants.monitor.defaultInterval);
+    return interval === 0 ? new ManualTicker() : new IntervalTicker(document, interval !== null && interval !== void 0 ? interval : Constants.monitor.defaultInterval);
 }
 function createMonitorBindingController(plugin, args) {
     var _a, _b, _c;
@@ -7245,22 +7245,22 @@ function createMonitorBindingController(plugin, args) {
             label: p.optional.string
         }));
     const reader = plugin.binding.reader(bindingArgs);
-    const bufferSize = (_b = (_a = params === null || params === undefined ? undefined : params.bufferSize) !== null && _a !== undefined ? _a : plugin.binding.defaultBufferSize && plugin.binding.defaultBufferSize(result.params)) !== null && _b !== undefined ? _b : 1;
+    const bufferSize = (_b = (_a = params === null || params === void 0 ? void 0 : params.bufferSize) !== null && _a !== void 0 ? _a : plugin.binding.defaultBufferSize && plugin.binding.defaultBufferSize(result.params)) !== null && _b !== void 0 ? _b : 1;
     const value = new MonitorBindingValue({
         binding: new ReadonlyBinding({
             reader: reader,
             target: args.target
         }),
         bufferSize: bufferSize,
-        ticker: createTicker(args.document, params === null || params === undefined ? undefined : params.interval)
+        ticker: createTicker(args.document, params === null || params === void 0 ? void 0 : params.interval)
     });
     const controller = plugin.controller({
         document: args.document,
         params: result.params,
         value: value,
         viewProps: ViewProps.create({
-            disabled: params === null || params === undefined ? undefined : params.disabled,
-            hidden: params === null || params === undefined ? undefined : params.hidden
+            disabled: params === null || params === void 0 ? void 0 : params.disabled,
+            hidden: params === null || params === void 0 ? void 0 : params.hidden
         })
     });
     controller.viewProps.bindDisabled(value.ticker);
@@ -7270,7 +7270,7 @@ function createMonitorBindingController(plugin, args) {
     return new MonitorBindingController(args.document, {
         blade: createBlade(),
         props: ValueMap.fromObject({
-            label: 'label' in args.params ? (_c = params === null || params === undefined ? undefined : params.label) !== null && _c !== undefined ? _c : null : args.target.key
+            label: 'label' in args.params ? (_c = params === null || params === void 0 ? void 0 : params.label) !== null && _c !== void 0 ? _c : null : args.target.key
         }),
         value: value,
         valueController: controller
@@ -7305,14 +7305,14 @@ class PluginPool {
         }
     }
     createInput_(document, target, params) {
-        return this.pluginsMap_.inputs.reduce((result, plugin)=>result !== null && result !== undefined ? result : createInputBindingController(plugin, {
+        return this.pluginsMap_.inputs.reduce((result, plugin)=>result !== null && result !== void 0 ? result : createInputBindingController(plugin, {
                 document: document,
                 target: target,
                 params: params
             }), null);
     }
     createMonitor_(document, target, params) {
-        return this.pluginsMap_.monitors.reduce((result, plugin)=>result !== null && result !== undefined ? result : createMonitorBindingController(plugin, {
+        return this.pluginsMap_.monitors.reduce((result, plugin)=>result !== null && result !== void 0 ? result : createMonitorBindingController(plugin, {
                 document: document,
                 params: params,
                 target: target
@@ -7344,7 +7344,7 @@ class PluginPool {
         });
     }
     createBlade(document, params) {
-        const bc = this.pluginsMap_.blades.reduce((result, plugin)=>result !== null && result !== undefined ? result : createBladeController(plugin, {
+        const bc = this.pluginsMap_.blades.reduce((result, plugin)=>result !== null && result !== void 0 ? result : createBladeController(plugin, {
                 document: document,
                 params: params
             }), null);
@@ -7364,11 +7364,11 @@ class PluginPool {
             if (result) {
                 return result;
             }
-            return (_b = (_a = plugin.api) === null || _a === undefined ? undefined : _a.call(plugin, {
+            return (_b = (_a = plugin.api) === null || _a === void 0 ? void 0 : _a.call(plugin, {
                 controller: bc
-            })) !== null && _b !== undefined ? _b : null;
+            })) !== null && _b !== void 0 ? _b : null;
         }, null);
-        return this.apiCache_.add(bc, api !== null && api !== undefined ? api : new BindingApi(bc));
+        return this.apiCache_.add(bc, api !== null && api !== void 0 ? api : new BindingApi(bc));
     }
     createMonitorBindingApi_(bc) {
         const api = this.pluginsMap_.monitors.reduce((result, plugin)=>{
@@ -7376,11 +7376,11 @@ class PluginPool {
             if (result) {
                 return result;
             }
-            return (_b = (_a = plugin.api) === null || _a === undefined ? undefined : _a.call(plugin, {
+            return (_b = (_a = plugin.api) === null || _a === void 0 ? void 0 : _a.call(plugin, {
                 controller: bc
-            })) !== null && _b !== undefined ? _b : null;
+            })) !== null && _b !== void 0 ? _b : null;
         }, null);
-        return this.apiCache_.add(bc, api !== null && api !== undefined ? api : new BindingApi(bc));
+        return this.apiCache_.add(bc, api !== null && api !== void 0 ? api : new BindingApi(bc));
     }
     createBindingApi(bc) {
         if (this.apiCache_.has(bc)) {
@@ -7401,7 +7401,7 @@ class PluginPool {
         if (isBindingController(bc)) {
             return this.createBindingApi(bc);
         }
-        const api = this.pluginsMap_.blades.reduce((result, plugin)=>result !== null && result !== undefined ? result : plugin.api({
+        const api = this.pluginsMap_.blades.reduce((result, plugin)=>result !== null && result !== void 0 ? result : plugin.api({
                 controller: bc,
                 pool: this
             }), null);
@@ -7710,7 +7710,7 @@ const SliderBladePlugin = {
     },
     controller (args) {
         var _a, _b;
-        const initialValue = (_a = args.params.value) !== null && _a !== undefined ? _a : 0;
+        const initialValue = (_a = args.params.value) !== null && _a !== void 0 ? _a : 0;
         const drc = new DefiniteRangeConstraint({
             max: args.params.max,
             min: args.params.min
@@ -7719,7 +7719,7 @@ const SliderBladePlugin = {
             constraint: drc
         });
         const vc = new SliderTextController(args.document, Object.assign(Object.assign({}, createSliderTextProps({
-            formatter: (_b = args.params.format) !== null && _b !== undefined ? _b : numberToString,
+            formatter: (_b = args.params.format) !== null && _b !== void 0 ? _b : numberToString,
             keyScale: createValue(1),
             max: drc.values.value('max'),
             min: drc.values.value('min'),
@@ -7771,7 +7771,7 @@ const TextBladePlugin = function() {
             const ic = new TextController(args.document, {
                 parser: args.params.parse,
                 props: ValueMap.fromObject({
-                    formatter: (_a = args.params.format) !== null && _a !== undefined ? _a : (v)=>String(v)
+                    formatter: (_a = args.params.format) !== null && _a !== void 0 ? _a : (v)=>String(v)
                 }),
                 value: v,
                 viewProps: args.viewProps
@@ -7818,8 +7818,8 @@ function embedStyle(doc, id, css) {
  */ class Pane extends RootApi {
     constructor(opt_config){
         var _a, _b;
-        const config = opt_config !== null && opt_config !== undefined ? opt_config : {};
-        const doc = (_a = config.document) !== null && _a !== undefined ? _a : getWindowDocument();
+        const config = opt_config !== null && opt_config !== void 0 ? opt_config : {};
+        const doc = (_a = config.document) !== null && _a !== void 0 ? _a : getWindowDocument();
         const pool = createDefaultPluginPool();
         const rootController = new RootController(doc, {
             expanded: config.expanded,
@@ -7831,7 +7831,7 @@ function embedStyle(doc, id, css) {
         });
         super(rootController, pool);
         this.pool_ = pool;
-        this.containerElem_ = (_b = config.container) !== null && _b !== undefined ? _b : createDefaultWrapperElement(doc);
+        this.containerElem_ = (_b = config.container) !== null && _b !== void 0 ? _b : createDefaultWrapperElement(doc);
         this.containerElem_.appendChild(this.element);
         this.doc_ = doc;
         this.usesDefaultWrapper_ = !config.container;
