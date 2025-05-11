@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+# [5.3.0](https://github.com/dmnsgn/canvas-record/compare/v5.2.1...v5.3.0) (2025-05-11)
+
+
+### Features
+
+* add rect option for capturing a sub-region of the canvas ([84760b5](https://github.com/dmnsgn/canvas-record/commit/84760b53887dd9f99c2e70ece4155123289e6862)), closes [#26](https://github.com/dmnsgn/canvas-record/issues/26)
+
+
+
 ## [5.2.1](https://github.com/dmnsgn/canvas-record/compare/v5.2.0...v5.2.1) (2025-05-04)
 
 
