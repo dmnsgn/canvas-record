@@ -11,6 +11,7 @@ import {
   formatSeconds,
   isWebCodecsSupported,
   nextMultiple,
+  captureCanvasRegion,
 } from "./utils.js";
 
 /**
@@ -45,13 +46,14 @@ const RecorderStatus = Object.freeze({
  * @property {string} [name=""] A name for the recorder, used as prefix for the default file name.
  * @property {number} [duration=10] The recording duration in seconds. If set to Infinity, `await canvasRecorder.stop()` needs to be called manually.
  * @property {number} [frameRate=30] The frame rate in frame per seconds. Use `await canvasRecorder.step();` to go to the next frame.
+ * @property {Array} [rect=[]] Sub-region [x, y, width, height] of the canvas to encode from bottom left. Default to 0, 0 and context.drawingBufferWidth/drawingBufferHeight or canvas.width/height.
  * @property {boolean} [download=true] Automatically download the recording when duration is reached or when `await canvasRecorder.stop()` is manually called.
  * @property {string} [extension="mp4"] Default file extension: infers which Encoder is selected.
  * @property {string} [target="in-browser"] Default writing target: in-browser or file-system when available.
  * @property {object} [encoder] A specific encoder. Default encoder based on options.extension: GIF > WebCodecs > H264MP4.
  * @property {object} [encoderOptions] See `src/encoders` or individual packages for a list of options.
  * @property {object} [muxerOptions] See "mp4-muxer" and "webm-muxer" for a list of options.
- * @property {object} [frameOptions] Options for createImageBitmap(), VideoFrame or canvas-screenshot.
+ * @property {object} [frameOptions] Options for createImageBitmap(), VideoFrame, getImageData() or canvas-screenshot.
  * @property {onStatusChangeCb} [onStatusChange]
  */
 
@@ -70,6 +72,7 @@ class Recorder {
     name: "",
     duration: 10, // 0 to Infinity
     frameRate: 30,
+    rect: [],
     download: true,
     extension: "mp4",
     target: "in-browser",
@@ -94,12 +97,27 @@ class Recorder {
     this.encoder.height = value;
   }
 
-  // TODO: allow overwrite
+  get x() {
+    return this.rect[0] ?? 0;
+  }
+  get y() {
+    return this.rect[1] ?? 0;
+  }
+  // Only used if rect is defined
+  get yFlipped() {
+    return this.canvasHeight - this.rect[1] - this.rect[3];
+  }
   get width() {
-    return this.context.drawingBufferWidth || this.context.canvas.width;
+    return this.rect[2] ?? this.canvasWidth;
   }
   get height() {
-    return this.context.drawingBufferHeight || this.context.canvas.height;
+    return this.rect[3] ?? this.canvasHeight;
+  }
+  get canvasWidth() {
+    return this.context.drawingBufferWidth ?? this.context.canvas.width;
+  }
+  get canvasHeight() {
+    return this.context.drawingBufferHeight ?? this.context.canvas.height;
   }
 
   get stats() {
@@ -197,6 +215,7 @@ Speedup: x${(this.time / renderTime).toFixed(3)}`,
       }
     }
 
+    this.is2D = context instanceof CanvasRenderingContext2D;
     this.#updateStatus(RecorderStatus.Ready);
   }
 
@@ -260,12 +279,38 @@ Speedup: x${(this.time / renderTime).toFixed(3)}`,
   async getFrame(frameMethod) {
     switch (frameMethod) {
       case "bitmap": {
-        return await createImageBitmap(this.context.canvas, this.frameOptions);
+        return await createImageBitmap(
+          this.context.canvas,
+          ...(this.rect.length
+            ? [
+                this.x,
+                this.yFlipped,
+                this.width,
+                this.height,
+                this.frameOptions,
+              ]
+            : [this.frameOptions]),
+        );
       }
       case "videoFrame": {
-        return new VideoFrame(this.context.canvas, {
+        let { canvas } = this.context;
+
+        // Note: visibleRect doesn't crop in WebGL so we need to capture
+        let visibleRect;
+        if (this.rect.length) {
+          const { x, yFlipped: y, width, height } = this;
+
+          if (this.is2D) {
+            visibleRect = { x, y, width, height };
+          } else {
+            canvas = captureCanvasRegion(canvas, x, y, width, height);
+          }
+        }
+
+        return new VideoFrame(canvas, {
           timestamp: this.time * 1_000_000, // in µs
           duration: 1_000_000 / this.frameRate,
+          visibleRect,
           ...this.frameOptions,
         });
       }
@@ -273,16 +318,16 @@ Speedup: x${(this.time / renderTime).toFixed(3)}`,
         return undefined;
       }
       case "imageData": {
-        if (this.context.drawingBufferWidth) {
-          const width = this.context.drawingBufferWidth;
-          const height = this.context.drawingBufferHeight;
+        if (!this.is2D) {
+          const width = this.width;
+          const height = this.height;
           const length = width * height * 4;
           const pixels = new Uint8Array(length);
           const pixelsFlipped = new Uint8Array(length);
 
           this.context.readPixels(
-            0,
-            0,
+            this.x,
+            this.y,
             width,
             height,
             this.context.RGBA,
@@ -301,14 +346,24 @@ Speedup: x${(this.time / renderTime).toFixed(3)}`,
         }
 
         return this.context.getImageData(
-          0,
-          0,
+          this.x,
+          this.yFlipped,
           nextMultiple(this.width, 2),
           nextMultiple(this.height, 2),
+          this.frameOptions,
         ).data;
       }
       default: {
-        return await canvasScreenshot(this.context.canvas, {
+        const canvas = this.rect.length
+          ? captureCanvasRegion(
+              this.context.canvas,
+              this.x,
+              this.yFlipped,
+              this.width,
+              this.height,
+            )
+          : this.context.canvas;
+        return await canvasScreenshot(canvas, {
           useBlob: true,
           download: false,
           filename: `output.${this.encoder.extension}`,

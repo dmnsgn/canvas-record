@@ -1,3 +1,5 @@
+import createCanvasContext from "canvas-context";
+
 /**
  * Check for WebCodecs support on the current platform.
  * @type {boolean}
@@ -21,6 +23,18 @@ const downloadBlob = (filename, blobPart, mimeType) => {
   setTimeout(() => {
     URL.revokeObjectURL(url);
   }, 1);
+};
+
+let captureContext;
+const captureCanvasRegion = (canvas, x, y, width, height) => {
+  captureContext ||= createCanvasContext("2d", {
+    contextAttributes: { willReadFrequently: true },
+  }).context;
+  captureContext.canvas.width = width;
+  captureContext.canvas.height = height;
+
+  captureContext.drawImage(canvas, x, y, width, height, 0, 0, width, height);
+  return captureContext.canvas;
 };
 
 const formatDate = (date) =>
@@ -87,6 +101,7 @@ const estimateBitRate = (
 export {
   isWebCodecsSupported,
   downloadBlob,
+  captureCanvasRegion,
   formatDate,
   formatSeconds,
   nextMultiple,
