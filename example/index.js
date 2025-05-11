@@ -13,6 +13,8 @@ const params = new URLSearchParams(window.location.search);
 const pixelRatio = devicePixelRatio;
 const width = 512;
 const height = 512;
+const drawWidth = width * pixelRatio;
+const drawHeight = height * pixelRatio;
 
 // GUI
 const CONFIG = {
@@ -22,7 +24,7 @@ const CONFIG = {
   frameRate: 30,
   target: "in-browser",
   filename: "",
-  rect: { x: 0, y: 0, z: width, w: height },
+  rect: { x: 0, y: 0, z: drawWidth, w: drawHeight },
   contextType: "gl",
   ...Object.fromEntries(params.entries()),
 };
@@ -54,10 +56,10 @@ pane.addBinding(CONFIG, "duration", { step: 1, min: 1, max: 30 });
 pane.addBinding(CONFIG, "frameRate", { step: 1, min: 1, max: 60 });
 pane.addBinding(CONFIG, "filename");
 pane.addBinding(CONFIG, "rect", {
-  x: { step: 1, min: 0, max: width - 1 },
-  y: { step: 1, min: 0, max: height - 1 },
-  z: { step: 1, min: 1, max: width },
-  w: { step: 1, min: 1, max: height },
+  x: { step: 1, min: 0, max: drawWidth - 1 },
+  y: { step: 1, min: 0, max: drawHeight - 1 },
+  z: { step: 1, min: 1, max: drawWidth },
+  w: { step: 1, min: 1, max: drawHeight },
 });
 
 pane.addBinding(CONFIG, "contextType", {
@@ -76,8 +78,8 @@ const getPexColor = (name) => fromHex(createColor(), getColor(name));
 
 // Setup
 const { context, canvas } = createCanvasContext("2d", {
-  width: width * pixelRatio,
-  height: height * pixelRatio,
+  width: drawWidth,
+  height: drawHeight,
   contextAttributes: { willReadFrequently: true },
 });
 Object.assign(canvas.style, { width: `${width}px`, height: `${height}px` });
