@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+# [5.4.0](https://github.com/dmnsgn/canvas-record/compare/v5.3.0...v5.4.0) (2025-08-01)
+
+
+### Features
+
+* add support for mov extension in WebCodecsEncoder ([9de1c8c](https://github.com/dmnsgn/canvas-record/commit/9de1c8c2bcbe8b499ad9e1e651fac00cf31a0c33))
+
+
+
 # [5.3.0](https://github.com/dmnsgn/canvas-record/compare/v5.2.1...v5.3.0) (2025-05-11)
 
 

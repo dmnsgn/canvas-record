@@ -124,6 +124,8 @@ Roadmap:
 ## Classes
 
 <dl>
+<dt><a href="#Recorder">Recorder</a></dt>
+<dd></dd>
 <dt><a href="#Encoder">Encoder</a></dt>
 <dd></dd>
 <dt><a href="#FFmpegEncoder">FFmpegEncoder</a></dt>
@@ -139,8 +141,6 @@ Roadmap:
 <dt><a href="#MP4WasmEncoder">MP4WasmEncoder</a></dt>
 <dd></dd>
 <dt><a href="#WebCodecsEncoder">WebCodecsEncoder</a></dt>
-<dd></dd>
-<dt><a href="#Recorder">Recorder</a></dt>
 <dd></dd>
 </dl>
 
@@ -164,6 +164,15 @@ Based on &quot;H.264 for the rest of us&quot; by Kush Amerasinghe.</p>
 ## Typedefs
 
 <dl>
+<dt><a href="#onStatusChangeCb">onStatusChangeCb</a> : <code>function</code></dt>
+<dd><p>A callback to notify on the status change. To compare with RecorderStatus enum values.</p>
+</dd>
+<dt><a href="#RecorderOptions">RecorderOptions</a> : <code>object</code></dt>
+<dd><p>Options for recording. All optional.</p>
+</dd>
+<dt><a href="#RecorderStartOptions">RecorderStartOptions</a> : <code>object</code></dt>
+<dd><p>Options for recording initialisation. All optional.</p>
+</dd>
 <dt><a href="#EncoderExtensions">EncoderExtensions</a> : <code>&quot;mp4&quot;</code> | <code>&quot;webm&quot;</code> | <code>&quot;png&quot;</code> | <code>&quot;jpg&quot;</code> | <code>&quot;gif&quot;</code> | <code>&quot;mkv&quot;</code></dt>
 <dd></dd>
 <dt><a href="#EncoderTarget">EncoderTarget</a> : <code>&quot;in-browser&quot;</code> | <code>&quot;file-system&quot;</code></dt>
@@ -194,17 +203,8 @@ Based on &quot;H.264 for the rest of us&quot; by Kush Amerasinghe.</p>
 <dd></dd>
 <dt><a href="#WebCodecsEncoderEncoderOptions">WebCodecsEncoderEncoderOptions</a> : <code>VideoEncoderConfig</code></dt>
 <dd></dd>
-<dt><a href="#WebCodecsMuxerOptions">WebCodecsMuxerOptions</a> : <code>MuxerOptions</code></dt>
+<dt><a href="#WebCodecsMuxerOptions">WebCodecsMuxerOptions</a> : <code>module:mediabunny~OutputOptions</code></dt>
 <dd></dd>
-<dt><a href="#onStatusChangeCb">onStatusChangeCb</a> : <code>function</code></dt>
-<dd><p>A callback to notify on the status change. To compare with RecorderStatus enum values.</p>
-</dd>
-<dt><a href="#RecorderOptions">RecorderOptions</a> : <code>object</code></dt>
-<dd><p>Options for recording. All optional.</p>
-</dd>
-<dt><a href="#RecorderStartOptions">RecorderStartOptions</a> : <code>object</code></dt>
-<dd><p>Options for recording initialisation. All optional.</p>
-</dd>
 </dl>
 
 <a name="module_canvas-record"></a>
@@ -213,6 +213,82 @@ Based on &quot;H.264 for the rest of us&quot; by Kush Amerasinghe.</p>
 
 Re-export Recorder, RecorderStatus, all Encoders and utils.
 
+<a name="Recorder"></a>
+
+## Recorder
+
+**Kind**: global class
+
+- [Recorder](#Recorder)
+  - [new Recorder(context, [options])](#new_Recorder_new)
+  - [.defaultOptions](#Recorder+defaultOptions) : [<code>RecorderOptions</code>](#RecorderOptions)
+  - [.mimeTypes](#Recorder+mimeTypes) : <code>object</code>
+  - [.start([startOptions])](#Recorder+start)
+  - [.step()](#Recorder+step)
+  - [.stop()](#Recorder+stop) ⇒ <code>ArrayBuffer</code> \| <code>Uint8Array</code> \| <code>Array.&lt;Blob&gt;</code> \| <code>undefined</code>
+  - [.dispose()](#Recorder+dispose)
+
+<a name="new_Recorder_new"></a>
+
+### new Recorder(context, [options])
+
+Create a Recorder instance
+
+| Param     | Type                                             | Default         |
+| --------- | ------------------------------------------------ | --------------- |
+| context   | <code>RenderingContext</code>                    |                 |
+| [options] | [<code>RecorderOptions</code>](#RecorderOptions) | <code>{}</code> |
+
+<a name="Recorder+defaultOptions"></a>
+
+### recorder.defaultOptions : [<code>RecorderOptions</code>](#RecorderOptions)
+
+Sensible defaults for recording so that the recorder "just works".
+
+**Kind**: instance property of [<code>Recorder</code>](#Recorder)
+<a name="Recorder+mimeTypes"></a>
+
+### recorder.mimeTypes : <code>object</code>
+
+A mapping of extension to their mime types
+
+**Kind**: instance property of [<code>Recorder</code>](#Recorder)
+<a name="Recorder+start"></a>
+
+### recorder.start([startOptions])
+
+Start the recording by initializing and optionally calling the initial step.
+
+**Kind**: instance method of [<code>Recorder</code>](#Recorder)
+
+| Param          | Type                                                       | Default         |
+| -------------- | ---------------------------------------------------------- | --------------- |
+| [startOptions] | [<code>RecorderStartOptions</code>](#RecorderStartOptions) | <code>{}</code> |
+
+<a name="Recorder+step"></a>
+
+### recorder.step()
+
+Encode a frame and increment the time and the playhead.
+Calls `await canvasRecorder.stop()` when duration is reached.
+
+**Kind**: instance method of [<code>Recorder</code>](#Recorder)
+<a name="Recorder+stop"></a>
+
+### recorder.stop() ⇒ <code>ArrayBuffer</code> \| <code>Uint8Array</code> \| <code>Array.&lt;Blob&gt;</code> \| <code>undefined</code>
+
+Stop the recording and return the recorded buffer.
+If options.download is set, automatically start downloading the resulting file.
+Is called when duration is reached or manually.
+
+**Kind**: instance method of [<code>Recorder</code>](#Recorder)
+<a name="Recorder+dispose"></a>
+
+### recorder.dispose()
+
+Clean up the recorder and encoder
+
+**Kind**: instance method of [<code>Recorder</code>](#Recorder)
 <a name="Encoder"></a>
 
 ## Encoder
@@ -382,82 +458,6 @@ Clean up the encoder
 | --------- | ---------------------------------------------------------------- |
 | [options] | [<code>WebCodecsEncoderOptions</code>](#WebCodecsEncoderOptions) |
 
-<a name="Recorder"></a>
-
-## Recorder
-
-**Kind**: global class
-
-- [Recorder](#Recorder)
-  - [new Recorder(context, [options])](#new_Recorder_new)
-  - [.defaultOptions](#Recorder+defaultOptions) : [<code>RecorderOptions</code>](#RecorderOptions)
-  - [.mimeTypes](#Recorder+mimeTypes) : <code>object</code>
-  - [.start([startOptions])](#Recorder+start)
-  - [.step()](#Recorder+step)
-  - [.stop()](#Recorder+stop) ⇒ <code>ArrayBuffer</code> \| <code>Uint8Array</code> \| <code>Array.&lt;Blob&gt;</code> \| <code>undefined</code>
-  - [.dispose()](#Recorder+dispose)
-
-<a name="new_Recorder_new"></a>
-
-### new Recorder(context, [options])
-
-Create a Recorder instance
-
-| Param     | Type                                             | Default         |
-| --------- | ------------------------------------------------ | --------------- |
-| context   | <code>RenderingContext</code>                    |                 |
-| [options] | [<code>RecorderOptions</code>](#RecorderOptions) | <code>{}</code> |
-
-<a name="Recorder+defaultOptions"></a>
-
-### recorder.defaultOptions : [<code>RecorderOptions</code>](#RecorderOptions)
-
-Sensible defaults for recording so that the recorder "just works".
-
-**Kind**: instance property of [<code>Recorder</code>](#Recorder)
-<a name="Recorder+mimeTypes"></a>
-
-### recorder.mimeTypes : <code>object</code>
-
-A mapping of extension to their mime types
-
-**Kind**: instance property of [<code>Recorder</code>](#Recorder)
-<a name="Recorder+start"></a>
-
-### recorder.start([startOptions])
-
-Start the recording by initializing and optionally calling the initial step.
-
-**Kind**: instance method of [<code>Recorder</code>](#Recorder)
-
-| Param          | Type                                                       | Default         |
-| -------------- | ---------------------------------------------------------- | --------------- |
-| [startOptions] | [<code>RecorderStartOptions</code>](#RecorderStartOptions) | <code>{}</code> |
-
-<a name="Recorder+step"></a>
-
-### recorder.step()
-
-Encode a frame and increment the time and the playhead.
-Calls `await canvasRecorder.stop()` when duration is reached.
-
-**Kind**: instance method of [<code>Recorder</code>](#Recorder)
-<a name="Recorder+stop"></a>
-
-### recorder.stop() ⇒ <code>ArrayBuffer</code> \| <code>Uint8Array</code> \| <code>Array.&lt;Blob&gt;</code> \| <code>undefined</code>
-
-Stop the recording and return the recorded buffer.
-If options.download is set, automatically start downloading the resulting file.
-Is called when duration is reached or manually.
-
-**Kind**: instance method of [<code>Recorder</code>](#Recorder)
-<a name="Recorder+dispose"></a>
-
-### recorder.dispose()
-
-Clean up the recorder and encoder
-
-**Kind**: instance method of [<code>Recorder</code>](#Recorder)
 <a name="RecorderStatus"></a>
 
 ## RecorderStatus : <code>enum</code>
@@ -507,6 +507,56 @@ Based on "H.264 for the rest of us" by Kush Amerasinghe.
 const bitRate = estimateBitRate(1920, 1080, 30, "variable");
 const bitRateMbps = bitRate * 1_000_000; // => 13 Mbps
 ```
+
+<a name="onStatusChangeCb"></a>
+
+## onStatusChangeCb : <code>function</code>
+
+A callback to notify on the status change. To compare with RecorderStatus enum values.
+
+**Kind**: global typedef
+
+| Param          | Type                | Description |
+| -------------- | ------------------- | ----------- |
+| RecorderStatus | <code>number</code> | the status  |
+
+<a name="RecorderOptions"></a>
+
+## RecorderOptions : <code>object</code>
+
+Options for recording. All optional.
+
+**Kind**: global typedef
+**Properties**
+
+| Name             | Type                                               | Default                                           | Description                                                                                                                                                           |
+| ---------------- | -------------------------------------------------- | ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [name]           | <code>string</code>                                | <code>&quot;\&quot;\&quot;&quot;</code>           | A name for the recorder, used as prefix for the default file name.                                                                                                    |
+| [duration]       | <code>number</code>                                | <code>10</code>                                   | The recording duration in seconds. If set to Infinity, `await canvasRecorder.stop()` needs to be called manually.                                                     |
+| [frameRate]      | <code>number</code>                                | <code>30</code>                                   | The frame rate in frame per seconds. Use `await canvasRecorder.step();` to go to the next frame.                                                                      |
+| [rect]           | <code>Array</code>                                 | <code>[]</code>                                   | Sub-region [x, y, width, height] of the canvas to encode from bottom left. Default to 0, 0 and context.drawingBufferWidth/drawingBufferHeight or canvas.width/height. |
+| [download]       | <code>boolean</code>                               | <code>true</code>                                 | Automatically download the recording when duration is reached or when `await canvasRecorder.stop()` is manually called.                                               |
+| [extension]      | <code>string</code>                                | <code>&quot;\&quot;mp4\&quot;&quot;</code>        | Default file extension: infers which Encoder is selected.                                                                                                             |
+| [target]         | <code>string</code>                                | <code>&quot;\&quot;in-browser\&quot;&quot;</code> | Default writing target: in-browser or file-system when available.                                                                                                     |
+| [encoder]        | <code>object</code>                                |                                                   | A specific encoder. Default encoder based on options.extension: GIF > WebCodecs > H264MP4.                                                                            |
+| [encoderOptions] | <code>object</code>                                |                                                   | See `src/encoders` or individual packages for a list of options.                                                                                                      |
+| [muxerOptions]   | <code>object</code>                                |                                                   | See "mediabunny" for a list of options.                                                                                                                               |
+| [frameOptions]   | <code>object</code>                                |                                                   | Options for createImageBitmap(), VideoFrame, getImageData() or canvas-screenshot.                                                                                     |
+| [onStatusChange] | [<code>onStatusChangeCb</code>](#onStatusChangeCb) |                                                   |                                                                                                                                                                       |
+
+<a name="RecorderStartOptions"></a>
+
+## RecorderStartOptions : <code>object</code>
+
+Options for recording initialisation. All optional.
+
+**Kind**: global typedef
+**Properties**
+
+| Name       | Type                 | Description                                                                   |
+| ---------- | -------------------- | ----------------------------------------------------------------------------- |
+| [filename] | <code>string</code>  | Overwrite the file name completely.                                           |
+| [initOnly] | <code>boolean</code> | Only initialised the recorder and don't call the first await recorder.step(). |
 
 <a name="EncoderExtensions"></a>
 
@@ -658,63 +708,10 @@ const bitRateMbps = bitRate * 1_000_000; // => 13 Mbps
 **See**: [VideoEncoder.configure](https://developer.mozilla.org/en-US/docs/Web/API/VideoEncoder/configure#config)
 <a name="WebCodecsMuxerOptions"></a>
 
-## WebCodecsMuxerOptions : <code>MuxerOptions</code>
+## WebCodecsMuxerOptions : <code>module:mediabunny~OutputOptions</code>
 
 **Kind**: global typedef
-**See**
-
-- [Mp4.MuxerOptions](https://github.com/Vanilagy/mp4-muxer/#usage)
-- [WebM.MuxerOptions](https://github.com/Vanilagy/webm-muxer/#usage)
-
-<a name="onStatusChangeCb"></a>
-
-## onStatusChangeCb : <code>function</code>
-
-A callback to notify on the status change. To compare with RecorderStatus enum values.
-
-**Kind**: global typedef
-
-| Param          | Type                | Description |
-| -------------- | ------------------- | ----------- |
-| RecorderStatus | <code>number</code> | the status  |
-
-<a name="RecorderOptions"></a>
-
-## RecorderOptions : <code>object</code>
-
-Options for recording. All optional.
-
-**Kind**: global typedef
-**Properties**
-
-| Name             | Type                                               | Default                                           | Description                                                                                                                                                           |
-| ---------------- | -------------------------------------------------- | ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [name]           | <code>string</code>                                | <code>&quot;\&quot;\&quot;&quot;</code>           | A name for the recorder, used as prefix for the default file name.                                                                                                    |
-| [duration]       | <code>number</code>                                | <code>10</code>                                   | The recording duration in seconds. If set to Infinity, `await canvasRecorder.stop()` needs to be called manually.                                                     |
-| [frameRate]      | <code>number</code>                                | <code>30</code>                                   | The frame rate in frame per seconds. Use `await canvasRecorder.step();` to go to the next frame.                                                                      |
-| [rect]           | <code>Array</code>                                 | <code>[]</code>                                   | Sub-region [x, y, width, height] of the canvas to encode from bottom left. Default to 0, 0 and context.drawingBufferWidth/drawingBufferHeight or canvas.width/height. |
-| [download]       | <code>boolean</code>                               | <code>true</code>                                 | Automatically download the recording when duration is reached or when `await canvasRecorder.stop()` is manually called.                                               |
-| [extension]      | <code>string</code>                                | <code>&quot;\&quot;mp4\&quot;&quot;</code>        | Default file extension: infers which Encoder is selected.                                                                                                             |
-| [target]         | <code>string</code>                                | <code>&quot;\&quot;in-browser\&quot;&quot;</code> | Default writing target: in-browser or file-system when available.                                                                                                     |
-| [encoder]        | <code>object</code>                                |                                                   | A specific encoder. Default encoder based on options.extension: GIF > WebCodecs > H264MP4.                                                                            |
-| [encoderOptions] | <code>object</code>                                |                                                   | See `src/encoders` or individual packages for a list of options.                                                                                                      |
-| [muxerOptions]   | <code>object</code>                                |                                                   | See "mp4-muxer" and "webm-muxer" for a list of options.                                                                                                               |
-| [frameOptions]   | <code>object</code>                                |                                                   | Options for createImageBitmap(), VideoFrame, getImageData() or canvas-screenshot.                                                                                     |
-| [onStatusChange] | [<code>onStatusChangeCb</code>](#onStatusChangeCb) |                                                   |                                                                                                                                                                       |
-
-<a name="RecorderStartOptions"></a>
-
-## RecorderStartOptions : <code>object</code>
-
-Options for recording initialisation. All optional.
-
-**Kind**: global typedef
-**Properties**
-
-| Name       | Type                 | Description                                                                   |
-| ---------- | -------------------- | ----------------------------------------------------------------------------- |
-| [filename] | <code>string</code>  | Overwrite the file name completely.                                           |
-| [initOnly] | <code>boolean</code> | Only initialised the recorder and don't call the first await recorder.step(). |
+**See**: [mediabunny#output-formats](https://mediabunny.dev/guide/output-formats)
 
 <!-- api-end -->
 
