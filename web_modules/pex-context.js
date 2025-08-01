@@ -18,8 +18,7 @@
  * @alias module:pex-gl.default
  * @param {import("./types.js").PexGLOptions} [opts={}]
  * @returns {RenderingContext}
- */ function createRenderingContext(opts) {
-    if (opts === void 0) opts = {};
+ */ function createRenderingContext(opts = {}) {
     // Get options and set defaults
     const { width = window.innerWidth, height = window.innerHeight, pixelRatio = 1, fullscreen = !opts.width && !opts.height, type = "webgl", element = document.body, ...contextAttributes } = {
         ...opts
@@ -524,8 +523,7 @@ function updateTexture(ctx, texture, opts) {
     texture.info = `${Object.keys(ctx.PixelFormat).find((key)=>ctx.PixelFormat[key] === pixelFormat)}_${Object.keys(ctx.Encoding).find((key)=>ctx.Encoding[key] === encoding)}`;
     return texture;
 }
-function updateTexture2D(ctx, texture, data, param) {
-    let { offset } = param === void 0 ? {} : param;
+function updateTexture2D(ctx, texture, data, { offset } = {}) {
     const gl = ctx.gl;
     const { internalFormat, format, type, target, compressed } = texture;
     for(let level = 0; level < data.length; level++){
@@ -845,18 +843,14 @@ const TYPE_TO_SIZE = {
     mat4: 16
 };
 // TODO: can't update attributes/indices as they're in vertexArray
-function updateVertexArray(ctx, vertexArray, param) {
-    let { vertexLayout } = param;
+function updateVertexArray(ctx, vertexArray, { vertexLayout }) {
     const gl = ctx.gl;
     gl.bindVertexArray(vertexArray.handle);
-    enableVertexData(ctx, Object.entries(vertexLayout).map((param)=>{
-        let [name, { location, type, size }] = param;
-        return [
+    enableVertexData(ctx, Object.entries(vertexLayout).map(([name, { location, type, size }])=>[
             name,
             location,
             size ?? TYPE_TO_SIZE[type]
-        ];
-    }), vertexArray);
+        ]), vertexArray);
     gl.bindVertexArray(null);
 }
 
@@ -946,8 +940,7 @@ function createProgram(ctx, opts) {
     updateProgram(ctx, program, opts);
     return program;
 }
-function updateProgram(ctx, program, param) {
-    let { vert, frag, vertexLayout } = param;
+function updateProgram(ctx, program, { vert, frag, vertexLayout }) {
     console.assert(typeof vert === "string", "Vertex shader source must be a string");
     console.assert(typeof frag === "string", "Fragment shader source must be a string");
     const gl = ctx.gl;
@@ -1155,8 +1148,7 @@ function updateBuffer(ctx, buffer, opts) {
  */ const allowedProps = [
     "target"
 ];
-function createQuery(ctx, opts) {
-    if (opts === void 0) opts = {};
+function createQuery(ctx, opts = {}) {
     checkProps(allowedProps, opts);
     const gl = ctx.gl;
     const query = Object.assign({
@@ -1178,23 +1170,20 @@ function createQuery(ctx, opts) {
     }
     return query;
 }
-function begin(param, q) {
-    let { QueryState, gl } = param;
+function begin({ QueryState, gl }, q) {
     if (q.state !== QueryState.Ready) return false;
     gl.beginQuery(q.target, q.handle);
     q.state = QueryState.Active;
     q.result = null;
     return true;
 }
-function end(param, q) {
-    let { QueryState, gl } = param;
+function end({ QueryState, gl }, q) {
     if (q.state !== QueryState.Active) return false;
     gl.endQuery(q.target);
     q.state = QueryState.Pending;
     return true;
 }
-function available(param, q) {
-    let { gl, QueryState } = param;
+function available({ gl, QueryState }, q) {
     const available = gl.getQueryParameter(q.handle, gl.QUERY_RESULT_AVAILABLE);
     if (available) {
         q.result = gl.getQueryParameter(q.handle, gl.QUERY_RESULT);
@@ -1566,9 +1555,7 @@ function polyfill(ctx) {
                 "16I": "Int16",
                 "32UI": "Uint32",
                 "32I": "Int32"
-            }).map((param)=>{
-                let [type, DataType] = param;
-                return [
+            }).map(([type, DataType])=>[
                     [
                         `${format}${type}`
                     ],
@@ -1576,8 +1563,7 @@ function polyfill(ctx) {
                         gl[`${format === "R" ? "RED" : format}${type.endsWith("I") ? "_INTEGER" : ""}`],
                         ctx.DataType[DataType]
                     ]
-                ];
-            }))),
+                ]))),
         // Special
         SRGB8: [
             gl.RGB,
@@ -1755,8 +1741,7 @@ const allowedCommandProps = [
  * Create a context object
  * @param {import("./types.js").PexContextOptions & import("pex-gl").Options} [options]
  * @returns {ctx}
- */ function createContext(options) {
-    if (options === void 0) options = {};
+ */ function createContext(options = {}) {
     const opts = {
         pixelRatio: 1,
         type: "webgl2",
@@ -1926,8 +1911,7 @@ const allowedCommandProps = [
      * ```
      * @memberof ctx
      * @param {import("./types.js").PexContextSetOptions} options
-     */ set (param) {
-            let { pixelRatio, width, height } = param;
+     */ set ({ pixelRatio, width, height }) {
             if (pixelRatio) {
                 this.updatePixelRatio = Math.min(pixelRatio, window.devicePixelRatio);
             }
@@ -2117,10 +2101,7 @@ const allowedCommandProps = [
      * ```
      */ pass (opts) {
             if (this.debugMode) {
-                console.debug(NAMESPACE, "pass", opts, opts.color?.map((param)=>{
-                    let { texture, info } = param;
-                    return texture?.info || info;
-                }) || "");
+                console.debug(NAMESPACE, "pass", opts, opts.color?.map(({ texture, info })=>texture?.info || info) || "");
             }
             return this.resource(createPass(this, opts));
         },
@@ -2372,8 +2353,7 @@ const allowedCommandProps = [
      * @memberof ctx
      * @param {{ x: number, y: number, width: number, height: number }} viewport
      * @returns {Uint8Array}
-     */ readPixels (param) {
-            let { x = 0, y = 0, width, height } = param;
+     */ readPixels ({ x = 0, y = 0, width, height }) {
             const pixels = new Uint8Array(width * height * 4);
             gl.readPixels(x, y, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
             return pixels;

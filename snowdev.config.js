@@ -34,8 +34,7 @@ export default {
     "gifenc",
     "h264-mp4-encoder",
     "media-codecs",
-    "mp4-muxer",
-    "webm-muxer",
+    "mediabunny",
 
     "canvas-context",
     "es-module-shims",

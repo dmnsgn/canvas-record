@@ -3145,8 +3145,7 @@ function stringFromUnknown(value) {
 function formatString(value) {
     return value;
 }
-function connectValues(param) {
-    let { primary, secondary, forward, backward } = param;
+function connectValues({ primary, secondary, forward, backward }) {
     let changing = false;
     function preventFeedback(callback) {
         if (changing) {
@@ -4543,16 +4542,14 @@ const PARSER_AND_RESULT = [
     }
 ];
 function detectStringColor(text) {
-    return PARSER_AND_RESULT.reduce((prev, param)=>{
-        let { parser, result: detection } = param;
+    return PARSER_AND_RESULT.reduce((prev, { parser, result: detection })=>{
         if (prev) {
             return prev;
         }
         return parser(text) ? detection : null;
     }, null);
 }
-function detectStringColorFormat(text, type) {
-    if (type === void 0) type = 'int';
+function detectStringColorFormat(text, type = 'int') {
     const r = detectStringColor(text);
     if (!r) {
         return null;
@@ -4599,13 +4596,11 @@ function zerofill(comp) {
     const hex = constrainRange(Math.floor(comp), 0, 255).toString(16);
     return hex.length === 1 ? `0${hex}` : hex;
 }
-function colorToHexRgbString(value, prefix) {
-    if (prefix === void 0) prefix = '#';
+function colorToHexRgbString(value, prefix = '#') {
     const hexes = removeAlphaComponent(value.getComponents('rgb')).map(zerofill).join('');
     return `${prefix}${hexes}`;
 }
-function colorToHexRgbaString(value, prefix) {
-    if (prefix === void 0) prefix = '#';
+function colorToHexRgbaString(value, prefix = '#') {
     const rgbaComps = value.getComponents('rgb');
     const hexes = [
         rgbaComps[0],

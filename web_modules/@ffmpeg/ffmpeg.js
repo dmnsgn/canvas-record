@@ -72,8 +72,7 @@ const ERROR_TERMINATED = new Error("called FFmpeg.terminate()");
         this.loaded = false;
         this.#registerHandlers = ()=>{
             if (this.#worker) {
-                this.#worker.onmessage = (param)=>{
-                    let { data: { id, type, data } } = param;
+                this.#worker.onmessage = ({ data: { id, type, data } })=>{
                     switch(type){
                         case FFMessageType.LOAD:
                             this.loaded = true;
@@ -106,9 +105,7 @@ const ERROR_TERMINATED = new Error("called FFmpeg.terminate()");
                 };
             }
         };
-        this.#send = (param, trans, signal)=>{
-            let { type, data } = param;
-            if (trans === void 0) trans = [];
+        this.#send = ({ type, data }, trans = [], signal)=>{
             if (!this.#worker) {
                 return Promise.reject(ERROR_NOT_LOADED);
             }
@@ -134,11 +131,9 @@ const ERROR_TERMINATED = new Error("called FFmpeg.terminate()");
      *
      * @category FFmpeg
      * @returns `true` if ffmpeg core is loaded for the first time.
-     */ this.load = (config, param)=>{
-            if (config === void 0) config = {};
-            let { signal } = param === void 0 ? {} : param;
+     */ this.load = (config = {}, { signal } = {})=>{
             if (!this.#worker) {
-                this.#worker = new Worker(new URL(new URL('../assets/worker-BIbGGrl-.js', import.meta.url).href, import.meta.url), {
+                this.#worker = new Worker(new URL(new URL('../assets/worker-BIbGGrl-.js', import.meta.url).href), {
                     type: "module"
                 });
                 this.#registerHandlers();
@@ -171,17 +166,13 @@ const ERROR_TERMINATED = new Error("called FFmpeg.terminate()");
      * milliseconds to wait before stopping the command execution.
      *
      * @defaultValue -1
-     */ timeout, param)=>{
-            if (timeout === void 0) timeout = -1;
-            let { signal } = param === void 0 ? {} : param;
-            return this.#send({
+     */ timeout = -1, { signal } = {})=>this.#send({
                 type: FFMessageType.EXEC,
                 data: {
                     args,
                     timeout
                 }
             }, undefined, signal);
-        };
         /**
      * Terminate all ongoing API calls and terminate web worker.
      * `FFmpeg.load()` must be called again before calling any other APIs.
@@ -213,8 +204,7 @@ const ERROR_TERMINATED = new Error("called FFmpeg.terminate()");
      * ```
      *
      * @category File System
-     */ this.writeFile = (path, data, param)=>{
-            let { signal } = param === void 0 ? {} : param;
+     */ this.writeFile = (path, data, { signal } = {})=>{
             const trans = [];
             if (data instanceof Uint8Array) {
                 trans.push(data.buffer);
@@ -264,83 +254,64 @@ const ERROR_TERMINATED = new Error("called FFmpeg.terminate()");
      * - binary: read file as binary file, return data in Uint8Array type.
      *
      * @defaultValue binary
-     */ encoding, param)=>{
-            if (encoding === void 0) encoding = "binary";
-            let { signal } = param === void 0 ? {} : param;
-            return this.#send({
+     */ encoding = "binary", { signal } = {})=>this.#send({
                 type: FFMessageType.READ_FILE,
                 data: {
                     path,
                     encoding
                 }
             }, undefined, signal);
-        };
         /**
      * Delete a file.
      *
      * @category File System
-     */ this.deleteFile = (path, param)=>{
-            let { signal } = param === void 0 ? {} : param;
-            return this.#send({
+     */ this.deleteFile = (path, { signal } = {})=>this.#send({
                 type: FFMessageType.DELETE_FILE,
                 data: {
                     path
                 }
             }, undefined, signal);
-        };
         /**
      * Rename a file or directory.
      *
      * @category File System
-     */ this.rename = (oldPath, newPath, param)=>{
-            let { signal } = param === void 0 ? {} : param;
-            return this.#send({
+     */ this.rename = (oldPath, newPath, { signal } = {})=>this.#send({
                 type: FFMessageType.RENAME,
                 data: {
                     oldPath,
                     newPath
                 }
             }, undefined, signal);
-        };
         /**
      * Create a directory.
      *
      * @category File System
-     */ this.createDir = (path, param)=>{
-            let { signal } = param === void 0 ? {} : param;
-            return this.#send({
+     */ this.createDir = (path, { signal } = {})=>this.#send({
                 type: FFMessageType.CREATE_DIR,
                 data: {
                     path
                 }
             }, undefined, signal);
-        };
         /**
      * List directory contents.
      *
      * @category File System
-     */ this.listDir = (path, param)=>{
-            let { signal } = param === void 0 ? {} : param;
-            return this.#send({
+     */ this.listDir = (path, { signal } = {})=>this.#send({
                 type: FFMessageType.LIST_DIR,
                 data: {
                     path
                 }
             }, undefined, signal);
-        };
         /**
      * Delete an empty directory.
      *
      * @category File System
-     */ this.deleteDir = (path, param)=>{
-            let { signal } = param === void 0 ? {} : param;
-            return this.#send({
+     */ this.deleteDir = (path, { signal } = {})=>this.#send({
                 type: FFMessageType.DELETE_DIR,
                 data: {
                     path
                 }
             }, undefined, signal);
-        };
     }
 }
 

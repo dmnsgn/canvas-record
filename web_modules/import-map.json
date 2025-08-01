@@ -13,10 +13,9 @@
     "gifenc": "./gifenc.js",
     "h264-mp4-encoder": "./h264-mp4-encoder.js",
     "media-codecs": "./media-codecs.js",
-    "mp4-muxer": "./mp4-muxer.js",
+    "mediabunny": "./mediabunny.js",
     "pex-color": "./pex-color.js",
     "pex-context": "./pex-context.js",
-    "tweakpane": "./tweakpane.js",
-    "webm-muxer": "./webm-muxer.js"
+    "tweakpane": "./tweakpane.js"
   }
 }

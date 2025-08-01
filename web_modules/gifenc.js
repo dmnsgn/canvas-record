@@ -1,7 +1,6 @@
 var X = {
     trailer: 59};
-function F(t) {
-    if (t === void 0) t = 256;
+function F(t = 256) {
     let e = 0, s = new Uint8Array(t);
     return {
         get buffer () {
@@ -19,15 +18,11 @@ function F(t) {
         writeByte (r) {
             n(e + 1), s[e] = r, e++;
         },
-        writeBytes (r, o, i) {
-            if (o === void 0) o = 0;
-            if (i === void 0) i = r.length;
+        writeBytes (r, o = 0, i = r.length) {
             n(e + i);
             for(let c = 0; c < i; c++)s[e++] = r[c + o];
         },
-        writeBytesView (r, o, i) {
-            if (o === void 0) o = 0;
-            if (i === void 0) i = r.byteLength;
+        writeBytesView (r, o = 0, i = r.byteLength) {
             n(e + i), s.set(r.subarray(o, o + i), e), e += i;
         }
     };
@@ -59,11 +54,7 @@ var O = 12, J = 5003, lt = [
     32767,
     65535
 ];
-function at(t, e, s, n, r, o, i, c) {
-    if (r === void 0) r = F(512);
-    if (o === void 0) o = new Uint8Array(256);
-    if (i === void 0) i = new Int32Array(J);
-    if (c === void 0) c = new Int32Array(J);
+function at(t, e, s, n, r = F(512), o = new Uint8Array(256), i = new Int32Array(J), c = new Int32Array(J)) {
     let x = i.length, a = Math.max(2, n);
     o.fill(0), c.fill(0), i.fill(-1);
     let l = 0, f = 0, g = a + 1, h = g, b = false, w = h, _ = (1 << w) - 1, u = 1 << g - 1, k = u + 1, B = u + 2, p = 0, A = s[0], z = 0;
@@ -153,8 +144,7 @@ function ut(t, e) {
     }
     return n;
 }
-function H(t, e, s) {
-    if (s === void 0) s = {};
+function H(t, e, s = {}) {
     let { format: n = "rgb565", clearAlpha: r = true, clearAlphaColor: o = 0, clearAlphaThreshold: i = 0, oneBitAlpha: c = false } = s;
     if (!t || !t.buffer) throw new Error("quantize() expected RGBA Uint8Array data");
     if (!(t instanceof Uint8Array) && !(t instanceof Uint8ClampedArray)) throw new Error("quantize() expected RGBA Uint8Array data");
@@ -232,8 +222,7 @@ function U(t, e) {
 function P(t, e) {
     return e > 1 ? Math.round(t / e) * e : t;
 }
-function et(t, param) {
-    let { roundRGB: e = 5, roundAlpha: s = 10, oneBitAlpha: n = null } = param === void 0 ? {} : param;
+function et(t, { roundRGB: e = 5, roundAlpha: s = 10, oneBitAlpha: n = null } = {}) {
     let r = new Uint32Array(t.buffer);
     for(let o = 0; o < r.length; o++){
         let i = r[o], c = i >> 24 & 255, x = i >> 16 & 255, a = i >> 8 & 255, l = i & 255;
@@ -244,8 +233,7 @@ function et(t, param) {
         l = P(l, e), a = P(a, e), x = P(x, e), r[o] = c << 24 | x << 16 | a << 8 | l << 0;
     }
 }
-function nt(t, e, s) {
-    if (s === void 0) s = "rgb565";
+function nt(t, e, s = "rgb565") {
     if (!t || !t.buffer) throw new Error("quantize() expected RGBA Uint8Array data");
     if (!(t instanceof Uint8Array) && !(t instanceof Uint8ClampedArray)) throw new Error("quantize() expected RGBA Uint8Array data");
     if (e.length > 256) throw new Error("applyPalette() only works with 256 colors or less");
@@ -289,8 +277,7 @@ function bt(t, e, s, n) {
     }
     return r;
 }
-function rt(t, e, s) {
-    if (s === void 0) s = 5;
+function rt(t, e, s = 5) {
     if (!t.length || !e.length) return;
     let n = t.map((i)=>i.slice(0, 3)), r = s * s, o = t[0].length;
     for(let i = 0; i < e.length; i++){
@@ -308,8 +295,7 @@ function rt(t, e, s) {
 function q(t) {
     return t * t;
 }
-function W(t, e, s) {
-    if (s === void 0) s = U;
+function W(t, e, s = U) {
     let n = Infinity, r = -1;
     for(let o = 0; o < t.length; o++){
         let i = t[o], c = s(e, i);
@@ -317,8 +303,7 @@ function W(t, e, s) {
     }
     return r;
 }
-function N(t, e, s) {
-    if (s === void 0) s = U;
+function N(t, e, s = U) {
     let n = Infinity, r = -1;
     for(let o = 0; o < t.length; o++){
         let i = t[o], c = s(e, i);
@@ -329,12 +314,10 @@ function N(t, e, s) {
         n
     ];
 }
-function ot(t, e, s) {
-    if (s === void 0) s = U;
+function ot(t, e, s = U) {
     return t[W(t, e, s)];
 }
-function ct(t) {
-    if (t === void 0) t = {};
+function ct(t = {}) {
     let { initialCapacity: e = 4096, auto: s = true } = t, n = F(e), r = 5003, o = new Uint8Array(256), i = new Int32Array(r), c = new Int32Array(r), x = false;
     return {
         reset () {
@@ -356,8 +339,7 @@ function ct(t) {
             return n;
         },
         writeHeader: a,
-        writeFrame (l, f, g, h) {
-            if (h === void 0) h = {};
+        writeFrame (l, f, g, h = {}) {
             let { transparent: b = false, transparentIndex: w = 0, delay: _ = 0, palette: u = null, repeat: k = 0, colorDepth: B = 8, dispose: p = -1 } = h, A = false;
             if (s ? x || (A = true, a(), x = true) : A = Boolean(h.first), f = Math.max(0, Math.floor(f)), g = Math.max(0, Math.floor(g)), A) {
                 if (!u) throw new Error("First frame must include a { palette } option");
@@ -380,8 +362,7 @@ function wt(t, e, s, n, r) {
     let c = 0;
     t.writeByte(0 | i | c | o), S(t, s), t.writeByte(r || 0), t.writeByte(0);
 }
-function pt(t, e, s, n, r) {
-    if (r === void 0) r = 8;
+function pt(t, e, s, n, r = 8) {
     let o = 1, i = 0, c = Z(n.length) - 1, x = o << 7 | r - 1 << 4 | i << 3 | c, a = 0, l = 0;
     S(t, e), S(t, s), t.writeBytes([
         x,
@@ -409,8 +390,7 @@ function ht(t, e, s, n) {
         t.writeByte(128 | r | o | 0 | i);
     } else t.writeByte(0);
 }
-function yt(t, e, s, n, r, o, i, c) {
-    if (r === void 0) r = 8;
+function yt(t, e, s, n, r = 8, o, i, c) {
     $(s, n, e, r, t, o, i, c);
 }
 function S(t, e) {

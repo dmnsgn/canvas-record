@@ -2,8 +2,7 @@ const setAlpha = (color, a)=>{
     if (a !== undefined) color[3] = a;
     return color;
 };
-const floorArray = (color, precision)=>{
-    if (precision === void 0) precision = 5;
+const floorArray = (color, precision = 5)=>{
     const p = 10 ** precision;
     color.forEach((n, i)=>color[i] = Math.floor((n + Number.EPSILON) * p) / p);
     return color;
@@ -345,10 +344,7 @@ const getBounds = (L)=>{
     }
     return result;
 };
-const distanceLineFromOrigin = (param)=>{
-    let { intercept, slope } = param;
-    return Math.abs(intercept) / Math.sqrt(slope ** 2 + 1);
-};
+const distanceLineFromOrigin = ({ intercept, slope })=>Math.abs(intercept) / Math.sqrt(slope ** 2 + 1);
 const maxSafeChromaForL = (L)=>{
     const bounds = getBounds(L * 100);
     let min = Infinity;
@@ -361,10 +357,7 @@ const maxSafeChromaForL = (L)=>{
     }
     return min / 100;
 };
-const lengthOfRayUntilIntersect = (theta, param)=>{
-    let { intercept, slope } = param;
-    return intercept / (Math.sin(theta) - slope * Math.cos(theta));
-};
+const lengthOfRayUntilIntersect = (theta, { intercept, slope })=>intercept / (Math.sin(theta) - slope * Math.cos(theta));
 const maxChromaForLH = (L, H)=>{
     const hrad = H * TAU;
     const bounds = getBounds(L * 100);
@@ -609,16 +602,14 @@ const findCusp = (a, b)=>{
         lCusp * sCusp
     ];
 };
-const getStMax = (a_, b_, cusp)=>{
-    if (cusp === void 0) cusp = null;
+const getStMax = (a_, b_, cusp = null)=>{
     if (!cusp) cusp = findCusp(a_, b_);
     return [
         cusp[1] / cusp[0],
         cusp[1] / (1 - cusp[0])
     ];
 };
-const findGamutIntersection = (a, b, L1, C1, L0, cusp)=>{
-    if (cusp === void 0) cusp = null;
+const findGamutIntersection = (a, b, L1, C1, L0, cusp = null)=>{
     if (!cusp) cusp = findCusp(a, b);
     let t;
     if ((L1 - L0) * cusp[1] - (cusp[0] - L0) * C1 <= 0) {
@@ -749,11 +740,7 @@ var utils = /*#__PURE__*/Object.freeze({
  * @param {number} [b=0]
  * @param {number} [a]
  * @returns {color}
- */ function create(r, g, b, a) {
-    if (r === void 0) r = 0;
-    if (g === void 0) g = 0;
-    if (b === void 0) b = 0;
-    if (a === void 0) a = 1;
+ */ function create(r = 0, g = 0, b = 0, a = 1) {
     return [
         r,
         g,
@@ -806,8 +793,7 @@ var utils = /*#__PURE__*/Object.freeze({
 /**
  * @deprecated Use "set()".
  * @ignore
- */ function toRGB(color, out) {
-    if (out === void 0) out = [];
+ */ function toRGB(color, out = []) {
     console.error(`"toRGB()" deprecated. Use "set()".`);
     return set(out, color);
 }
@@ -822,8 +808,7 @@ var utils = /*#__PURE__*/Object.freeze({
  * @param {import("./color.js").color} color
  * @param {bytes} bytes
  * @returns {import("./color.js").color}
- */ function fromBytes(color, param) {
-    let [r, g, b, a] = param;
+ */ function fromBytes(color, [r, g, b, a]) {
     color[0] = r / 255;
     color[1] = g / 255;
     color[2] = b / 255;
@@ -836,8 +821,7 @@ var utils = /*#__PURE__*/Object.freeze({
  * @param {import("./color.js").color} color
  * @param {Array} out
  * @returns {bytes}
- */ function toBytes(color, out) {
-    if (out === void 0) out = [];
+ */ function toBytes(color, out = []) {
     out[0] = Math.round(color[0] * 255);
     out[1] = Math.round(color[1] * 255);
     out[2] = Math.round(color[2] * 255);
@@ -883,9 +867,7 @@ var utils = /*#__PURE__*/Object.freeze({
  * @param {import("./color.js").color} color
  * @param {Array} out
  * @returns {linear}
- */ function toLinear(param, out) {
-    let [r, g, b, a] = param;
-    if (out === void 0) out = [];
+ */ function toLinear([r, g, b, a], out = []) {
     rgbToLinear(r, g, b, out);
     return setAlpha(out, a);
 }
@@ -915,9 +897,7 @@ var utils = /*#__PURE__*/Object.freeze({
  * @param {import("./color.js").color} color
  * @param {Array} out
  * @returns {xyz}
- */ function toXYZD50(param, out) {
-    let [r, g, b, a] = param;
-    if (out === void 0) out = [];
+ */ function toXYZD50([r, g, b, a], out = []) {
     rgbToLinear(r, g, b, out);
     linearToXyzD50(out[0], out[1], out[2], out);
     return setAlpha(out, a);
@@ -942,9 +922,7 @@ var utils = /*#__PURE__*/Object.freeze({
  * @param {import("./color.js").color} color
  * @param {Array} out
  * @returns {xyz}
- */ function toXYZD65(param, out) {
-    let [r, g, b, a] = param;
-    if (out === void 0) out = [];
+ */ function toXYZD65([r, g, b, a], out = []) {
     rgbToLinear(r, g, b, out);
     linearToXyzD65(out[0], out[1], out[2], out);
     return setAlpha(out, a);
@@ -975,8 +953,7 @@ var utils = /*#__PURE__*/Object.freeze({
  * @param {import("./color.js").color} color
  * @param {Array} out
  * @returns {p3}
- */ function toP3(color, out) {
-    if (out === void 0) out = [];
+ */ function toP3(color, out = []) {
     toXYZD65(color, out);
     xyzD65ToLinearP3(out[0], out[1], out[2], out);
     return linearToRgb(out[0], out[1], out[2], out);
@@ -1016,8 +993,7 @@ var utils = /*#__PURE__*/Object.freeze({
  * @param {import("./color.js").color} color
  * @param {boolean} alpha Handle alpha
  * @returns {hex}
- */ function toHex(color, alpha) {
-    if (alpha === void 0) alpha = true;
+ */ function toHex(color, alpha = true) {
     const c = color.map((val)=>Math.round(val * 255));
     return `#${(c[2] | c[1] << 8 | c[0] << 16 | 1 << 24).toString(16).slice(1).toUpperCase()}${alpha && color[3] !== undefined && color[3] !== 1 ? (c[3] | 1 << 8).toString(16).slice(1) : ""}`;
 }
@@ -1062,9 +1038,7 @@ var utils = /*#__PURE__*/Object.freeze({
  * @param {import("./color.js").color} color
  * @param {Array} out
  * @returns {hsl}
- */ function toHSL(param, out) {
-    let [r, g, b, a] = param;
-    if (out === void 0) out = [];
+ */ function toHSL([r, g, b, a], out = []) {
     const max = Math.max(r, g, b);
     const min = Math.min(r, g, b);
     out[2] = (max + min) / 2;
@@ -1121,8 +1095,7 @@ var utils = /*#__PURE__*/Object.freeze({
  * @param {import("./color.js").color} color
  * @param {Array} out
  * @returns {hwb}
- */ function toHWB(color, out) {
-    if (out === void 0) out = [];
+ */ function toHWB(color, out = []) {
     toHSL(color, out);
     out[1] = Math.min(color[0], color[1], color[2]);
     out[2] = 1 - Math.max(color[0], color[1], color[2]);
@@ -1189,9 +1162,7 @@ var utils = /*#__PURE__*/Object.freeze({
  * @param {import("./color.js").color} color
  * @param {Array} out
  * @returns {hsv}
- */ function toHSV(param, out) {
-    let [r, g, b, a] = param;
-    if (out === void 0) out = [];
+ */ function toHSV([r, g, b, a], out = []) {
     const max = Math.max(r, g, b);
     const min = Math.min(r, g, b);
     out[2] = max;
@@ -1223,14 +1194,11 @@ var utils = /*#__PURE__*/Object.freeze({
  *
  * Components range (D50): 0 <= l <= 1; -0.79287 <= a <= 0.9355; -1.12029 <= b <= 0.93388;
  * @see {@link https://en.wikipedia.org/wiki/CIELAB_color_space}
- */ function fromLab(color, l, a, b, α, param) {
-    let { illuminant = D50, fromXYZ = fromXYZD50 } = param === void 0 ? {} : param;
+ */ function fromLab(color, l, a, b, α, { illuminant = D50, fromXYZ = fromXYZD50 } = {}) {
     labToXyz(l, a, b, color, illuminant);
     return fromXYZ(color, color[0], color[1], color[2], α);
 }
-function toLab(color, out, param) {
-    if (out === void 0) out = [];
-    let { illuminant = D50, toXYZ = toXYZD50 } = param === void 0 ? {} : param;
+function toLab(color, out = [], { illuminant = D50, toXYZ = toXYZD50 } = {}) {
     toXYZ(color, out);
     return xyzToLab(out[0], out[1], out[2], out, illuminant);
 }
@@ -1255,8 +1223,7 @@ function toLab(color, out, param) {
  * @param {import("./color.js").color} color
  * @param {Array} out
  * @returns {lab}
- */ function toLabD50(color, out) {
-    if (out === void 0) out = [];
+ */ function toLabD50(color, out = []) {
     return toLab(color, out, {
         illuminant: D50,
         toXYZ: toXYZD50
@@ -1283,8 +1250,7 @@ function toLab(color, out, param) {
  * @param {import("./color.js").color} color
  * @param {Array} out
  * @returns {lab}
- */ function toLabD65(color, out) {
-    if (out === void 0) out = [];
+ */ function toLabD65(color, out = []) {
     return toLab(color, out, {
         illuminant: D65,
         toXYZ: toXYZD65
@@ -1315,8 +1281,7 @@ function toLab(color, out, param) {
  * @param {import("./color.js").color} color
  * @param {Array} out
  * @returns {lch}
- */ function toLCH(color, out) {
-    if (out === void 0) out = [];
+ */ function toLCH(color, out = []) {
     toLabD50(color, out);
     return labToLch(out[0], out[1], out[2], out);
 }
@@ -1346,9 +1311,7 @@ function toLab(color, out, param) {
  * @param {import("./color.js").color} color
  * @param {Array} out
  * @returns {oklab}
- */ function toOklab(param, out) {
-    let [r, g, b, a] = param;
-    if (out === void 0) out = [];
+ */ function toOklab([r, g, b, a], out = []) {
     rgbToLinear(r, g, b, out);
     linearToOklab(out[0], out[1], out[2], out);
     return setAlpha(out, a);
@@ -1403,8 +1366,7 @@ function toLab(color, out, param) {
  * @param {import("./color.js").color} color
  * @param {Array} out
  * @returns {okhsv}
- */ function toOkhsv(color, out) {
-    if (out === void 0) out = [];
+ */ function toOkhsv(color, out = []) {
     toLinear(color, out);
     linearToOklab(out[0], out[1], out[2], out);
     const H = 0.5 + 0.5 * Math.atan2(-out[2], -out[1]) / Math.PI;
@@ -1488,8 +1450,7 @@ function toLab(color, out, param) {
  * @param {import("./color.js").color} color
  * @param {Array} out
  * @returns {okhsl}
- */ function toOkhsl(color, out) {
-    if (out === void 0) out = [];
+ */ function toOkhsl(color, out = []) {
     toLinear(color, out);
     linearToOklab(out[0], out[1], out[2], out);
     const C = Math.sqrt(out[1] * out[1] + out[2] * out[2]);
@@ -1555,8 +1516,7 @@ function toLab(color, out, param) {
  * @param {import("./color.js").color} color
  * @param {Array} out
  * @returns {oklch}
- */ function toOklch(color, out) {
-    if (out === void 0) out = [];
+ */ function toOklch(color, out = []) {
     toOklab(color, out);
     // Range is [0, 150]
     out[1] *= 1.5;
@@ -1589,8 +1549,7 @@ function toLab(color, out, param) {
  * @param {import("./color.js").color} color
  * @param {Array} out
  * @returns {lchuv}
- */ function toLCHuv(color, out) {
-    if (out === void 0) out = [];
+ */ function toLCHuv(color, out = []) {
     toXYZD65(color, out);
     xyzToLuv(out[0], out[1], out[2], out);
     return luvToLch(out[0], out[1], out[2], out);
@@ -1620,8 +1579,7 @@ function toLab(color, out, param) {
  * @param {import("./color.js").color} color
  * @param {Array} out
  * @returns {hsluv}
- */ function toHSLuv(color, out) {
-    if (out === void 0) out = [];
+ */ function toHSLuv(color, out = []) {
     toLCHuv(color, out);
     return lchToHsluv(out[0], out[1], out[2], out);
 }
@@ -1649,8 +1607,7 @@ function toLab(color, out, param) {
  * @param {import("./color.js").color} color
  * @param {Array} out
  * @returns {hpluv}
- */ function toHPLuv(color, out) {
-    if (out === void 0) out = [];
+ */ function toHPLuv(color, out = []) {
     toLCHuv(color, out);
     return lchToHpluv(out[0], out[1], out[2], out);
 }
@@ -1670,8 +1627,7 @@ const toCSSColorSpace = (colorSpace, color, a)=>`color(${colorSpace} ${color.joi
  * @param {import("./color.js").color} color
  * @param {number} [precision=5]
  * @returns {css}
- */ function toCSSRGB(color, precision) {
-    if (precision === void 0) precision = 5;
+ */ function toCSSRGB(color, precision = 5) {
     set(TMP, getCoords(color));
     if (precision !== undefined) floorArray(TMP, precision);
     return toCSSColorSpace("srgb", TMP, color[3]);
@@ -1683,8 +1639,7 @@ const toCSSColorSpace = (colorSpace, color, a)=>`color(${colorSpace} ${color.joi
  * @param {import("./color.js").color} color
  * @param {number} [precision=5]
  * @returns {css}
- */ function toCSSRGBLinear(color, precision) {
-    if (precision === void 0) precision = 5;
+ */ function toCSSRGBLinear(color, precision = 5) {
     toLinear(getCoords(color), TMP);
     if (precision !== undefined) floorArray(TMP, precision);
     return toCSSColorSpace("srgb-linear", TMP, color[3]);
@@ -1696,8 +1651,7 @@ const toCSSColorSpace = (colorSpace, color, a)=>`color(${colorSpace} ${color.joi
  * @param {import("./color.js").color} color
  * @param {number} [precision=5]
  * @returns {css}
- */ function toCSSP3(color, precision) {
-    if (precision === void 0) precision = 5;
+ */ function toCSSP3(color, precision = 5) {
     toP3(getCoords(color), TMP);
     if (precision !== undefined) floorArray(TMP, precision);
     return toCSSColorSpace("display-p3", TMP, color[3]);
@@ -1709,8 +1663,7 @@ const toCSSColorSpace = (colorSpace, color, a)=>`color(${colorSpace} ${color.joi
  * @param {import("./color.js").color} color
  * @param {number} [precision=5]
  * @returns {css}
- */ function toCSSHSL(color, precision) {
-    if (precision === void 0) precision = 5;
+ */ function toCSSHSL(color, precision = 5) {
     toHSL(getCoords(color), TMP);
     TMP[0] *= 360;
     TMP[1] *= 100;
@@ -1725,8 +1678,7 @@ const toCSSColorSpace = (colorSpace, color, a)=>`color(${colorSpace} ${color.joi
  * @param {import("./color.js").color} color
  * @param {number} [precision=5]
  * @returns {css}
- */ function toCSSHWB(color, precision) {
-    if (precision === void 0) precision = 5;
+ */ function toCSSHWB(color, precision = 5) {
     toHWB(getCoords(color), TMP);
     TMP[0] *= 360;
     if (precision !== undefined) floorArray(TMP, precision);
@@ -1740,8 +1692,7 @@ const toCSSColorSpace = (colorSpace, color, a)=>`color(${colorSpace} ${color.joi
  * @param {import("./color.js").color} color
  * @param {number} [precision=5]
  * @returns {css}
- */ function toCSSLab(color, precision) {
-    if (precision === void 0) precision = 5;
+ */ function toCSSLab(color, precision = 5) {
     toLab(getCoords(color), TMP);
     TMP[0] *= 100;
     TMP[1] *= 100;
@@ -1755,8 +1706,7 @@ const toCSSColorSpace = (colorSpace, color, a)=>`color(${colorSpace} ${color.joi
  * @param {import("./color.js").color} color
  * @param {number} [precision=5]
  * @returns {css}
- */ function toCSSLabD65(color, precision) {
-    if (precision === void 0) precision = 5;
+ */ function toCSSLabD65(color, precision = 5) {
     toLabD65(getCoords(color), TMP);
     TMP[0] *= 100;
     TMP[1] *= 100;
@@ -1771,8 +1721,7 @@ const toCSSColorSpace = (colorSpace, color, a)=>`color(${colorSpace} ${color.joi
  * @param {import("./color.js").color} color
  * @param {number} [precision=5]
  * @returns {css}
- */ function toCSSLCH(color, precision) {
-    if (precision === void 0) precision = 5;
+ */ function toCSSLCH(color, precision = 5) {
     toLCH(getCoords(color), TMP);
     TMP[0] *= 100;
     TMP[1] *= 150;
@@ -1786,8 +1735,7 @@ const toCSSColorSpace = (colorSpace, color, a)=>`color(${colorSpace} ${color.joi
  * @param {import("./color.js").color} color
  * @param {number} [precision=5]
  * @returns {css}
- */ function toCSSOkLab(color, precision) {
-    if (precision === void 0) precision = 5;
+ */ function toCSSOkLab(color, precision = 5) {
     toOklab(getCoords(color), TMP);
     TMP[0] *= 100;
     if (precision !== undefined) floorArray(TMP, precision);
@@ -1799,8 +1747,7 @@ const toCSSColorSpace = (colorSpace, color, a)=>`color(${colorSpace} ${color.joi
  * @param {import("./color.js").color} color
  * @param {number} [precision=5]
  * @returns {css}
- */ function toCSSOklch(color, precision) {
-    if (precision === void 0) precision = 5;
+ */ function toCSSOklch(color, precision = 5) {
     toOklch(getCoords(color), TMP);
     TMP[0] *= 100;
     TMP[2] *= 360;
@@ -1814,8 +1761,7 @@ const toCSSColorSpace = (colorSpace, color, a)=>`color(${colorSpace} ${color.joi
  * @param {import("./color.js").color} color
  * @param {number} [precision=5]
  * @returns {css}
- */ function toCSSXYZD50(color, precision) {
-    if (precision === void 0) precision = 5;
+ */ function toCSSXYZD50(color, precision = 5) {
     toXYZD50(getCoords(color), TMP);
     if (precision !== undefined) floorArray(TMP, precision);
     return toCSSColorSpace("xyz-d50", TMP, color[3]);
@@ -1826,8 +1772,7 @@ const toCSSColorSpace = (colorSpace, color, a)=>`color(${colorSpace} ${color.joi
  * @param {import("./color.js").color} color
  * @param {number} [precision=5]
  * @returns {css}
- */ function toCSSXYZ(color, precision) {
-    if (precision === void 0) precision = 5;
+ */ function toCSSXYZ(color, precision = 5) {
     toXYZD65(getCoords(color), TMP);
     if (precision !== undefined) floorArray(TMP, precision);
     return toCSSColorSpace("xyz", TMP, color[3]);

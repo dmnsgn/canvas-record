@@ -1,4 +1,4 @@
-import { r as require$$0, b as browser$1, B as Buffer, d as require$$1, e as require$$2, a as getDefaultExportFromCjs } from './_chunks/polyfills-CAtupzpz.js';
+import { r as require$$0, b as browser$1, B as Buffer, d as require$$1, e as require$$2, a as getDefaultExportFromCjs } from './_chunks/polyfills-Cb_CjFTI.js';
 
 var h264Mp4Encoder_node = function(A) {
     var B = {};

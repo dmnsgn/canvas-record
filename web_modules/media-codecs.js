@@ -67,8 +67,7 @@ const VP_LEVELS = [
  * Get a codec parameter string
  * @param {import("../types.js").VPCodecOptions} options
  * @returns {string}
- */ const getCodec$3 = (param)=>{
-    let { name, profile, level, bitDepth } = param;
+ */ const getCodec$3 = ({ name, profile, level, bitDepth })=>{
     const codec = VP_CODECS.find((codec)=>codec.name === name);
     if (!codec) throw new Error(`Unknown VP Codec "${name}"`);
     if (!VP_PROFILES.includes(profile)) {
@@ -179,10 +178,7 @@ const AV_LEVELS = [
     10,
     12
 ];
-/** @private  */ const formatProfile = (param)=>{
-    let { P } = param;
-    return P;
-};
+/** @private  */ const formatProfile = ({ P })=>P;
 /** @private  */ const convertLevel$1 = (level)=>{
     const [X, Y] = level.split(".");
     return (parseInt(X, 10) - 2) * 4 + parseInt(Y, 10);
@@ -210,8 +206,7 @@ const AV_LEVELS = [
  * Get a codec parameter string
  * @param {import("../types.js").AVCodecOptions} options
  * @returns {string}
- */ const getCodec$2 = (param)=>{
-    let { name, profile: profileName, level, tier, bitDepth } = param;
+ */ const getCodec$2 = ({ name, profile: profileName, level, tier, bitDepth })=>{
     const codec = AV_CODECS.find((codec)=>codec.name === name);
     if (!codec) throw new Error(`Unknown AV Codec "${name}"`);
     const profile = AV_PROFILES.find((profile)=>profile.name === profileName);
@@ -394,10 +389,7 @@ const AVC_LEVELS = [
     "6.2"
 ];
 /** @private */ const formatLevel$1 = (level)=>(parseFloat(level) * 10).toString(16).padStart(2, "0");
-/** @private */ const formatCodec$1 = (cccc, param, LL)=>{
-    let { PP, CC } = param;
-    return `${cccc}.${PP}${CC}${LL}`;
-};
+/** @private */ const formatCodec$1 = (cccc, { PP, CC }, LL)=>`${cccc}.${PP}${CC}${LL}`;
 /**
  * Return a list of all possible codec parameter string and their human readable names
  * @returns {import("../types.js").MediaCodecItem[]}
@@ -409,8 +401,7 @@ const AVC_LEVELS = [
  * Get a codec parameter string
  * @param {import("../types.js").AVCCodecOptions} options
  * @returns {string}
- */ const getCodec$1 = (param)=>{
-    let { profile: profileName, level } = param;
+ */ const getCodec$1 = ({ profile: profileName, level })=>{
     if (!AVC_LEVELS.includes(level)) throw new Error(`Unknown AVC Level "${level}"`);
     const profile = AVC_PROFILES.find((profile)=>profile.name === profileName);
     if (!profile) throw new Error(`Unknown AVC Profile "${profileName}"`);
@@ -534,10 +525,7 @@ const HEVC_LEVELS = [
 /** @private  */ const formatLevel = (level)=>String(convertLevel(level));
 /** @private  */ const formatCompatibility = (compatibility)=>compatibility.toString(16);
 /** @private  */ const formatTier = (tier)=>tier === "Main" ? "L" : "H";
-/** @private  */ const formatCodec = (cccc, param, C, T, LL, CC)=>{
-    let { PP } = param;
-    return `${cccc}.${PP}.${C}.${T}${LL}.${CC}`;
-};
+/** @private  */ const formatCodec = (cccc, { PP }, C, T, LL, CC)=>`${cccc}.${PP}.${C}.${T}${LL}.${CC}`;
 /**
  * Return a list of all possible codec parameter string and their human readable names
  * @returns {import("../types.js").MediaCodecItem[]}
@@ -553,8 +541,7 @@ const HEVC_LEVELS = [
  * Get a codec parameter string
  * @param {import("../types.js").HEVCCodecOptions} options
  * @returns {string}
- */ const getCodec = (param)=>{
-    let { profile: profileName, compatibility, level, tier, constraint = "b0" } = param;
+ */ const getCodec = ({ profile: profileName, compatibility, level, tier, constraint = "b0" })=>{
     const profile = HEVC_PROFILES.find((profile)=>profile.name === profileName);
     if (!profile) throw new Error(`Unknown HEVC profile "${profileName}"`);
     if (!HEVC_LEVELS.includes(level)) {

@@ -1,4 +1,4 @@
-import { a as getDefaultExportFromCjs } from './_chunks/polyfills-CAtupzpz.js';
+import { a as getDefaultExportFromCjs } from './_chunks/polyfills-Cb_CjFTI.js';
 
 var fileExtension$1 = {exports: {}};
 
@@ -56,8 +56,7 @@ var fileExtension = /*@__PURE__*/ getDefaultExportFromCjs(fileExtensionExports);
  * - png for `"image/png"` (default)
  * - jpg/jpeg for `"image/jpeg"`
  * - webp for `"image/webp"`
- */ function canvasScreenshot(canvas, options) {
-    if (options === void 0) options = {};
+ */ function canvasScreenshot(canvas, options = {}) {
     const date = new Date();
     const { filename = `Screen Shot ${date.toISOString().slice(0, 10)} at ${date.toTimeString().slice(0, 8).replace(/:/g, ".")}.png`, type = getType(filename), quality = 1, useBlob, download = true } = {
         ...options
