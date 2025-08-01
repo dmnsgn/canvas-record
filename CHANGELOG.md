@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [5.4.1](https://github.com/dmnsgn/canvas-record/compare/v5.4.0...v5.4.1) (2025-08-01)
+
+
+
 # [5.4.0](https://github.com/dmnsgn/canvas-record/compare/v5.3.0...v5.4.0) (2025-08-01)
 
 
