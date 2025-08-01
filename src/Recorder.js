@@ -52,7 +52,7 @@ const RecorderStatus = Object.freeze({
  * @property {string} [target="in-browser"] Default writing target: in-browser or file-system when available.
  * @property {object} [encoder] A specific encoder. Default encoder based on options.extension: GIF > WebCodecs > H264MP4.
  * @property {object} [encoderOptions] See `src/encoders` or individual packages for a list of options.
- * @property {object} [muxerOptions] See "mp4-muxer" and "webm-muxer" for a list of options.
+ * @property {object} [muxerOptions] See "mediabunny" for a list of options.
  * @property {object} [frameOptions] Options for createImageBitmap(), VideoFrame, getImageData() or canvas-screenshot.
  * @property {onStatusChangeCb} [onStatusChange]
  */
@@ -85,6 +85,7 @@ class Recorder {
    */
   static mimeTypes = {
     mkv: "video/x-matroska;codecs=avc1",
+    mov: "video/quicktime",
     webm: "video/webm",
     mp4: "video/mp4",
     gif: "image/gif",

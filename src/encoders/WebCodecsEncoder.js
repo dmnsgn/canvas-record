@@ -1,9 +1,26 @@
-import * as MP4Muxer from "mp4-muxer";
-import * as WebMMuxer from "webm-muxer";
+import {
+  Output,
+  Mp4OutputFormat,
+  MovOutputFormat,
+  WebMOutputFormat,
+  MkvOutputFormat,
+  BufferTarget,
+  EncodedVideoPacketSource,
+  EncodedPacket,
+  StreamTarget,
+} from "mediabunny";
+
 import { AVC, VP } from "media-codecs";
 
 import Encoder from "./Encoder.js";
 import { estimateBitRate } from "../utils.js";
+
+const extensionToOutputFormat = {
+  mp4: Mp4OutputFormat,
+  mov: MovOutputFormat,
+  webm: WebMOutputFormat,
+  mkv: MkvOutputFormat,
+};
 
 /**
  * @typedef {object} WebCodecsEncoderOptions
@@ -16,13 +33,12 @@ import { estimateBitRate } from "../utils.js";
  * @see [VideoEncoder.configure]{@link https://developer.mozilla.org/en-US/docs/Web/API/VideoEncoder/configure#config}
  */
 /**
- * @typedef {MuxerOptions} WebCodecsMuxerOptions
- * @see [Mp4.MuxerOptions]{@link https://github.com/Vanilagy/mp4-muxer/#usage}
- * @see [WebM.MuxerOptions]{@link https://github.com/Vanilagy/webm-muxer/#usage}
+ * @typedef {import("mediabunny").OutputOptions} WebCodecsMuxerOptions
+ * @see [mediabunny#output-formats]{@link https://mediabunny.dev/guide/output-formats}
  */
 
 class WebCodecsEncoder extends Encoder {
-  static supportedExtensions = ["mp4", "webm", "mkv"];
+  static supportedExtensions = ["mp4", "mov", "webm", "mkv"];
   static supportedTargets = ["in-browser", "file-system"];
 
   static defaultOptions = {
@@ -50,7 +66,7 @@ class WebCodecsEncoder extends Encoder {
         types: [
           {
             description: "Video File",
-            accept: { [this.mimeType]: [`.${this.extension}`] },
+            accept: { [this.mimeType.split(";")[0]]: [`.${this.extension}`] },
           },
         ],
       });
@@ -58,44 +74,46 @@ class WebCodecsEncoder extends Encoder {
       this.writableFileStream = await this.getWritableFileStream(fileHandle);
     }
 
+    const format = new extensionToOutputFormat[this.extension]({
+      fastStart: this.writableFileStream ? false : "in-memory",
+    });
+
+    const isISOBMFF = ["mp4", "mov"].includes(this.extension);
+
+    // TODO: use format.getSupportedVideoCodecs();
     const codec =
       this.encoderOptions?.codec ||
-      (this.extension === "mp4"
+      (isISOBMFF
         ? AVC.getCodec({ profile: "High", level: "5.2" }) // avc1.640034
         : VP.getCodec({ name: "VP9", profile: 0, level: "1", bitDepth: 8 })); // vp09.00.10.08
 
     const CCCC = codec.split(".")[0];
 
-    const muxer = this.extension === "mp4" ? MP4Muxer : WebMMuxer;
-
-    this.muxer = new muxer.Muxer({
+    this.muxer = new Output({
+      format,
       target: this.writableFileStream
-        ? new muxer.FileSystemWritableFileStreamTarget(this.writableFileStream)
-        : new muxer.ArrayBufferTarget(),
-      type: this.extension === "mkv" ? "matroska" : "webm",
-      video: {
-        codec:
-          this.extension === "mp4"
-            ? // Supported: "avc" | "hevc"
-              CCCC.startsWith("hev") || CCCC.startsWith("hvc") // https://www.w3.org/TR/webcodecs-hevc-codec-registration/#fully-qualified-codec-strings
-              ? "hevc"
-              : "avc"
-            : // Supported: "V_VP8" | "V_VP9" | "V_AV1"
-              `V_${
-                CCCC.startsWith("av01")
-                  ? "AV1"
-                  : VP.VP_CODECS.find((codec) => codec.cccc === CCCC).name
-              }`,
-        width: this.width,
-        height: this.height,
-      },
-      firstTimestampBehavior: "offset", // "strict" | "offset" | "permissive"
-      fastStart: this.writableFileStream ? false : "in-memory",
+        ? new StreamTarget(this.writableFileStream)
+        : new BufferTarget(),
       ...this.muxerOptions,
     });
 
+    const videoCodec = isISOBMFF
+      ? // Supported: "avc" | "hevc"
+        CCCC.startsWith("hev") || CCCC.startsWith("hvc") // https://www.w3.org/TR/webcodecs-hevc-codec-registration/#fully-qualified-codec-strings
+        ? "hevc"
+        : "avc"
+      : // Supported: "vp8" | "vp9" | "av1"
+        CCCC.startsWith("av01")
+        ? "av1"
+        : VP.VP_CODECS.find((codec) => codec.cccc === CCCC).name.toLowerCase();
+
+    const videoSource = new EncodedVideoPacketSource(videoCodec);
+    this.muxer.addVideoTrack(videoSource, { frameRate: this.frameRate });
+
     this.encoder = new VideoEncoder({
-      output: (chunk, meta) => this.muxer.addVideoChunk(chunk, meta),
+      output: async (chunk, meta) => {
+        await videoSource.add(EncodedPacket.fromEncodedChunk(chunk), meta);
+      },
       error: (e) => console.error(e),
     });
 
@@ -129,6 +147,8 @@ class WebCodecsEncoder extends Encoder {
   }
 
   async encode(frame, number) {
+    if (number === 0) await this.muxer.start();
+
     const keyFrame = number % this.groupOfPictures === 0;
 
     this.encoder.encode(frame, { keyFrame });
@@ -140,13 +160,9 @@ class WebCodecsEncoder extends Encoder {
 
   async stop() {
     await this.encoder.flush();
-    this.muxer.finalize();
+    await this.muxer.finalize();
 
-    const buffer = this.muxer.target?.buffer;
-
-    if (this.writableFileStream) await this.writableFileStream.close();
-
-    return buffer;
+    return this.muxer.target?.buffer;
   }
 
   async dispose() {
