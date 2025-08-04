@@ -156,9 +156,14 @@ function render(canvasRecorder = {}) {
 
 const updateStatus = () => {
   if (canvasRecorder && canvasRecorder.stats?.detail) {
-    detailElement.innerHTML = `Status: ${Object.keys(RecorderStatus).find(
+
+    const statusDetails = `Status: ${Object.keys(RecorderStatus).find(
       (key) => RecorderStatus[key] === canvasRecorder.status,
     )}\nDetails:\n${canvasRecorder.stats.detail}`;
+    
+    detailElement.setHtml(
+      statusDetails
+    );
   }
 };
 
