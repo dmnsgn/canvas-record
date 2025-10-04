@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [5.4.2](https://github.com/dmnsgn/canvas-record/compare/v5.4.1...v5.4.2) (2025-10-04)
+
+
+### Bug Fixes
+
+* handle node.js support by expanding common js dependencies imports ([a4c0919](https://github.com/dmnsgn/canvas-record/commit/a4c0919e5392a51029d4253c51e15ad55734dd71))
+
+
+
 ## [5.4.1](https://github.com/dmnsgn/canvas-record/compare/v5.4.0...v5.4.1) (2025-08-01)
 
 
