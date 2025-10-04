@@ -1,5 +1,5 @@
 /**
- * @typedef {"mp4" | "webm" | "png" | "jpg" | "gif" | "mkv"} EncoderExtensions
+ * @typedef {"mp4" | "webm" | "png" | "jpg" | "gif" | "mkv" | "mov"} EncoderExtensions
  */
 
 /**
@@ -25,7 +25,7 @@ class Encoder {
   };
 
   /**
-   * Base Encoder class. All Encoders extend it and its method are called by the Recorder.
+   * Base Encoder class. All Encoders extend it and its methods are called by the Recorder.
    * @class Encoder
    * @param {object} options
    *

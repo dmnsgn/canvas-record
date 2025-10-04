@@ -89,15 +89,15 @@ tick(canvasRecorder);
 
 Encoder comparison:
 
-| Encoder        | Extension              | Required Web API   | WASM                  | Speed    |
-| -------------- | ---------------------- | ------------------ | --------------------- | -------- |
-| `WebCodecs`    | `mp4` / `webm` / `mkv` | WebCodecs          | ❌                    | Fast     |
-| `MP4Wasm`      | `mp4`                  | WebCodecs          | ✅ (embed)            | Fast     |
-| `H264MP4`      | `mp4`                  |                    | ✅ (embed)            | Medium   |
-| `FFmpeg`       | `mp4` / `webm`         | SharedArrayBuffer  | ✅ (need binary path) | Slow     |
-| `GIF`          | `gif`                  | WebWorkers (wip)   | ❌                    | Fast     |
-| `Frame`        | `png` / `jpg`          | File System Access | ❌                    | Fast     |
-| `MediaCapture` | `mkv` / `webm`         | MediaStream        | ❌                    | Realtime |
+| Encoder        | Extension                      | Required Web API   | WASM                  | Speed    |
+| -------------- | ------------------------------ | ------------------ | --------------------- | -------- |
+| `WebCodecs`    | `mp4` / `webm` / `mkv` / `mov` | WebCodecs          | ❌                    | Fast     |
+| `MP4Wasm`      | `mp4`                          | WebCodecs          | ✅ (embed)            | Fast     |
+| `H264MP4`      | `mp4`                          |                    | ✅ (embed)            | Medium   |
+| `FFmpeg`       | `mp4` / `webm`                 | SharedArrayBuffer  | ✅ (need binary path) | Slow     |
+| `GIF`          | `gif`                          | WebWorkers (wip)   | ❌                    | Fast     |
+| `Frame`        | `png` / `jpg`                  | File System Access | ❌                    | Fast     |
+| `MediaCapture` | `mkv` / `webm`                 | MediaStream        | ❌                    | Realtime |
 
 Note:
 
@@ -173,7 +173,7 @@ Based on &quot;H.264 for the rest of us&quot; by Kush Amerasinghe.</p>
 <dt><a href="#RecorderStartOptions">RecorderStartOptions</a> : <code>object</code></dt>
 <dd><p>Options for recording initialisation. All optional.</p>
 </dd>
-<dt><a href="#EncoderExtensions">EncoderExtensions</a> : <code>&quot;mp4&quot;</code> | <code>&quot;webm&quot;</code> | <code>&quot;png&quot;</code> | <code>&quot;jpg&quot;</code> | <code>&quot;gif&quot;</code> | <code>&quot;mkv&quot;</code></dt>
+<dt><a href="#EncoderExtensions">EncoderExtensions</a> : <code>&quot;mp4&quot;</code> | <code>&quot;webm&quot;</code> | <code>&quot;png&quot;</code> | <code>&quot;jpg&quot;</code> | <code>&quot;gif&quot;</code> | <code>&quot;mkv&quot;</code> | <code>&quot;mov&quot;</code></dt>
 <dd></dd>
 <dt><a href="#EncoderTarget">EncoderTarget</a> : <code>&quot;in-browser&quot;</code> | <code>&quot;file-system&quot;</code></dt>
 <dd></dd>
@@ -316,7 +316,7 @@ Clean up the recorder and encoder
 
 ### new Encoder(options)
 
-Base Encoder class. All Encoders extend it and its method are called by the Recorder.
+Base Encoder class. All Encoders extend it and its methods are called by the Recorder.
 
 | Param   | Type                |
 | ------- | ------------------- |
@@ -531,7 +531,7 @@ Options for recording. All optional.
 
 | Name             | Type                                               | Default                                           | Description                                                                                                                                                           |
 | ---------------- | -------------------------------------------------- | ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [name]           | <code>string</code>                                | <code>&quot;\&quot;\&quot;&quot;</code>           | A name for the recorder, used as prefix for the default file name.                                                                                                    |
+| [name]           | <code>string</code>                                | <code>&quot;\&quot;​\&quot;&quot;</code>          | A name for the recorder, used as prefix for the default file name.                                                                                                    |
 | [duration]       | <code>number</code>                                | <code>10</code>                                   | The recording duration in seconds. If set to Infinity, `await canvasRecorder.stop()` needs to be called manually.                                                     |
 | [frameRate]      | <code>number</code>                                | <code>30</code>                                   | The frame rate in frame per seconds. Use `await canvasRecorder.step();` to go to the next frame.                                                                      |
 | [rect]           | <code>Array</code>                                 | <code>[]</code>                                   | Sub-region [x, y, width, height] of the canvas to encode from bottom left. Default to 0, 0 and context.drawingBufferWidth/drawingBufferHeight or canvas.width/height. |
@@ -560,7 +560,7 @@ Options for recording initialisation. All optional.
 
 <a name="EncoderExtensions"></a>
 
-## EncoderExtensions : <code>&quot;mp4&quot;</code> \| <code>&quot;webm&quot;</code> \| <code>&quot;png&quot;</code> \| <code>&quot;jpg&quot;</code> \| <code>&quot;gif&quot;</code> \| <code>&quot;mkv&quot;</code>
+## EncoderExtensions : <code>&quot;mp4&quot;</code> \| <code>&quot;webm&quot;</code> \| <code>&quot;png&quot;</code> \| <code>&quot;jpg&quot;</code> \| <code>&quot;gif&quot;</code> \| <code>&quot;mkv&quot;</code> \| <code>&quot;mov&quot;</code>
 
 **Kind**: global typedef
 <a name="EncoderTarget"></a>
@@ -723,7 +723,6 @@ All MIT:
 - [h264-mp4-encoder](https://github.com/TrevorSundberg/h264-mp4-encoder/blob/master/LICENSE.md)
 - [@ffmpeg/ffmpeg](https://github.com/ffmpegwasm/ffmpeg.wasm/blob/master/LICENSE)
 - [gifenc](https://github.com/mattdesl/gifenc/blob/master/LICENSE.md)
-- [webm-muxer](https://github.com/Vanilagy/webm-muxer/blob/main/LICENSE)
-- [mp4-muxer](https://github.com/Vanilagy/mp4-muxer/blob/main/LICENSE)
+- [mediabunny](https://github.com/Vanilagy/mediabunny/blob/main/LICENSE)
 
 MIT. See [license file](https://github.com/dmnsgn/canvas-record/blob/main/LICENSE.md).
