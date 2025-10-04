@@ -87,7 +87,7 @@ function compareFBOAttachments(framebuffer, passOpts) {
     const fboDepthAttachment = framebuffer.depth?.texture;
     const passDepthAttachment = passOpts.depth?.texture || passOpts.depth;
     if (fboDepthAttachment != passDepthAttachment) return false;
-    if (framebuffer.color.length != passOpts.color.length) return false;
+    if (framebuffer.color.length != passOpts.color?.length) return false;
     for(let i = 0; i < framebuffer.color.length; i++){
         const fboColorAttachment = framebuffer.color[i]?.texture;
         const passColorAttachment = passOpts.color[i]?.texture || passOpts.color[i];
@@ -99,9 +99,13 @@ const getUniformLocation = (gl, program, name)=>gl.getUniformLocation(program.ha
 function enableVertexData(ctx, vertexLayout, cmd, updateState) {
     const gl = ctx.gl;
     const { attributes = {}, indices } = cmd;
-    for(let i = 0; i < ctx.capabilities.maxVertexAttribs; i++){
-        ctx.state.activeAttributes[i] = null;
-        gl.disableVertexAttribArray(i);
+    for(let i = vertexLayout.length; i < ctx.capabilities.maxVertexAttribs; i++){
+        if (ctx.state.activeAttributes[i]) {
+            gl.bindBuffer(gl.ARRAY_BUFFER, null);
+            gl.vertexAttribPointer(i, 4, ctx.DataType.Float32, false, 0, 0);
+            gl.disableVertexAttribArray(i);
+            ctx.state.activeAttributes[i] = null;
+        }
     }
     for(let i = 0; i < vertexLayout.length; i++){
         const [name, location, size] = vertexLayout[i];
@@ -305,7 +309,6 @@ function draw(ctx, cmd) {
  * @property {ctx.PixelFormat} [pixelFormat=ctx.PixelFormat.RGBA8]
  * @property {ctx.TextureFormat} [internalFormat=ctx.TextureFormat.RGBA]
  * @property {ctx.DataType} [type=ctx.TextureFormat[opts.pixelFormat]]
- * @property {ctx.Encoding} [encoding=ctx.Encoding.Linear]
  * @property {ctx.Wrap} [wrapS=ctx.Wrap.ClampToEdge]
  * @property {ctx.Wrap} [wrapT=ctx.Wrap.ClampToEdge]
  * @property {ctx.Wrap} [wrap=ctx.Wrap.ClampToEdge]
@@ -315,6 +318,7 @@ function draw(ctx, cmd) {
  * @property {boolean} [mipmap=true] requires `min` to be set to `ctx.Filter.LinearMipmapLinear` or similar
  * @property {boolean} [premultiplyAlpha=false]
  * @property {boolean} [flipY=false]
+ * @property {boolean} [colorspaceConversion=gl.NONE]
  * @property {boolean} [compressed=false]
  * @property {TextureTarget} [target]
  * @property {number} [offset]
@@ -334,8 +338,8 @@ function draw(ctx, cmd) {
     "pixelFormat",
     "internalFormat",
     "type",
-    "encoding",
     "flipY",
+    "colorspaceConversion",
     "mipmap",
     "target",
     "min",
@@ -366,9 +370,6 @@ function createTexture(ctx, opts) {
     updateTexture(ctx, texture, opts);
     return texture;
 }
-function orValue(a, b) {
-    return a !== undefined ? a : b;
-}
 const isElement = (element)=>element && element instanceof Element;
 const isBuffer = (object)=>[
         "vertexBuffer",
@@ -385,18 +386,28 @@ function updateTexture(ctx, texture, opts) {
     let data = null;
     let width = opts.width;
     let height = opts.height;
-    let flipY = orValue(opts.flipY, orValue(texture.flipY, false));
-    let target = opts.target || texture.target;
+    const flipY = opts.flipY ?? texture.flipY ?? false;
+    const target = opts.target || texture.target;
     let pixelFormat = opts.pixelFormat || texture.pixelFormat || ctx.PixelFormat.RGBA8;
-    const encoding = opts.encoding || texture.encoding || ctx.Encoding.Linear;
     const min = opts.min || texture.min || gl.NEAREST;
     const mag = opts.mag || texture.mag || gl.NEAREST;
     const wrapS = opts.wrapS || opts.wrap || texture.wrapS || texture.wrap || gl.CLAMP_TO_EDGE;
     const wrapT = opts.wrapT || opts.wrap || texture.wrapT || texture.wrap || gl.CLAMP_TO_EDGE;
     const aniso = opts.aniso || texture.aniso || 0;
-    const premultiplyAlpha = orValue(opts.premultiplyAlpha, orValue(texture.premultiplyAlpha, false));
+    const premultiplyAlpha = opts.premultiplyAlpha ?? texture.premultiplyAlpha ?? false;
+    const colorspaceConversion = opts.colorspaceConversion ?? opts.colorspaceConversion ?? gl.NONE;
     const compressed = opts.compressed || texture.compressed;
-    let internalFormat = opts.internalFormat || texture.internalFormat;
+    let internalFormat;
+    // Get internalFormat (format the GPU use internally) from opts.internalFormat (mainly for compressed texture) or pixelFormat
+    if (opts.internalFormat) {
+        internalFormat = opts.internalFormat;
+    } else {
+        if (opts.pixelFormat) {
+            internalFormat = gl[pixelFormat];
+        } else {
+            internalFormat = texture.internalFormat ?? gl[pixelFormat];
+        }
+    }
     let type;
     let format;
     // Bind
@@ -407,6 +418,7 @@ function updateTexture(ctx, texture, opts) {
     // Pixel storage mode
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, flipY);
     gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, premultiplyAlpha);
+    gl.pixelStorei(gl.UNPACK_COLORSPACE_CONVERSION_WEBGL, colorspaceConversion);
     // Parameters
     gl.texParameteri(target, gl.TEXTURE_MAG_FILTER, mag);
     gl.texParameteri(target, gl.TEXTURE_MIN_FILTER, min);
@@ -416,21 +428,54 @@ function updateTexture(ctx, texture, opts) {
         const anisoExt = gl.getExtension("EXT_texture_filter_anisotropic");
         gl.texParameterf(target, anisoExt.TEXTURE_MAX_ANISOTROPY_EXT, aniso);
     }
+    if (!internalFormat || opts.internalFormat) {
+        internalFormat = opts.internalFormat || gl[pixelFormat];
+        // WebGL1
+        if (ctx.gl instanceof WebGLRenderingContext) {
+            // WEBGL_depth_texture (WebGL1 only) just adds DEPTH_COMPONENT and DEPTH_STENCIL
+            if (ctx.capabilities.depthTexture && [
+                "DEPTH_COMPONENT16",
+                "DEPTH_COMPONENT24"
+            ].includes(pixelFormat)) {
+                internalFormat = gl["DEPTH_COMPONENT"];
+            }
+            // Handle legacy types
+            if (!internalFormat) {
+                if (pixelFormat === ctx.PixelFormat.R16F) {
+                    pixelFormat = "R16FLegacy";
+                    internalFormat = gl.ALPHA;
+                } else if (pixelFormat === ctx.PixelFormat.R32F) {
+                    pixelFormat = "R32FLegacy";
+                    internalFormat = gl.ALPHA;
+                } else if (pixelFormat === ctx.PixelFormat.RGBA8) {
+                    pixelFormat = ctx.PixelFormat.RGBA;
+                    internalFormat = gl.RGBA;
+                } else if (pixelFormat === ctx.PixelFormat.RGBA16F || pixelFormat === ctx.PixelFormat.RGBA32F) {
+                    internalFormat = gl.RGBA;
+                }
+            }
+        }
+        console.assert(internalFormat, `Texture2D.update Unknown internalFormat "${internalFormat}" for pixelFormat "${pixelFormat}".`);
+    }
+    // Get actual format and type (data supplied), allowing type override
+    [format, type] = ctx.TextureFormat[pixelFormat];
+    type = opts.type || type;
+    console.assert(type, `Texture2D.update Unknown type ${type}.`);
+    texture.internalFormat = internalFormat;
+    texture.format = format;
+    texture.type = type;
+    texture.target = target;
     // Data provided as element or ImageBitmap:
     // - width/height are retrieved from the element
     // - format/type are set to defaults
     const element = opts.data || opts;
     if (isElement(element) || !ctx.capabilities.isWebGL2 && element instanceof ImageBitmap) {
         console.assert(element instanceof HTMLImageElement || element instanceof HTMLVideoElement || element instanceof HTMLCanvasElement || element instanceof ImageBitmap, "Texture2D.update opts has to be HTMLImageElement, HTMLVideoElement, HTMLCanvasElement or ImageBitmap");
-        pixelFormat = ctx.PixelFormat.RGBA;
-        texture.internalFormat = gl.RGBA;
-        texture.format = gl.RGBA;
-        texture.type = gl.UNSIGNED_BYTE;
-        texture.target = target;
         texture.compressed = false;
-        texture.width = element.videoWidth || element.width;
-        texture.height = element.videoHeight || element.height;
-        gl.texImage2D(texture.target, 0, texture.internalFormat, texture.format, texture.type, element);
+        texture.width = element.videoWidth ?? element.width;
+        texture.height = element.videoHeight ?? element.height;
+        // Allowed internal formats: RGB, RGBA, LUMINANCE, LUMINANCE_ALPHA, ALPHA, R8, RG8, RGB8, RGBA8, SRGB8, SRGB8_ALPHA8
+        gl.texImage2D(target, 0, internalFormat, format, type, element);
     } else if (typeof opts === "object") {
         // Check data type
         console.assert(!data || Array.isArray(opts.data) || Object.values(ctx.DataTypeConstructor).some((TypedArray)=>opts.data instanceof TypedArray), "Texture2D.update opts.data has to be null, an Array or a TypedArray");
@@ -448,44 +493,6 @@ function updateTexture(ctx, texture, opts) {
             height ||= data?.height;
         }
         console.assert(!data || width !== undefined && height !== undefined, "Texture2D.update opts.width and opts.height are required when providing opts.data");
-        // Get internalFormat (format the GPU use internally) from opts.internalFormat (mainly for compressed texture) or pixelFormat
-        if (!internalFormat || opts.internalFormat) {
-            internalFormat = opts.internalFormat || gl[pixelFormat];
-            // WebGL1
-            if (ctx.gl instanceof WebGLRenderingContext) {
-                // WEBGL_depth_texture (WebGL1 only) just adds DEPTH_COMPONENT and DEPTH_STENCIL
-                if (ctx.capabilities.depthTexture && [
-                    "DEPTH_COMPONENT16",
-                    "DEPTH_COMPONENT24"
-                ].includes(pixelFormat)) {
-                    internalFormat = gl["DEPTH_COMPONENT"];
-                }
-                // Handle legacy types
-                if (!internalFormat) {
-                    if (pixelFormat === ctx.PixelFormat.R16F) {
-                        pixelFormat = "R16FLegacy";
-                        internalFormat = gl.ALPHA;
-                    } else if (pixelFormat === ctx.PixelFormat.R32F) {
-                        pixelFormat = "R32FLegacy";
-                        internalFormat = gl.ALPHA;
-                    } else if (pixelFormat === ctx.PixelFormat.RGBA8) {
-                        pixelFormat = ctx.PixelFormat.RGBA;
-                        internalFormat = gl.RGBA;
-                    } else if (pixelFormat === ctx.PixelFormat.RGBA16F || pixelFormat === ctx.PixelFormat.RGBA32F) {
-                        internalFormat = gl.RGBA;
-                    }
-                }
-            }
-            console.assert(internalFormat, `Texture2D.update Unknown internalFormat "${internalFormat}" for pixelFormat "${pixelFormat}".`);
-        }
-        // Get actual format and type (data supplied), allowing type override
-        [format, type] = ctx.TextureFormat[pixelFormat];
-        type = opts.type || type;
-        console.assert(type, `Texture2D.update Unknown type ${type}.`);
-        texture.internalFormat = internalFormat;
-        texture.format = format;
-        texture.type = type;
-        texture.target = target;
         texture.compressed = compressed;
         if (target === gl.TEXTURE_2D) {
             // Prepare data for mipmaps
@@ -519,8 +526,8 @@ function updateTexture(ctx, texture, opts) {
     texture.wrapS = wrapS;
     texture.wrapT = wrapT;
     texture.flipY = flipY;
-    texture.encoding = encoding;
-    texture.info = `${Object.keys(ctx.PixelFormat).find((key)=>ctx.PixelFormat[key] === pixelFormat)}_${Object.keys(ctx.Encoding).find((key)=>ctx.Encoding[key] === encoding)}`;
+    texture.colorspaceConversion = colorspaceConversion;
+    texture.mipmap = opts.mipmap;
     return texture;
 }
 function updateTexture2D(ctx, texture, data, { offset } = {}) {
@@ -585,6 +592,7 @@ function updateTextureCube(ctx, texture, data) {
         class: "framebuffer",
         handle: gl.createFramebuffer(),
         target: gl.FRAMEBUFFER,
+        name: `framebuffer${opts.name ? `_${opts.name}` : ""}`,
         drawBuffers: [],
         color: [],
         depth: null,
@@ -609,7 +617,7 @@ function updateTextureCube(ctx, texture, data) {
 function updateFramebuffer(ctx, framebuffer, opts) {
     const gl = ctx.gl;
     // TODO: if color.length > 1 check for WebGL2 or gl.getExtension('WEBGL_draw_buffers')
-    framebuffer.color = opts.color.map((attachment)=>{
+    framebuffer.color = opts.color ? opts.color.map((attachment)=>{
         const colorAttachment = attachment.texture ? attachment : {
             texture: attachment
         };
@@ -618,19 +626,25 @@ function updateFramebuffer(ctx, framebuffer, opts) {
             colorAttachment.target = colorAttachment.texture.target;
         }
         return colorAttachment;
-    });
+    }) : [];
     framebuffer.depth = opts.depth ? opts.depth.texture ? opts.depth : {
         texture: opts.depth
     } : null;
-    framebuffer.width = framebuffer.color[0].texture.width;
-    framebuffer.height = framebuffer.color[0].texture.height;
+    framebuffer.width = (framebuffer.color[0] || framebuffer.depth).texture.width;
+    framebuffer.height = (framebuffer.color[0] || framebuffer.depth).texture.height;
     // TODO: ctx push framebuffer
     gl.bindFramebuffer(framebuffer.target, framebuffer.handle);
     framebuffer.drawBuffers.length = 0;
     framebuffer.color.forEach((colorAttachment, i)=>{
         framebuffer.drawBuffers.push(gl.COLOR_ATTACHMENT0 + i);
-        gl.framebufferTexture2D(framebuffer.target, gl.COLOR_ATTACHMENT0 + i, colorAttachment.target, colorAttachment.texture.handle, colorAttachment.level);
+        if (colorAttachment.target === gl.RENDERBUFFER) {
+            gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0 + i, gl.RENDERBUFFER, //TODO: can we make this not the case?
+            colorAttachment.handle || colorAttachment.texture.handle);
+        } else {
+            gl.framebufferTexture2D(framebuffer.target, gl.COLOR_ATTACHMENT0 + i, colorAttachment.target, colorAttachment.texture.handle, colorAttachment.level);
+        }
     });
+    //unbind any unused attachments
     for(let i = framebuffer.color.length; i < ctx.capabilities.maxColorAttachments; i++){
         gl.framebufferTexture2D(framebuffer.target, gl.COLOR_ATTACHMENT0 + i, gl.TEXTURE_2D, null, 0);
     }
@@ -687,7 +701,11 @@ function updateRenderbuffer(ctx, renderbuffer, opts) {
     console.assert(internalFormat, `Unsupported float renderable format ${renderbuffer.pixelFormat}`);
     renderbuffer.format = internalFormat;
     gl.bindRenderbuffer(renderbuffer.target, renderbuffer.handle);
-    gl.renderbufferStorage(renderbuffer.target, renderbuffer.format, renderbuffer.width, renderbuffer.height);
+    if (opts.sampleCount) {
+        gl.renderbufferStorageMultisample(renderbuffer.target, Math.min(opts.sampleCount, ctx.capabilities.maxSamples), renderbuffer.format, renderbuffer.width, renderbuffer.height);
+    } else {
+        gl.renderbufferStorage(renderbuffer.target, renderbuffer.format, renderbuffer.width, renderbuffer.height);
+    }
     gl.bindRenderbuffer(renderbuffer.target, null);
 }
 
@@ -723,7 +741,26 @@ function createPass(ctx, opts) {
         }
     };
     // Inherits framebuffer from parent command or screen, if no target specified
-    if (opts.color || opts.depth) pass.framebuffer = ctx.framebuffer(opts);
+    if (opts.color || opts.depth) {
+        pass.framebuffer = ctx.framebuffer(opts);
+        const colorsToResolve = opts.color ? opts.color.map((attachment, index)=>{
+            if (attachment.resolveTarget) {
+                return {
+                    texture: attachment.resolveTarget,
+                    sourceIndex: index
+                };
+            }
+        }).filter((a)=>a) : [];
+        const depthToResolve = opts.depth?.resolveTarget;
+        if (colorsToResolve.length || depthToResolve) {
+            const resolveOpts = {
+                name: `${opts.name ? `${opts.name}_` : ""}resolve`,
+                color: colorsToResolve,
+                depth: depthToResolve
+            };
+            pass.resolveFramebuffer = ctx.framebuffer(resolveOpts);
+        }
+    }
     return pass;
 }
 
@@ -1135,7 +1172,6 @@ function updateBuffer(ctx, buffer, opts) {
     } else {
         gl.bufferData(buffer.target, data, buffer.usage);
     }
-    buffer.info = ctx.DataTypeConstructor[type].name;
 }
 
 /**
@@ -1257,7 +1293,7 @@ function polyfill(ctx) {
         const extsRGB = gl.getExtension("EXT_sRGB");
         if (extsRGB) {
             gl.SRGB ||= extsRGB.SRGB_EXT;
-            gl.SRGB8 ||= extsRGB.SRGB_ALPHA_EXT;
+            gl.SRGB8 ||= extsRGB.SRGB_EXT;
             gl.SRGB8_ALPHA8 ||= extsRGB.SRGB8_ALPHA8_EXT;
         }
     }
@@ -1681,12 +1717,6 @@ function polyfill(ctx) {
         RG32F: extColorBufferFloat && gl.RG32F,
         R11F_G11F_B10F: extColorBufferFloat && gl.R11F_G11F_B10F
     };
-    /** @enum */ ctx.Encoding = {
-        Linear: 1,
-        Gamma: 2,
-        SRGB: 3,
-        RGBM: 4
-    };
     /** @enum */ ctx.Primitive = {
         Points: gl.POINTS,
         Lines: gl.LINES,
@@ -1767,6 +1797,7 @@ const allowedCommandProps = [
             isWebGL2: isWebGL2$1,
             maxColorAttachments: 1,
             maxTextureImageUnits: gl.getParameter(gl.MAX_TEXTURE_IMAGE_UNITS),
+            maxSamples: isWebGL2$1 ? gl.getParameter(gl.MAX_SAMPLES) : 0,
             maxVertexTextureImageUnits: gl.getParameter(gl.MAX_VERTEX_TEXTURE_IMAGE_UNITS),
             maxVertexAttribs: gl.getParameter(gl.MAX_VERTEX_ATTRIBS),
             maxTextureSize: gl.getParameter(gl.MAX_TEXTURE_SIZE),
@@ -2076,6 +2107,9 @@ const allowedCommandProps = [
                 subCommand();
                 this.stack.pop();
             }
+            if (cmd.pass?.resolveFramebuffer) {
+                this.resolvePass(cmd.pass);
+            }
             this.checkError();
         },
         program (opts) {
@@ -2100,9 +2134,7 @@ const allowedCommandProps = [
      * })
      * ```
      */ pass (opts) {
-            if (this.debugMode) {
-                console.debug(NAMESPACE, "pass", opts, opts.color?.map(({ texture, info })=>texture?.info || info) || "");
-            }
+            if (this.debugMode) console.debug(NAMESPACE, "pass", opts);
             return this.resource(createPass(this, opts));
         },
         /**
@@ -2197,8 +2229,7 @@ const allowedCommandProps = [
      *   data: [255, 255, 255, 255, 0, 0, 0, 255],
      *   width: 2,
      *   height: 1,
-     *   pixelFormat: ctx.PixelFormat.RGB8,
-     *   encoding: ctx.Encoding.Linear,
+     *   pixelFormat: ctx.PixelFormat.RGBA8,
      *   wrap: ctx.Wrap.Repeat
      * })
      * ```
@@ -2496,6 +2527,41 @@ const allowedCommandProps = [
                 }
             }
             this.checkError();
+        },
+        resolvePass: (pass)=>{
+            const resolveFramebuffer = pass.resolveFramebuffer;
+            ctx.state.framebuffer = resolveFramebuffer;
+            // bind buffer for writing to
+            gl.bindFramebuffer(resolveFramebuffer.target, resolveFramebuffer.handle);
+            // bind buffer for reading from
+            gl.bindFramebuffer(gl.READ_FRAMEBUFFER, pass.framebuffer.handle);
+            let drawBuffers = resolveFramebuffer.color ? resolveFramebuffer.color.map(()=>gl.NONE) : null;
+            // i = -1 is depth buffer, doing it so we can have only one for loop
+            const startIndex = resolveFramebuffer.depth ? -1 : 0;
+            for(let i = startIndex; i < resolveFramebuffer.color.length; i++){
+                const isDepth = i == -1;
+                const attachment = isDepth ? resolveFramebuffer.depth?.texture : resolveFramebuffer.color[i].texture;
+                const mask = isDepth ? gl.DEPTH_BUFFER_BIT : gl.COLOR_BUFFER_BIT;
+                const filter = isDepth ? gl.NEAREST : gl.LINEAR;
+                if (i >= 0) {
+                    // attachment we writing to, only one
+                    drawBuffers[i] = gl.COLOR_ATTACHMENT0 + i;
+                    gl.drawBuffers(drawBuffers);
+                    // attachment we are reading from
+                    gl.readBuffer(gl.COLOR_ATTACHMENT0 + resolveFramebuffer.color[i].sourceIndex);
+                }
+                gl.blitFramebuffer(0, 0, attachment.width, attachment.height, 0, 0, attachment.width, attachment.height, mask, filter);
+                if (i >= 0) {
+                    // skip already written buffer on next write as we can only blit one attachment at the time
+                    drawBuffers[i] = gl.NONE;
+                    if (resolveFramebuffer.color[i].texture.mipmap) {
+                        ctx.update(pass.resolveFramebuffer.color[i].texture, {
+                            mipmap: true
+                        });
+                    }
+                }
+            }
+            gl.bindFramebuffer(gl.READ_FRAMEBUFFER, null);
         },
         applyViewport (viewport) {
             if (viewport && viewport !== this.state.viewport) {

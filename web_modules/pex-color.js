@@ -994,7 +994,7 @@ var utils = /*#__PURE__*/Object.freeze({
  * @param {boolean} alpha Handle alpha
  * @returns {hex}
  */ function toHex(color, alpha = true) {
-    const c = color.map((val)=>Math.round(val * 255));
+    const c = color.map((val)=>Math.max(0, Math.min(255, Math.round(val * 255))));
     return `#${(c[2] | c[1] << 8 | c[0] << 16 | 1 << 24).toString(16).slice(1).toUpperCase()}${alpha && color[3] !== undefined && color[3] !== 1 ? (c[3] | 1 << 8).toString(16).slice(1) : ""}`;
 }
 
@@ -1731,11 +1731,11 @@ const toCSSColorSpace = (colorSpace, color, a)=>`color(${colorSpace} ${color.joi
 }
 /**
  * Returns a lab CSS string representation of a given color.
- * @alias module:pex-color.toCSSOkLab
+ * @alias module:pex-color.toCSSOklab
  * @param {import("./color.js").color} color
  * @param {number} [precision=5]
  * @returns {css}
- */ function toCSSOkLab(color, precision = 5) {
+ */ function toCSSOklab(color, precision = 5) {
     toOklab(getCoords(color), TMP);
     TMP[0] *= 100;
     if (precision !== undefined) floorArray(TMP, precision);
@@ -1778,4 +1778,4 @@ const toCSSColorSpace = (colorSpace, color, a)=>`color(${colorSpace} ${color.joi
     return toCSSColorSpace("xyz", TMP, color[3]);
 }
 
-export { copy, create, fromBytes, fromHPLuv, fromHSL, fromHSLuv, fromHSV, fromHWB, fromHex, fromLCH, fromLCHuv, fromLab, fromLabD50, fromLabD65, fromLinear, fromOkhsl, fromOkhsv, fromOklab, fromOklch, fromP3, fromRGB, fromRGBBytes, fromValues, fromXYZD50, fromXYZD65, set, toBytes, toCSSHSL, toCSSHWB, toCSSLCH, toCSSLab, toCSSLabD65, toCSSOkLab, toCSSOklch, toCSSP3, toCSSRGB, toCSSRGBLinear, toCSSXYZ, toCSSXYZD50, toHPLuv, toHSL, toHSLuv, toHSV, toHWB, toHex, toLCH, toLCHuv, toLab, toLabD50, toLabD65, toLinear, toOkhsl, toOkhsv, toOklab, toOklch, toP3, toRGB, toRGBBytes, toXYZD50, toXYZD65, utils };
+export { copy, create, fromBytes, fromHPLuv, fromHSL, fromHSLuv, fromHSV, fromHWB, fromHex, fromLCH, fromLCHuv, fromLab, fromLabD50, fromLabD65, fromLinear, fromOkhsl, fromOkhsv, fromOklab, fromOklch, fromP3, fromRGB, fromRGBBytes, fromValues, fromXYZD50, fromXYZD65, set, toBytes, toCSSHSL, toCSSHWB, toCSSLCH, toCSSLab, toCSSLabD65, toCSSOklab, toCSSOklch, toCSSP3, toCSSRGB, toCSSRGBLinear, toCSSXYZ, toCSSXYZD50, toHPLuv, toHSL, toHSLuv, toHSV, toHWB, toHex, toLCH, toLCHuv, toLab, toLabD50, toLabD65, toLinear, toOkhsl, toOkhsv, toOklab, toOklch, toP3, toRGB, toRGBBytes, toXYZD50, toXYZD65, utils };
