@@ -1,5 +1,7 @@
-import { GIFEncoder as GIFEnc, quantize, applyPalette } from "gifenc";
+import gifenc from "gifenc";
 import Encoder from "./Encoder.js";
+
+const { GIFEncoder: GIFEnc, quantize, applyPalette } = gifenc;
 
 /**
  * @typedef {object} GIFEncoderOptions
