@@ -78,16 +78,14 @@ class WebCodecsEncoder extends Encoder {
       fastStart: this.writableFileStream ? false : "in-memory",
     });
 
-    const isISOBMFF = ["mp4", "mov"].includes(this.extension);
-
     // TODO: use format.getSupportedVideoCodecs();
     const codec =
       this.encoderOptions?.codec ||
-      (isISOBMFF
+      (["mp4", "mov"].includes(this.extension)
         ? AVC.getCodec({ profile: "High", level: "5.2" }) // avc1.640034
         : VP.getCodec({ name: "VP9", profile: 0, level: "1", bitDepth: 8 })); // vp09.00.10.08
 
-    const CCCC = codec.split(".")[0];
+    const [CCCC] = codec.split(".");
 
     this.muxer = new Output({
       format,
@@ -97,15 +95,19 @@ class WebCodecsEncoder extends Encoder {
       ...this.muxerOptions,
     });
 
-    const videoCodec = isISOBMFF
-      ? // Supported: "avc" | "hevc"
-        CCCC.startsWith("hev") || CCCC.startsWith("hvc") // https://www.w3.org/TR/webcodecs-hevc-codec-registration/#fully-qualified-codec-strings
-        ? "hevc"
-        : "avc"
-      : // Supported: "vp8" | "vp9" | "av1"
-        CCCC.startsWith("av01")
-        ? "av1"
-        : VP.VP_CODECS.find((codec) => codec.cccc === CCCC).name.toLowerCase();
+    let videoCodec; // Supported: "avc" | "hevc" | "av1" | "vp8" | "vp9" | "av1"
+    // https://www.w3.org/TR/webcodecs-hevc-codec-registration/#fully-qualified-codec-strings
+    if (CCCC.startsWith("hev") || CCCC.startsWith("hvc")) {
+      videoCodec = "hevc";
+    } else if (CCCC.startsWith("avc1")) {
+      videoCodec = "avc";
+    } else if (CCCC.startsWith("av01")) {
+      videoCodec = "av1";
+    } else if (CCCC.startsWith("vp")) {
+      videoCodec = VP.VP_CODECS.find(
+        (codec) => codec.cccc === CCCC,
+      ).name.toLowerCase();
+    }
 
     const videoSource = new EncodedVideoPacketSource(videoCodec);
     this.muxer.addVideoTrack(videoSource, { frameRate: this.frameRate });
