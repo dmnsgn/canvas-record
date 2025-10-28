@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [5.4.3](https://github.com/dmnsgn/canvas-record/compare/v5.4.2...v5.4.3) (2025-10-28)
+
+
+### Bug Fixes
+
+* use wildcard import for gifenc ([a3dc412](https://github.com/dmnsgn/canvas-record/commit/a3dc4124cd4e2bd4111ed8e79ee2087203873f6a))
+
+
+
 ## [5.4.2](https://github.com/dmnsgn/canvas-record/compare/v5.4.1...v5.4.2) (2025-10-04)
 
 
