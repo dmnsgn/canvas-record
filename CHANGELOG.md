@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+# [5.5.0](https://github.com/dmnsgn/canvas-record/compare/v5.4.3...v5.5.0) (2025-10-28)
+
+
+### Features
+
+* use video codec for EncodedVideoPacketSource based on codec string ([924603f](https://github.com/dmnsgn/canvas-record/commit/924603f88a70a1187d25f0a99f2a21f3a6c0edd3)), closes [#30](https://github.com/dmnsgn/canvas-record/issues/30)
+
+
+
 ## [5.4.3](https://github.com/dmnsgn/canvas-record/compare/v5.4.2...v5.4.3) (2025-10-28)
 
 
