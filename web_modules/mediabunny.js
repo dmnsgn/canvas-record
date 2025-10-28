@@ -158,7 +158,7 @@ const TRANSFER_CHARACTERISTICS_MAP = {
     'smpte170m': 6,
     'linear': 8,
     'iec61966-2-1': 13,
-    'pg': 16,
+    'pq': 16,
     'hlg': 18
 };
 const TRANSFER_CHARACTERISTICS_MAP_INVERSE = invertObject(TRANSFER_CHARACTERISTICS_MAP);
@@ -6821,6 +6821,10 @@ const readDataBox = (slice)=>{
     if (!header || header.name !== 'data') {
         return null;
     }
+    if (slice.remainingLength < 8) {
+        // Box is too small
+        return null;
+    }
     const typeIndicator = readU32Be(slice);
     slice.skip(4); // Locale indicator
     const data = readBytes(slice, header.contentSize - 8);
@@ -10086,7 +10090,10 @@ class MatroskaDemuxer extends Demuxer {
         };
         this.currentCluster = cluster;
         if (dataSlice) {
-            this.readContiguousElements(dataSlice);
+            // Read the children of the cluster, stopping early at level 0 or 1 EBML elements. We do this because some
+            // clusters have incorrect sizes that are too large
+            const endPos = this.readContiguousElements(dataSlice, LEVEL_0_AND_1_EBML_IDS);
+            cluster.elementEndPos = endPos;
         }
         for (const [, trackData] of cluster.trackData){
             const track = trackData.track;
@@ -10297,18 +10304,23 @@ class MatroskaDemuxer extends Demuxer {
             }
         }
     }
-    readContiguousElements(slice) {
+    readContiguousElements(slice, stopIds) {
         const startIndex = slice.filePos;
         while(slice.filePos - startIndex <= slice.length - MIN_HEADER_SIZE){
-            const foundElement = this.traverseElement(slice);
+            const startPos = slice.filePos;
+            const foundElement = this.traverseElement(slice, stopIds);
             if (!foundElement) {
-                break;
+                return startPos;
             }
         }
+        return slice.filePos;
     }
-    traverseElement(slice) {
+    traverseElement(slice, stopIds) {
         const header = readElementHeader(slice);
         if (!header) {
+            return false;
+        }
+        if (stopIds && stopIds.includes(header.id)) {
             return false;
         }
         const { id, size } = header;
@@ -11387,6 +11399,8 @@ class MatroskaTrackBacking {
             const dataStartPos = slice.filePos;
             if (id === EBMLId.Cluster) {
                 currentCluster = await demuxer.readCluster(elementStartPos, segment);
+                // readCluster computes the proper size even if it's undefined in the header, so let's use that instead
+                size = currentCluster.elementEndPos - dataStartPos;
                 const { blockIndex, correctBlockFound } = getMatchInCluster(currentCluster);
                 if (correctBlockFound) {
                     return this.fetchPacketInCluster(currentCluster, blockIndex, options);
@@ -11399,33 +11413,26 @@ class MatroskaTrackBacking {
             if (size === null) {
                 // Undefined element size (can happen in livestreamed files). In this case, we need to do some
                 // searching to determine the actual size of the element.
-                if (id === EBMLId.Cluster) {
-                    // The cluster should have already computed its length, we can just copy that result
-                    assert(currentCluster);
-                    size = currentCluster.elementEndPos - dataStartPos;
-                } else {
-                    // Search for the next element at level 0 or 1
-                    const nextElementPos = await searchForNextElementId(demuxer.reader, dataStartPos, LEVEL_0_AND_1_EBML_IDS, segment.elementEndPos);
-                    size = nextElementPos.pos - dataStartPos;
-                }
-                const endPos = dataStartPos + size;
-                if (segment.elementEndPos !== null && endPos > segment.elementEndPos - MIN_HEADER_SIZE) {
+                assert(id !== EBMLId.Cluster); // Undefined cluster sizes are fixed further up
+                // Search for the next element at level 0 or 1
+                const nextElementPos = await searchForNextElementId(demuxer.reader, dataStartPos, LEVEL_0_AND_1_EBML_IDS, segment.elementEndPos);
+                size = nextElementPos.pos - dataStartPos;
+            }
+            const endPos = dataStartPos + size;
+            if (segment.elementEndPos === null) {
+                // Check the next element. If it's a new segment, we know this segment ends here. The new
+                // segment is just ignored, since we're likely in a livestreamed file and thus only care about
+                // the first segment.
+                let slice = demuxer.reader.requestSliceRange(endPos, MIN_HEADER_SIZE, MAX_HEADER_SIZE);
+                if (slice instanceof Promise) slice = await slice;
+                if (!slice) break;
+                const elementId = readElementId(slice);
+                if (elementId === EBMLId.Segment) {
+                    segment.elementEndPos = endPos; // We now know the segment's size
                     break;
-                } else {
-                    // Check the next element. If it's a new segment, we know this segment ends here. The new
-                    // segment is just ignored, since we're likely in a livestreamed file and thus only care about
-                    // the first segment.
-                    let slice = demuxer.reader.requestSliceRange(endPos, MIN_HEADER_SIZE, MAX_HEADER_SIZE);
-                    if (slice instanceof Promise) slice = await slice;
-                    if (!slice) break;
-                    const elementId = readElementId(slice);
-                    if (elementId === EBMLId.Segment) {
-                        segment.elementEndPos = endPos;
-                        break;
-                    }
                 }
             }
-            currentPos = dataStartPos + size;
+            currentPos = endPos;
         }
         // Catch faulty cue points
         if (cuePoint && (!bestCluster || bestCluster.elementStartPos < cuePoint.clusterPosition)) {
@@ -25091,7 +25098,16 @@ const validateVideoOptions = (videoOptions)=>{
         throw new TypeError('options.video.alpha, when provided, must be either \'discard\' or \'keep\'.');
     }
     if (videoOptions?.keyFrameInterval !== undefined && (!Number.isFinite(videoOptions.keyFrameInterval) || videoOptions.keyFrameInterval < 0)) {
-        throw new TypeError('config.keyFrameInterval, when provided, must be a non-negative number.');
+        throw new TypeError('options.video.keyFrameInterval, when provided, must be a non-negative number.');
+    }
+    if (videoOptions?.process !== undefined && typeof videoOptions.process !== 'function') {
+        throw new TypeError('options.video.process, when provided, must be a function.');
+    }
+    if (videoOptions?.processedWidth !== undefined && (!Number.isInteger(videoOptions.processedWidth) || videoOptions.processedWidth <= 0)) {
+        throw new TypeError('options.video.processedWidth, when provided, must be a positive integer.');
+    }
+    if (videoOptions?.processedHeight !== undefined && (!Number.isInteger(videoOptions.processedHeight) || videoOptions.processedHeight <= 0)) {
+        throw new TypeError('options.video.processedHeight, when provided, must be a positive integer.');
     }
 };
 const validateAudioOptions = (audioOptions)=>{
@@ -25115,6 +25131,15 @@ const validateAudioOptions = (audioOptions)=>{
     }
     if (audioOptions?.sampleRate !== undefined && (!Number.isInteger(audioOptions.sampleRate) || audioOptions.sampleRate <= 0)) {
         throw new TypeError('options.audio.sampleRate, when provided, must be a positive integer.');
+    }
+    if (audioOptions?.process !== undefined && typeof audioOptions.process !== 'function') {
+        throw new TypeError('options.audio.process, when provided, must be a function.');
+    }
+    if (audioOptions?.processedNumberOfChannels !== undefined && (!Number.isInteger(audioOptions.processedNumberOfChannels) || audioOptions.processedNumberOfChannels <= 0)) {
+        throw new TypeError('options.audio.processedNumberOfChannels, when provided, must be a positive integer.');
+    }
+    if (audioOptions?.processedSampleRate !== undefined && (!Number.isInteger(audioOptions.processedSampleRate) || audioOptions.processedSampleRate <= 0)) {
+        throw new TypeError('options.audio.processedSampleRate, when provided, must be a positive integer.');
     }
 };
 const FALLBACK_NUMBER_OF_CHANNELS = 2;
@@ -25427,7 +25452,7 @@ const FALLBACK_SAMPLE_RATE = 48000;
             height = ceilToMultipleOfTwo(trackOptions.height);
         }
         const firstTimestamp = await track.getFirstTimestamp();
-        const needsTranscode = !!trackOptions.forceTranscode || this._startTimestamp > 0 || firstTimestamp < 0 || !!trackOptions.frameRate || trackOptions.keyFrameInterval !== undefined;
+        const needsTranscode = !!trackOptions.forceTranscode || this._startTimestamp > 0 || firstTimestamp < 0 || !!trackOptions.frameRate || trackOptions.keyFrameInterval !== undefined || trackOptions.process !== undefined;
         let needsRerender = width !== originalWidth || height !== originalHeight || totalRotation !== 0 && !outputSupportsRotation || !!crop;
         const alpha = trackOptions.alpha ?? 'discard';
         let videoCodecs = this.output.format.getSupportedVideoCodecs();
@@ -25448,9 +25473,6 @@ const FALLBACK_SAMPLE_RATE = 48000;
                 for await (const packet of sink.packets(undefined, endPacket, {
                     verifyKeyPackets: true
                 })){
-                    if (this._synchronizer.shouldWait(track.id, packet.timestamp)) {
-                        await this._synchronizer.wait(packet.timestamp);
-                    }
                     if (this._canceled) {
                         return;
                     }
@@ -25459,8 +25481,11 @@ const FALLBACK_SAMPLE_RATE = 48000;
                         delete packet.sideData.alpha;
                         delete packet.sideData.alphaByteLength;
                     }
+                    this._reportProgress(track.id, packet.timestamp);
                     await source.add(packet, meta);
-                    this._reportProgress(track.id, packet.timestamp + packet.duration);
+                    if (this._synchronizer.shouldWait(track.id, packet.timestamp)) {
+                        await this._synchronizer.wait(packet.timestamp);
+                    }
                 }
                 source.close();
                 this._synchronizer.closeTrack(track.id);
@@ -25480,8 +25505,8 @@ const FALLBACK_SAMPLE_RATE = 48000;
             }
             const bitrate = trackOptions.bitrate ?? QUALITY_HIGH;
             const encodableCodec = await getFirstEncodableVideoCodec(videoCodecs, {
-                width,
-                height,
+                width: trackOptions.process && trackOptions.processedWidth ? trackOptions.processedWidth : width,
+                height: trackOptions.process && trackOptions.processedHeight ? trackOptions.processedHeight : height,
                 bitrate
             });
             if (!encodableCodec) {
@@ -25496,8 +25521,7 @@ const FALLBACK_SAMPLE_RATE = 48000;
                 bitrate,
                 keyFrameInterval: trackOptions.keyFrameInterval,
                 sizeChangeBehavior: trackOptions.fit ?? 'passThrough',
-                alpha,
-                onEncodedPacket: (sample)=>this._reportProgress(track.id, sample.timestamp + sample.duration)
+                alpha
             };
             const source = new VideoSampleSource(encodingConfig);
             videoSource = source;
@@ -25508,7 +25532,7 @@ const FALLBACK_SAMPLE_RATE = 48000;
                 // back to the rerender path.
                 //
                 // Creating a new temporary Output is sort of hacky, but due to a lack of an isolated encoder API right
-                // now, this is the simplest way. Will refactor in the future!
+                // now, this is the simplest way. Will refactor in the future! TODO
                 const tempOutput = new Output({
                     format: new Mp4OutputFormat(),
                     target: new NullTarget()
@@ -25558,13 +25582,10 @@ const FALLBACK_SAMPLE_RATE = 48000;
                                 timestamp: lastCanvasTimestamp + i / frameRate,
                                 duration: 1 / frameRate
                             });
-                            await source.add(sample);
+                            await this._registerVideoSample(track, trackOptions, source, sample);
                         }
                     };
                     for await (const { canvas, timestamp, duration } of iterator){
-                        if (this._synchronizer.shouldWait(track.id, timestamp)) {
-                            await this._synchronizer.wait(timestamp);
-                        }
                         if (this._canceled) {
                             return;
                         }
@@ -25589,7 +25610,7 @@ const FALLBACK_SAMPLE_RATE = 48000;
                             timestamp: adjustedSampleTimestamp,
                             duration: frameRate !== undefined ? 1 / frameRate : duration
                         });
-                        await source.add(sample);
+                        await this._registerVideoSample(track, trackOptions, source, sample);
                         if (frameRate !== undefined) {
                             lastCanvas = canvas;
                             lastCanvasTimestamp = adjustedSampleTimestamp;
@@ -25621,14 +25642,11 @@ const FALLBACK_SAMPLE_RATE = 48000;
                         for(let i = 1; i < frameDifference; i++){
                             lastSample.setTimestamp(lastSampleTimestamp + i / frameRate);
                             lastSample.setDuration(1 / frameRate);
-                            await source.add(lastSample);
+                            await this._registerVideoSample(track, trackOptions, source, lastSample);
                         }
                         lastSample.close();
                     };
                     for await (const sample of sink.samples(this._startTimestamp, this._endTimestamp)){
-                        if (this._synchronizer.shouldWait(track.id, sample.timestamp)) {
-                            await this._synchronizer.wait(sample.timestamp);
-                        }
                         if (this._canceled) {
                             lastSample?.close();
                             return;
@@ -25653,7 +25671,7 @@ const FALLBACK_SAMPLE_RATE = 48000;
                             sample.setDuration(1 / frameRate);
                         }
                         sample.setTimestamp(adjustedSampleTimestamp);
-                        await source.add(sample);
+                        await this._registerVideoSample(track, trackOptions, source, sample);
                         if (frameRate !== undefined) {
                             lastSample = sample;
                             lastSampleTimestamp = adjustedSampleTimestamp;
@@ -25683,6 +25701,54 @@ const FALLBACK_SAMPLE_RATE = 48000;
         this._totalTrackCount++;
         this.utilizedTracks.push(track);
     }
+    /** @internal */ async _registerVideoSample(track, trackOptions, source, sample) {
+        if (this._canceled) {
+            return;
+        }
+        this._reportProgress(track.id, sample.timestamp);
+        let finalSamples;
+        if (!trackOptions.process) {
+            finalSamples = [
+                sample
+            ];
+        } else {
+            let processed = trackOptions.process(sample);
+            if (processed instanceof Promise) processed = await processed;
+            if (!Array.isArray(processed)) {
+                processed = processed === null ? [] : [
+                    processed
+                ];
+            }
+            finalSamples = processed.map((x)=>{
+                if (x instanceof VideoSample) {
+                    return x;
+                }
+                if (typeof VideoFrame !== 'undefined' && x instanceof VideoFrame) {
+                    return new VideoSample(x);
+                }
+                // Calling the VideoSample constructor here will automatically handle input validation for us
+                // (it throws for any non-legal argument).
+                return new VideoSample(x, {
+                    timestamp: sample.timestamp,
+                    duration: sample.duration
+                });
+            });
+        }
+        for (const finalSample of finalSamples){
+            if (this._canceled) {
+                break;
+            }
+            await source.add(finalSample);
+            if (this._synchronizer.shouldWait(track.id, finalSample.timestamp)) {
+                await this._synchronizer.wait(finalSample.timestamp);
+            }
+        }
+        for (const finalSample of finalSamples){
+            if (finalSample !== sample) {
+                finalSample.close();
+            }
+        }
+    }
     /** @internal */ async _processAudioTrack(track, trackOptions) {
         const sourceCodec = track.codec;
         if (!sourceCodec) {
@@ -25700,7 +25766,7 @@ const FALLBACK_SAMPLE_RATE = 48000;
         let sampleRate = trackOptions.sampleRate ?? originalSampleRate;
         let needsResample = numberOfChannels !== originalNumberOfChannels || sampleRate !== originalSampleRate || this._startTimestamp > 0 || firstTimestamp < 0;
         let audioCodecs = this.output.format.getSupportedAudioCodecs();
-        if (!trackOptions.forceTranscode && !trackOptions.bitrate && !needsResample && audioCodecs.includes(sourceCodec) && (!trackOptions.codec || trackOptions.codec === sourceCodec)) {
+        if (!trackOptions.forceTranscode && !trackOptions.bitrate && !needsResample && audioCodecs.includes(sourceCodec) && (!trackOptions.codec || trackOptions.codec === sourceCodec) && !trackOptions.process) {
             // Fast path, we can simply copy over the encoded packets
             const source = new EncodedAudioPacketSource(sourceCodec);
             audioSource = source;
@@ -25715,14 +25781,14 @@ const FALLBACK_SAMPLE_RATE = 48000;
                     metadataOnly: true
                 }) ?? undefined : undefined;
                 for await (const packet of sink.packets(undefined, endPacket)){
-                    if (this._synchronizer.shouldWait(track.id, packet.timestamp)) {
-                        await this._synchronizer.wait(packet.timestamp);
-                    }
                     if (this._canceled) {
                         return;
                     }
+                    this._reportProgress(track.id, packet.timestamp);
                     await source.add(packet, meta);
-                    this._reportProgress(track.id, packet.timestamp + packet.duration);
+                    if (this._synchronizer.shouldWait(track.id, packet.timestamp)) {
+                        await this._synchronizer.wait(packet.timestamp);
+                    }
                 }
                 source.close();
                 this._synchronizer.closeTrack(track.id);
@@ -25743,8 +25809,8 @@ const FALLBACK_SAMPLE_RATE = 48000;
             }
             const bitrate = trackOptions.bitrate ?? QUALITY_HIGH;
             const encodableCodecs = await getEncodableAudioCodecs(audioCodecs, {
-                numberOfChannels,
-                sampleRate,
+                numberOfChannels: trackOptions.process && trackOptions.processedNumberOfChannels ? trackOptions.processedNumberOfChannels : numberOfChannels,
+                sampleRate: trackOptions.process && trackOptions.processedSampleRate ? trackOptions.processedSampleRate : sampleRate,
                 bitrate
             });
             if (!encodableCodecs.some((codec)=>NON_PCM_AUDIO_CODECS.includes(codec)) && audioCodecs.some((codec)=>NON_PCM_AUDIO_CODECS.includes(codec)) && (numberOfChannels !== FALLBACK_NUMBER_OF_CHANNELS || sampleRate !== FALLBACK_SAMPLE_RATE)) {
@@ -25775,25 +25841,21 @@ const FALLBACK_SAMPLE_RATE = 48000;
                 return;
             }
             if (needsResample) {
-                audioSource = this._resampleAudio(track, codecOfChoice, numberOfChannels, sampleRate, bitrate);
+                audioSource = this._resampleAudio(track, trackOptions, codecOfChoice, numberOfChannels, sampleRate, bitrate);
             } else {
                 const source = new AudioSampleSource({
                     codec: codecOfChoice,
-                    bitrate,
-                    onEncodedPacket: (packet)=>this._reportProgress(track.id, packet.timestamp + packet.duration)
+                    bitrate
                 });
                 audioSource = source;
                 this._trackPromises.push((async ()=>{
                     await this._started;
                     const sink = new AudioSampleSink(track);
                     for await (const sample of sink.samples(undefined, this._endTimestamp)){
-                        if (this._synchronizer.shouldWait(track.id, sample.timestamp)) {
-                            await this._synchronizer.wait(sample.timestamp);
-                        }
                         if (this._canceled) {
                             return;
                         }
-                        await source.add(sample);
+                        await this._registerAudioSample(track, trackOptions, source, sample);
                         sample.close();
                     }
                     source.close();
@@ -25810,11 +25872,48 @@ const FALLBACK_SAMPLE_RATE = 48000;
         this._totalTrackCount++;
         this.utilizedTracks.push(track);
     }
-    /** @internal */ _resampleAudio(track, codec, targetNumberOfChannels, targetSampleRate, bitrate) {
+    /** @internal */ async _registerAudioSample(track, trackOptions, source, sample) {
+        if (this._canceled) {
+            return;
+        }
+        this._reportProgress(track.id, sample.timestamp);
+        let finalSamples;
+        if (!trackOptions.process) {
+            finalSamples = [
+                sample
+            ];
+        } else {
+            let processed = trackOptions.process(sample);
+            if (processed instanceof Promise) processed = await processed;
+            if (!Array.isArray(processed)) {
+                processed = processed === null ? [] : [
+                    processed
+                ];
+            }
+            if (!processed.every((x)=>x instanceof AudioSample)) {
+                throw new TypeError('The audio process function must return an AudioSample, null, or an array of AudioSamples.');
+            }
+            finalSamples = processed;
+        }
+        for (const finalSample of finalSamples){
+            if (this._canceled) {
+                break;
+            }
+            await source.add(finalSample);
+            if (this._synchronizer.shouldWait(track.id, finalSample.timestamp)) {
+                await this._synchronizer.wait(finalSample.timestamp);
+            }
+        }
+        for (const finalSample of finalSamples){
+            if (finalSample !== sample) {
+                finalSample.close();
+            }
+        }
+    }
+    /** @internal */ _resampleAudio(track, trackOptions, codec, targetNumberOfChannels, targetSampleRate, bitrate) {
         const source = new AudioSampleSource({
             codec,
-            bitrate,
-            onEncodedPacket: (packet)=>this._reportProgress(track.id, packet.timestamp + packet.duration)
+            bitrate
         });
         this._trackPromises.push((async ()=>{
             await this._started;
@@ -25823,14 +25922,11 @@ const FALLBACK_SAMPLE_RATE = 48000;
                 targetSampleRate,
                 startTime: this._startTimestamp,
                 endTime: this._endTimestamp,
-                onSample: (sample)=>source.add(sample)
+                onSample: (sample)=>this._registerAudioSample(track, trackOptions, source, sample)
             });
             const sink = new AudioSampleSink(track);
             const iterator = sink.samples(this._startTimestamp, this._endTimestamp);
             for await (const sample of iterator){
-                if (this._synchronizer.shouldWait(track.id, sample.timestamp)) {
-                    await this._synchronizer.wait(sample.timestamp);
-                }
                 if (this._canceled) {
                     return;
                 }
