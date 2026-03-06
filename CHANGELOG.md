@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [5.5.1](https://github.com/dmnsgn/canvas-record/compare/v5.5.0...v5.5.1) (2026-03-06)
+
+
+### Bug Fixes
+
+* handle empty rect array in Recorder imagedata getFrame ([d7bb191](https://github.com/dmnsgn/canvas-record/commit/d7bb191f3d0afc5e7fbfecff87fd1694bb7a1463)), closes [#32](https://github.com/dmnsgn/canvas-record/issues/32)
+
+
+
 # [5.5.0](https://github.com/dmnsgn/canvas-record/compare/v5.4.3...v5.5.0) (2025-10-28)
 
 

@@ -213,7 +213,6 @@ var YA = (() => {
           for (
             typeof C.preRun == "function" && (C.preRun = [C.preRun]);
             C.preRun.length;
-
           )
             gI(C.preRun.shift());
         sA(SA);
@@ -226,7 +225,6 @@ var YA = (() => {
           for (
             typeof C.postRun == "function" && (C.postRun = [C.postRun]);
             C.postRun.length;
-
           )
             BI(C.postRun.shift());
         sA(JA);
@@ -1338,7 +1336,6 @@ return ret;
         for (
           typeof C.preInit == "function" && (C.preInit = [C.preInit]);
           C.preInit.length > 0;
-
         )
           C.preInit.pop()();
       return (VA(), C.ready);
