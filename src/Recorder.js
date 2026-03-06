@@ -106,7 +106,7 @@ class Recorder {
   }
   // Only used if rect is defined
   get yFlipped() {
-    return this.canvasHeight - this.rect[1] - this.rect[3];
+    return this.canvasHeight - this.y - this.height;
   }
   get width() {
     return this.rect[2] ?? this.canvasWidth;
