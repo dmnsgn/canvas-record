@@ -1,4 +1,4 @@
-import { b as browser$1, g as global, B as Buffer } from '../_chunks/polyfills-Cb_CjFTI.js';
+import { b as browser$1, g as global, B as Buffer } from '../_chunks/polyfills-CdR2cT8D.js';
 
 var createFFmpegCore = (()=>{
     var _scriptDir = import.meta.url;
@@ -119,7 +119,7 @@ var createFFmpegCore = (()=>{
         }
         var read_, readAsync, readBinary;
         if (ENVIRONMENT_IS_NODE) {
-            const { createRequire: createRequire } = await import('../_chunks/polyfills-Cb_CjFTI.js').then(function (n) { return n._; });
+            const { createRequire: createRequire } = await import('../_chunks/polyfills-CdR2cT8D.js').then(function (n) { return n._; });
             var require = createRequire(import.meta.url);
             var fs = require("fs");
             var nodePath = require("path");

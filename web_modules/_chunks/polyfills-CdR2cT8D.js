@@ -2201,8 +2201,6 @@ function isSlowBuffer (obj) {
   return typeof obj.readFloatLE === 'function' && typeof obj.slice === 'function' && isFastBuffer(obj.slice(0, 0))
 }
 
-var commonjsGlobal = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
-
 function getDefaultExportFromCjs (x) {
 	return x && x.__esModule && Object.prototype.hasOwnProperty.call(x, 'default') ? x['default'] : x;
 }
@@ -2215,7 +2213,7 @@ function getAugmentedNamespace(n) {
 			var isInstance = false;
       try {
         isInstance = this instanceof a;
-      } catch {}
+      } catch (e) {}
 			if (isInstance) {
         return Reflect.construct(f, arguments, this.constructor);
 			}
@@ -2508,4 +2506,4 @@ var _polyfillNode_module = /*#__PURE__*/Object.freeze({
   __proto__: null
 });
 
-export { Buffer as B, _polyfillNode_module as _, getDefaultExportFromCjs as a, browser$1 as b, commonjsGlobal as c, require$$1 as d, require$$2 as e, global$1 as g, require$$0 as r };
+export { Buffer as B, _polyfillNode_module as _, getDefaultExportFromCjs as a, browser$1 as b, require$$1 as c, require$$2 as d, global$1 as g, require$$0 as r };
