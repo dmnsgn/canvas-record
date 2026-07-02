@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -10,6 +10,7 @@
         --color-dark: #1a1a1a;
         --color-light: #f2f2f2;
         --color-accent: #fd5e62;
+        --color-checker: #d0d0d0;
       }
 
       body {
@@ -33,6 +34,14 @@
 
       canvas {
         max-width: 100%;
+        background-image: conic-gradient(
+          var(--color-checker) 25%,
+          transparent 0 50%,
+          var(--color-checker) 0 75%,
+          transparent 0
+        );
+        background-size: 16px 16px;
+        background-color: #fff;
       }
       .Detail {
         position: fixed;

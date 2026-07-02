@@ -77,19 +77,29 @@ in vec2 vTexCoord;
 out vec4 outColor;
 
 uniform vec4 uColor;
+uniform vec4 uBackgroundColor;
 uniform float uProgress;
+uniform bool uTransparent;
 
 ${drawNumber}
 
 void main() {
   vec2 dist = abs(vTexCoord - vec2(0.5));
 
+  vec2 uv = vec2(vTexCoord.x, 1.0 - vTexCoord.y);
+  bool inBackground =
+    (uv.x < 0.5 && uv.y < 0.5) || (uv.x >= 0.5 && uv.y >= 0.5);
+
   if (drawNumber(float(uTextValue), gl_FragCoord.xy, uTextPosition, FONT_SIZE / float(CHAR_ROWS))) {
     outColor = vec4(1.0);
   } else if (dist.x < uProgress * 0.5 && dist.y < uProgress * 0.5) {
     outColor = vec4(uColor);
-  } else {
+  } else if (inBackground) {
+    outColor = vec4(uBackgroundColor);
+  } else if (uTransparent) {
     discard;
+  } else {
+    outColor = vec4(uBackgroundColor);
   }
 }
 `;

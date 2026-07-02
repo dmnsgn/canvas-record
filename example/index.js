@@ -26,6 +26,7 @@ const CONFIG = {
   filename: "",
   rect: { x: 0, y: 0, z: drawWidth, w: drawHeight },
   contextType: "gl",
+  transparent: false,
   ...Object.fromEntries(params.entries()),
 };
 const pane = new Pane();
@@ -65,6 +66,7 @@ pane.addBinding(CONFIG, "rect", {
 pane.addBinding(CONFIG, "contextType", {
   options: ["2d", "gl"].map((value) => ({ text: value, value })),
 });
+pane.addBinding(CONFIG, "transparent").on("change", () => render());
 
 const startButton = pane.addButton({ title: "Start Recording" });
 const stopButton = pane.addButton({ title: "Stop Recording" });
@@ -80,23 +82,32 @@ const getPexColor = (name) => fromHex(createColor(), getColor(name));
 const { context, canvas } = createCanvasContext("2d", {
   width: drawWidth,
   height: drawHeight,
-  contextAttributes: { willReadFrequently: true },
+  contextAttributes: { willReadFrequently: true, alpha: true },
 });
 Object.assign(canvas.style, { width: `${width}px`, height: `${height}px` });
 
 const element = document.querySelector(".Canvases");
 element.appendChild(canvas);
 
-const ctx = createPexContext({ width, height, pixelRatio, element });
+const ctx = createPexContext({
+  width,
+  height,
+  pixelRatio,
+  element,
+  alpha: true,
+});
 const clearCmd = {
-  pass: ctx.pass({ clearColor: getPexColor("dark") }),
+  pass: ctx.pass({ clearColor: [0, 0, 0, 0] }),
 };
 const drawCmd = {
   pipeline: ctx.pipeline({ vert, frag }),
   attributes: {
     aPosition: ctx.vertexBuffer(Float32Array.of(-1, -1, 3, -1, -1, 3)), // Fullscreen triangle
   },
-  uniforms: { uColor: getPexColor("accent") },
+  uniforms: {
+    uColor: getPexColor("accent"),
+    uBackgroundColor: getPexColor("dark"),
+  },
   count: 3,
 };
 
@@ -109,7 +120,7 @@ let canvasRecorder;
 function render(canvasRecorder = {}) {
   const currentFrame = canvasRecorder.frame || 0;
 
-  const t = currentFrame / canvasRecorder.frameTotal || Number.EPSILON;
+  const t = currentFrame / (canvasRecorder.frameTotal - 1) || Number.EPSILON;
 
   const width = canvas.width;
   const height = canvas.height;
@@ -123,7 +134,12 @@ function render(canvasRecorder = {}) {
     // Background
     context.clearRect(0, 0, width, height);
     context.fillStyle = getColor("dark");
-    context.fillRect(0, 0, width, height);
+    if (CONFIG.transparent) {
+      context.fillRect(0, 0, width / 2, height / 2);
+      context.fillRect(width / 2, height / 2, width / 2, height / 2);
+    } else {
+      context.fillRect(0, 0, width, height);
+    }
 
     // Interpolated element
     context.save();
@@ -149,6 +165,7 @@ function render(canvasRecorder = {}) {
         uProgress: t,
         uTextValue: currentFrame,
         uTextPosition: [x, height - y - (fontSize / 2) * lineHeight],
+        uTransparent: CONFIG.transparent,
       },
     });
   }
@@ -193,9 +210,12 @@ const initRecorder = async (encoderName) => {
 
   // const baseURL = "https://unpkg.com/@ffmpeg/core-mt@0.12.4/dist/esm";
 
-  let encoderOptions = {};
+  const alpha = CONFIG.transparent ? "keep" : "discard";
+
+  let encoderOptions = { alpha };
   if (encoderName === "FFmpegEncoder") {
     encoderOptions = {
+      ...encoderOptions,
       // FFmpeg requires more effort...
       coreURL: new URL(
         "../web_modules/@ffmpeg/core.js",

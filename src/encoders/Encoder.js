@@ -39,6 +39,14 @@ class Encoder {
   }
 
   /**
+   * Alpha for Encoders that support transparency.
+   * @type {"keep" | "discard"}
+   */
+  get alpha() {
+    return this.encoderOptions?.alpha === "keep" ? "keep" : "discard";
+  }
+
+  /**
    * Setup the encoder: load binary, instantiate muxers, setup file system target...
    * @param {object} options
    */

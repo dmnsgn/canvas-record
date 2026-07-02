@@ -312,6 +312,7 @@ Speedup: x${(this.time / renderTime).toFixed(3)}`,
           timestamp: this.time * 1_000_000, // in µs
           duration: 1_000_000 / this.frameRate,
           visibleRect,
+          alpha: this.encoder.alpha,
           ...this.frameOptions,
         });
       }
