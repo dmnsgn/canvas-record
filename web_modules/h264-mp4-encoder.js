@@ -1,4 +1,4 @@
-import { r as require$$0, b as browser$1, B as Buffer, d as require$$1, e as require$$2, a as getDefaultExportFromCjs } from './_chunks/polyfills-Cb_CjFTI.js';
+import { a as getDefaultExportFromCjs, r as require$$0, b as browser$1, B as Buffer, c as require$$1, d as require$$2 } from './_chunks/polyfills-CdR2cT8D.js';
 
 var h264Mp4Encoder_node = function(A) {
     var B = {};
@@ -3482,6 +3482,6 @@ var h264Mp4Encoder_node = function(A) {
     }
 ]);
 
-var h264Mp4Encoder_node$1 = /*@__PURE__*/ getDefaultExportFromCjs(h264Mp4Encoder_node);
+var h264Mp4Encoder_node_default = /*@__PURE__*/ getDefaultExportFromCjs(h264Mp4Encoder_node);
 
-export { h264Mp4Encoder_node$1 as default };
+export { h264Mp4Encoder_node_default as default };

@@ -12,6 +12,7 @@ import {
   isWebCodecsSupported,
   nextMultiple,
   captureCanvasRegion,
+  ensureExtension,
 } from "./utils.js";
 
 /**
@@ -236,7 +237,9 @@ Speedup: x${(this.time / renderTime).toFixed(3)}`,
     const target = this.getSupportedTarget();
 
     this.startTime = new Date();
-    this.filename = filename || this.getDefaultFileName(extension);
+    this.filename = filename
+      ? ensureExtension(filename, extension)
+      : this.getDefaultFileName(extension);
 
     await this.encoder.init({
       encoderOptions: this.encoderOptions,
@@ -312,6 +315,7 @@ Speedup: x${(this.time / renderTime).toFixed(3)}`,
           timestamp: this.time * 1_000_000, // in µs
           duration: 1_000_000 / this.frameRate,
           visibleRect,
+          alpha: this.encoder.alpha,
           ...this.frameOptions,
         });
       }

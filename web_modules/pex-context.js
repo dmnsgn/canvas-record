@@ -306,6 +306,7 @@ function draw(ctx, cmd) {
  * @property {HTMLImageElement | HTMLVideoElement | HTMLCanvasElement | Array | import("./types.js").TypedArray | TextureOptionsData} [data]
  * @property {number} [width]
  * @property {number} [height]
+ * @property {number} [depth]
  * @property {ctx.PixelFormat} [pixelFormat=ctx.PixelFormat.RGBA8]
  * @property {ctx.TextureFormat} [internalFormat=ctx.TextureFormat.RGBA]
  * @property {ctx.DataType} [type=ctx.TextureFormat[opts.pixelFormat]]
@@ -395,7 +396,7 @@ function updateTexture(ctx, texture, opts) {
     const wrapT = opts.wrapT || opts.wrap || texture.wrapT || texture.wrap || gl.CLAMP_TO_EDGE;
     const aniso = opts.aniso || texture.aniso || 0;
     const premultiplyAlpha = opts.premultiplyAlpha ?? texture.premultiplyAlpha ?? false;
-    const colorspaceConversion = opts.colorspaceConversion ?? opts.colorspaceConversion ?? gl.NONE;
+    const colorspaceConversion = opts.colorspaceConversion ?? texture.colorspaceConversion ?? gl.NONE;
     const compressed = opts.compressed || texture.compressed;
     let internalFormat;
     // Get internalFormat (format the GPU use internally) from opts.internalFormat (mainly for compressed texture) or pixelFormat
@@ -505,14 +506,19 @@ function updateTexture(ctx, texture, opts) {
             ];
             if (data[0].width) texture.width = data[0].width;
             if (data[0].height) texture.height = data[0].height;
+            texture.depth = 1;
             updateTexture2D(ctx, texture, data, opts);
         } else if (isTexture2DArray) {
             texture.width = width;
             texture.height = height;
-            if (data?.length) updateTexture2DArray(ctx, texture, data);
+            if (data?.length) {
+                texture.depth = data.length;
+                updateTexture2DArray(ctx, texture, data);
+            }
         } else if (isTextureCube) {
             texture.width = width;
             texture.height = height;
+            texture.depth = 1;
             updateTextureCube(ctx, texture, data);
         }
     } else {

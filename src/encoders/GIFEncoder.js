@@ -1,7 +1,6 @@
-import * as gifenc from "gifenc";
 import Encoder from "./Encoder.js";
 
-const { GIFEncoder: GIFEnc, quantize, applyPalette } = gifenc;
+let GIFEnc, quantize, applyPalette;
 
 /**
  * @typedef {object} GIFEncoderOptions
@@ -28,6 +27,7 @@ const { GIFEncoder: GIFEnc, quantize, applyPalette } = gifenc;
  * @property {number} [delay=0]
  * @property {number} [repeat=0]
  * @property {number} [dispose=-1]
+ * @property {"keep" | "discard"} [alpha] `alpha: "keep"` enables GIF's 1-bit transparency (auto-configures quantization and per-frame transparent index).
  * @see [WriteFrameOpts]{@link https://github.com/mattdesl/gifenc#gifwriteframeindex-width-height-opts--}
  */
 
@@ -57,6 +57,23 @@ class GIFEncoder extends Encoder {
   async init(options) {
     super.init(options);
 
+    ({ GIFEncoder: GIFEnc, quantize, applyPalette } = await import("gifenc"));
+
+    // GIF only supports 1-bit transparency: quantize with an alpha-aware format
+    // and collapse alpha to fully transparent/opaque so a palette entry can be
+    // flagged as the transparent color per frame.
+    if (this.alpha === "keep") {
+      this.quantizeOptions = {
+        ...this.quantizeOptions,
+        format: "rgba4444",
+        // Keep a custom threshold if provided, otherwise force it on.
+        oneBitAlpha:
+          typeof this.quantizeOptions.oneBitAlpha === "number"
+            ? this.quantizeOptions.oneBitAlpha
+            : true,
+      };
+    }
+
     this.encoder = GIFEnc();
   }
 
@@ -71,9 +88,25 @@ class GIFEncoder extends Encoder {
 
     const index = applyPalette(frame, palette, this.quantizeOptions.format);
 
-    this.encoder.writeFrame(index, this.width, this.height, {
+    const frameOptions = {
       palette,
       delay: (1 / this.frameRate) * 1000,
+    };
+
+    if (this.alpha === "keep") {
+      // The oneBitAlpha pass yields a fully transparent palette entry (alpha 0);
+      // flag it so GIF renders those pixels as see-through.
+      const transparentIndex = palette.findIndex((color) => color[3] === 0);
+
+      if (transparentIndex !== -1) {
+        frameOptions.transparent = true;
+        frameOptions.transparentIndex = transparentIndex;
+        frameOptions.dispose = 2; // Restore to background so frames don't bleed.
+      }
+    }
+
+    this.encoder.writeFrame(index, this.width, this.height, {
+      ...frameOptions,
       ...this.encoderOptions,
     });
   }
