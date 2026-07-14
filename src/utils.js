@@ -50,6 +50,11 @@ const formatSeconds = (seconds) => {
 
 const nextMultiple = (x, n = 2) => Math.ceil(x / n) * n;
 
+const ensureExtension = (filename, extension) =>
+  filename.toLowerCase().endsWith(`.${extension.toLowerCase()}`)
+    ? filename
+    : `${filename}.${extension}`;
+
 class Deferred {
   constructor() {
     this.resolve = null;
@@ -105,6 +110,7 @@ export {
   formatDate,
   formatSeconds,
   nextMultiple,
+  ensureExtension,
   Deferred,
   estimateBitRate,
 };
