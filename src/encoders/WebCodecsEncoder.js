@@ -1,26 +1,7 @@
-import {
-  Output,
-  Mp4OutputFormat,
-  MovOutputFormat,
-  WebMOutputFormat,
-  MkvOutputFormat,
-  BufferTarget,
-  StreamTarget,
-  VideoSampleSource,
-  VideoSample,
-} from "mediabunny";
-
-import { AVC, VP } from "media-codecs";
-
 import Encoder from "./Encoder.js";
 import { estimateBitRate } from "../utils.js";
 
-const extensionToOutputFormat = {
-  mp4: Mp4OutputFormat,
-  mov: MovOutputFormat,
-  webm: WebMOutputFormat,
-  mkv: MkvOutputFormat,
-};
+let VideoSample;
 
 /**
  * @typedef {object} WebCodecsEncoderOptions
@@ -61,6 +42,26 @@ class WebCodecsEncoder extends Encoder {
 
   async init(options) {
     super.init(options);
+
+    const {
+      Output,
+      Mp4OutputFormat,
+      MovOutputFormat,
+      WebMOutputFormat,
+      MkvOutputFormat,
+      BufferTarget,
+      VideoSampleSource,
+      StreamTarget,
+    } = await import("mediabunny");
+    ({ VideoSample } = await import("mediabunny"));
+    const { AVC, VP } = await import("media-codecs");
+
+    const extensionToOutputFormat = {
+      mp4: Mp4OutputFormat,
+      mov: MovOutputFormat,
+      webm: WebMOutputFormat,
+      mkv: MkvOutputFormat,
+    };
 
     if (
       this.alpha === "keep" &&

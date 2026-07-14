@@ -1,7 +1,6 @@
-import { FFmpeg } from "@ffmpeg/ffmpeg";
-import { fetchFile } from "@ffmpeg/util";
-
 import Encoder from "./Encoder.js";
+
+let FFmpeg, fetchFile;
 
 const getFrameName = (frame) => `${String(frame).padStart(5, "0")}.png`;
 
@@ -29,6 +28,9 @@ class FFmpegEncoder extends Encoder {
 
   async init(options) {
     super.init(options);
+
+    ({ FFmpeg } = await import("@ffmpeg/ffmpeg"));
+    ({ fetchFile } = await import("@ffmpeg/util"));
 
     if (
       this.alpha === "keep" &&

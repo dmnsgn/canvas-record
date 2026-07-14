@@ -1,7 +1,6 @@
-import * as gifenc from "gifenc";
 import Encoder from "./Encoder.js";
 
-const { GIFEncoder: GIFEnc, quantize, applyPalette } = gifenc;
+let GIFEnc, quantize, applyPalette;
 
 /**
  * @typedef {object} GIFEncoderOptions
@@ -57,6 +56,8 @@ class GIFEncoder extends Encoder {
 
   async init(options) {
     super.init(options);
+
+    ({ GIFEncoder: GIFEnc, quantize, applyPalette } = await import("gifenc"));
 
     // GIF only supports 1-bit transparency: quantize with an alpha-aware format
     // and collapse alpha to fully transparent/opaque so a palette entry can be
