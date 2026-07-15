@@ -47,7 +47,7 @@ class FrameEncoder extends Encoder {
 
   async encode(frame, frameNumber) {
     await this.writeFile(
-      `${`${frameNumber}`.padStart(5, "0")}.${this.extension}`,
+      `${String(frameNumber).padStart(5, "0")}.${this.extension}`,
       frame,
     );
   }

@@ -56,13 +56,6 @@ class WebCodecsEncoder extends Encoder {
     ({ VideoSample } = await import("mediabunny"));
     const { AVC, VP } = await import("media-codecs");
 
-    const extensionToOutputFormat = {
-      mp4: Mp4OutputFormat,
-      mov: MovOutputFormat,
-      webm: WebMOutputFormat,
-      mkv: MkvOutputFormat,
-    };
-
     if (
       this.alpha === "keep" &&
       !WebCodecsEncoder.alphaCapableExtensions.includes(this.extension)
@@ -79,13 +72,22 @@ class WebCodecsEncoder extends Encoder {
         types: [
           {
             description: "Video File",
-            accept: { [this.mimeType.split(";")[0]]: [`.${this.extension}`] },
+            accept: {
+              [this.mimeType.split(";", 1)[0]]: [`.${this.extension}`],
+            },
           },
         ],
       });
 
       this.writableFileStream = await this.getWritableFileStream(fileHandle);
     }
+
+    const extensionToOutputFormat = {
+      mp4: Mp4OutputFormat,
+      mov: MovOutputFormat,
+      webm: WebMOutputFormat,
+      mkv: MkvOutputFormat,
+    };
 
     const format = new extensionToOutputFormat[this.extension]({
       fastStart: this.writableFileStream ? false : "in-memory",

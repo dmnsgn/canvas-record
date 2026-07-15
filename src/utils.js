@@ -37,7 +37,7 @@ const captureCanvasRegion = (canvas, x, y, width, height) => {
 };
 
 const formatDate = (date) =>
-  date.toISOString().replace(/:/g, "-").replace("T", "@").replace("Z", "");
+  date.toISOString().replaceAll(':', "-").replace("T", "@").replace("Z", "");
 
 const formatSeconds = (seconds) => {
   const minutes = Math.floor(seconds / 60);
@@ -55,9 +55,9 @@ const ensureExtension = (filename, extension) =>
     : `${filename}.${extension}`;
 
 class Deferred {
+  resolve = null;
+  reject = null;
   constructor() {
-    this.resolve = null;
-    this.reject = null;
     this.promise = new Promise((resolve, reject) => {
       this.resolve = resolve;
       this.reject = reject;

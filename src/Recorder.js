@@ -177,7 +177,7 @@ Speedup: x${(this.time / renderTime).toFixed(3)}`,
       this.target,
     );
 
-    if (this.target === "file-system" && !("showSaveFilePicker" in window)) {
+    if (this.target === "file-system" && !("showSaveFilePicker" in globalThis)) {
       isTargetSupported = false;
     }
 
@@ -320,7 +320,7 @@ Speedup: x${(this.time / renderTime).toFixed(3)}`,
         });
       }
       case "requestFrame": {
-        return undefined;
+        return;
       }
       case "imageData": {
         if (!this.is2D) {

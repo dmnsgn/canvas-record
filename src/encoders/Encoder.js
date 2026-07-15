@@ -56,8 +56,8 @@ class Encoder {
 
   // File System API
   async getDirectory() {
-    if (!("showDirectoryPicker" in window)) return;
-    return await window.showDirectoryPicker();
+    if (!("showDirectoryPicker" in globalThis)) return;
+    return await showDirectoryPicker();
   }
 
   async getDirectoryHandle(directory, name) {
@@ -69,12 +69,9 @@ class Encoder {
       return await this.directoryHandle.getFileHandle(name, { create: true });
     }
 
-    if (!("showSaveFilePicker" in window)) return;
+    if (!("showSaveFilePicker" in globalThis)) return;
 
-    return await window.showSaveFilePicker({
-      suggestedName: name,
-      ...options,
-    });
+    return await showSaveFilePicker({ suggestedName: name, ...options });
   }
 
   async getWritableFileStream(fileHandle) {
