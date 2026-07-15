@@ -90,6 +90,7 @@ class Recorder {
     webm: "video/webm",
     mp4: "video/mp4",
     gif: "image/gif",
+    zip: "application/zip",
   };
 
   set width(value) {
@@ -208,7 +209,7 @@ Speedup: x${(this.time / renderTime).toFixed(3)}`,
     if (!this.encoder) {
       if (this.extension === "gif") {
         this.encoder = new GIFEncoder(opts);
-      } else if (["png", "jpg"].includes(this.extension)) {
+      } else if (["png", "jpg", "zip"].includes(this.extension)) {
         this.encoder = new FrameEncoder(opts);
       } else {
         this.encoder = isWebCodecsSupported

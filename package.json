@@ -1,7 +1,7 @@
 {
   "name": "canvas-record",
   "version": "5.5.1",
-  "description": "Record a video in the browser or directly on the File System from a canvas region (2D/WebGL/WebGPU) as MP4, WebM, MKV, MOV, GIF, PNG/JPG Sequence using WebCodecs and wasm when available.",
+  "description": "Record a video in the browser or directly on the File System from a canvas region (2D/WebGL/WebGPU) as MP4, WebM, MKV, MOV, GIF, PNG/JPG Sequence (zipped or not) using WebCodecs and Wasm when available.",
   "keywords": [
     "canvas",
     "record",
@@ -56,6 +56,7 @@
     "@ffmpeg/util": "^0.12.1",
     "canvas-context": "^3.3.1",
     "canvas-screenshot": "^4.2.2",
+    "fflate": "^0.8.3",
     "gifenc": "^1.0.3",
     "h264-mp4-encoder": "^1.0.12",
     "media-codecs": "^3.0.0",
