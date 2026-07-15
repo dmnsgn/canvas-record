@@ -4,8 +4,7 @@ import createCanvasContext from "canvas-context";
  * Check for WebCodecs support on the current platform.
  * @type {boolean}
  */
-const isWebCodecsSupported =
-  typeof window !== "undefined" && typeof window.VideoEncoder === "function";
+const isWebCodecsSupported = typeof VideoEncoder === "function";
 
 let link;
 
