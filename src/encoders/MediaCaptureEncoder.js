@@ -54,9 +54,7 @@ class MediaCaptureEncoder extends Encoder {
       this.chunks = [];
       this.recorder.start();
     }
-    if (!this.frameRate !== 0) {
-      (this.stream.getVideoTracks?.()?.[0] || this.stream).requestFrame();
-    }
+    (this.stream.getVideoTracks?.()?.[0] || this.stream).requestFrame();
     if (this.flushFrequency && (number + 1) % this.flushFrequency === 0) {
       this.recorder.requestData();
     }
