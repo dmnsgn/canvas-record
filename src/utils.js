@@ -6,18 +6,15 @@ import createCanvasContext from "canvas-context";
  */
 const isWebCodecsSupported = typeof VideoEncoder === "function";
 
-let link;
-
 const downloadBlob = (filename, blobPart, mimeType) => {
-  link ||= document.createElement("a");
+  const link = document.createElement("a");
   link.download = filename;
 
   const blob = new Blob(blobPart, { type: mimeType });
   const url = URL.createObjectURL(blob);
   link.href = url;
 
-  const event = new MouseEvent("click");
-  link.dispatchEvent(event);
+  link.click();
 
   setTimeout(() => {
     URL.revokeObjectURL(url);

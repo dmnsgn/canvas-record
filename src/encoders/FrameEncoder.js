@@ -82,7 +82,10 @@ class FrameEncoder extends Encoder {
         await writable.close();
       } else {
         downloadBlob(frameFileName, [blob], this.mimeType);
-        // Ugh. Required otherwise frames are skipped
+        // Empirical workaround: browsers throttle/drop rapid successive
+        // programmatic downloads without this delay between them. No spec
+        // governs the threshold, so this value isn't guaranteed to hold
+        // across browsers/versions.
         await new Promise((r) => setTimeout(r, 100));
       }
     } catch (error) {
