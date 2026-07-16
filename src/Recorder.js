@@ -124,6 +124,7 @@ class Recorder {
   }
 
   get stats() {
+    // eslint-disable-next-line unicorn/no-useless-undefined -- getter-return requires an explicit value
     if (this.status !== RecorderStatus.Recording) return undefined;
 
     const renderTime = (Date.now() - this.startTime.getTime()) / 1000;
@@ -284,18 +285,16 @@ Speedup: x${(this.time / renderTime).toFixed(3)}`,
   async getFrame(frameMethod) {
     switch (frameMethod) {
       case "bitmap": {
-        return await createImageBitmap(
-          this.context.canvas,
-          ...(this.rect.length
-            ? [
-                this.x,
-                this.yFlipped,
-                this.width,
-                this.height,
-                this.frameOptions,
-              ]
-            : [this.frameOptions]),
-        );
+        return this.rect.length
+          ? await createImageBitmap(
+              this.context.canvas,
+              this.x,
+              this.yFlipped,
+              this.width,
+              this.height,
+              this.frameOptions,
+            )
+          : await createImageBitmap(this.context.canvas, this.frameOptions);
       }
       case "videoFrame": {
         let { canvas } = this.context;

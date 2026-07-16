@@ -8,7 +8,7 @@ import { toBlobURL } from "@ffmpeg/util";
 
 import { vert, frag } from "./shaders.js";
 
-const params = new URLSearchParams(window.location.search);
+const params = new URLSearchParams(location.search);
 
 const pixelRatio = devicePixelRatio;
 const width = 512;
@@ -27,17 +27,16 @@ const CONFIG = {
   rect: { x: 0, y: 0, z: drawWidth, w: drawHeight },
   contextType: "gl",
   transparent: false,
-  ...Object.fromEntries(params.entries()),
+  ...Object.fromEntries(params),
 };
 const pane = new Pane();
 pane.addBinding(CONFIG, "extension", {
   options: Array.from(
     new Set(
-      Object.values(Encoders)
-        .map((Encoder) => Encoder.supportedExtensions)
-        .flat(),
+      Object.values(Encoders).flatMap((Encoder) => Encoder.supportedExtensions),
     ),
-  ).map((value) => ({ text: value, value })),
+    (value) => ({ text: value, value }),
+  ),
 });
 pane.addBinding(CONFIG, "encoder", {
   options: Object.keys(Encoders)
@@ -47,11 +46,10 @@ pane.addBinding(CONFIG, "encoder", {
 pane.addBinding(CONFIG, "target", {
   options: Array.from(
     new Set(
-      Object.values(Encoders)
-        .map((Encoder) => Encoder.supportedTargets)
-        .flat(),
+      Object.values(Encoders).flatMap((Encoder) => Encoder.supportedTargets),
     ),
-  ).map((value) => ({ text: value, value })),
+    (value) => ({ text: value, value }),
+  ),
 });
 pane.addBinding(CONFIG, "duration", { step: 1, min: 1, max: 30 });
 pane.addBinding(CONFIG, "frameRate", { step: 1, min: 1, max: 60 });
@@ -73,9 +71,9 @@ const stopButton = pane.addButton({ title: "Stop Recording" });
 
 // Utils
 const getColor = (name) =>
-  `${window
-    .getComputedStyle(document.documentElement)
-    .getPropertyValue(`--color-${name}`)}`;
+  getComputedStyle(document.documentElement).getPropertyValue(
+    `--color-${name}`,
+  );
 const getPexColor = (name) => fromHex(createColor(), getColor(name));
 
 // Setup
@@ -87,7 +85,7 @@ const { context, canvas } = createCanvasContext("2d", {
 Object.assign(canvas.style, { width: `${width}px`, height: `${height}px` });
 
 const element = document.querySelector(".Canvases");
-element.appendChild(canvas);
+element.append(canvas);
 
 const ctx = createPexContext({
   width,
@@ -217,10 +215,7 @@ const initRecorder = async (encoderName) => {
     encoderOptions = {
       ...encoderOptions,
       // FFmpeg requires more effort...
-      coreURL: new URL(
-        "../web_modules/@ffmpeg/core.js",
-        import.meta.url,
-      ).toString(),
+      coreURL: new URL("../web_modules/@ffmpeg/core.js", import.meta.url).href,
       // ...and 32MB of wasm to be fetch so maybe let's keep fetching from unpkg.
       // wasmURL: new URL("./ffmpeg-core.wasm", import.meta.url).toString(),
 
@@ -258,7 +253,7 @@ const initRecorder = async (encoderName) => {
     name: `canvas-record-example-${encoderName || "default"}-${contextType}`,
     ...configOptions,
     rect: [rect.x, rect.y, rect.z, rect.w],
-    encoder: encoderName ? new Encoders[`${encoderName}`]() : null,
+    encoder: encoderName ? new Encoders[encoderName]() : null,
     debug: true,
     encoderOptions,
   });
@@ -273,7 +268,7 @@ const start = async (encoderName) => {
   await canvasRecorder.start({ filename: CONFIG.filename, initOnly: true });
 
   // Animate to start encoding
-  tick(canvasRecorder);
+  tick();
 };
 
 startButton.on("click", async () => {
@@ -284,7 +279,7 @@ stopButton.on("click", async () => {
   reset();
 });
 
-reset();
+await reset();
 render();
 
 // Test
