@@ -27,6 +27,8 @@ npm install canvas-record
 
 ## Usage
 
+See the [demo](https://dmnsgn.github.io/canvas-record/) and its [source](https://raw.githubusercontent.com/dmnsgn/canvas-record/refs/heads/main/example/index.js).
+
 ```js
 import { Recorder, RecorderStatus, Encoders } from "canvas-record";
 import createCanvasContext from "canvas-context";
