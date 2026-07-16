@@ -32,7 +32,7 @@ int scalePosition(float diff, float scale) {
 const float CHAR_AND_SPACING = float(CHAR_COLUMNS + CHAR_SPACING);
 
 bool drawNumber(float value, vec2 fragCoord, vec2 textPosition, float scale) {
-  uint digitCount = value == 0.0 ? 1u : uint(floor(log10(value))) + 1u;
+  uint digitCount = value == 0.0 ? 1u : uint(floor(log10(value) + 1e-5)) + 1u;
 
   int y = scalePosition(fragCoord.y - textPosition.y, scale);
   if (y >= CHAR_ROWS_INT || y < 0) return false;
