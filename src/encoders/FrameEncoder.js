@@ -1,6 +1,6 @@
 import Encoder from "./Encoder.js";
 
-import { downloadBlob, Deferred } from "../utils.js";
+import { downloadBlob } from "../utils.js";
 
 let Zip, ZipPassThrough;
 
@@ -23,7 +23,7 @@ class FrameEncoder extends Encoder {
     super.init(options);
 
     if (this.extension === "zip") {
-      this.q = new Deferred();
+      this.deferred = Promise.withResolvers();
 
       if (this.target === "file-system") {
         const fileHandle = await this.getFileHandle(this.filename, {
@@ -45,19 +45,21 @@ class FrameEncoder extends Encoder {
 
       this.zip = new Zip(async (error, chunk, final) => {
         if (error) {
-          this.q.reject(error);
+          this.deferred.reject(error);
           console.error(error);
         } else {
           if (this.writableFileStream) {
             this.writableFileStream.write(chunk);
             if (final) {
               await this.writableFileStream.close();
-              this.q.resolve();
+              this.deferred.resolve();
             }
           } else {
             this.chunks.push(chunk);
             if (final) {
-              this.q.resolve(new Blob(this.chunks, { type: this.mimeType }));
+              this.deferred.resolve(
+                new Blob(this.chunks, { type: this.mimeType }),
+              );
             }
           }
         }
@@ -109,7 +111,7 @@ class FrameEncoder extends Encoder {
     if (this.extension !== "zip") return;
 
     this.zip.end();
-    return await this.q.promise;
+    return await this.deferred.promise;
   }
 }
 

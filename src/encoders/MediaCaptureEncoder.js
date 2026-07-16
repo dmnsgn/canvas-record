@@ -1,7 +1,5 @@
 import Encoder from "./Encoder.js";
 
-import { Deferred } from "../utils.js";
-
 /**
  * @typedef {object} MediaCaptureEncoderOptions
  * @property {number} [flushFrequency=10]
@@ -45,7 +43,7 @@ class MediaCaptureEncoder extends Encoder {
     this.recorder.ondataavailable = (event) => {
       event.data.size && this.chunks.push(event.data);
 
-      if (this.q) this.q.resolve();
+      if (this.deferred) this.deferred.resolve();
     };
   }
 
@@ -61,12 +59,12 @@ class MediaCaptureEncoder extends Encoder {
   }
 
   async stop() {
-    this.q = new Deferred();
+    this.deferred = Promise.withResolvers();
 
     this.recorder.stop();
-    await this.q.promise;
+    await this.deferred.promise;
 
-    delete this.q;
+    delete this.deferred;
 
     return this.chunks;
   }

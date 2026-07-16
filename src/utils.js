@@ -51,18 +51,6 @@ const ensureExtension = (filename, extension) =>
     ? filename
     : `${filename}.${extension}`;
 
-class Deferred {
-  resolve = null;
-  reject = null;
-  constructor() {
-    this.promise = new Promise((resolve, reject) => {
-      this.resolve = resolve;
-      this.reject = reject;
-    });
-    Object.freeze(this);
-  }
-}
-
 /**
  * Estimate the bit rate of a video rounded to nearest megabit.
  * Based on "H.264 for the rest of us" by Kush Amerasinghe.
@@ -107,6 +95,5 @@ export {
   formatSeconds,
   nextMultiple,
   ensureExtension,
-  Deferred,
   estimateBitRate,
 };
