@@ -49,7 +49,7 @@ class FrameEncoder extends Encoder {
           console.error(error);
         } else {
           if (this.writableFileStream) {
-            this.writableFileStream.write(chunk);
+            await this.writableFileStream.write(chunk);
             if (final) {
               await this.writableFileStream.close();
               this.deferred.resolve();
