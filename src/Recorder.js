@@ -234,34 +234,40 @@ Speedup: x${(this.time / renderTime).toFixed(3)}`,
   async init({ filename } = {}) {
     this.#updateStatus(RecorderStatus.Initializing);
 
-    this.deltaTime = 1 / this.frameRate;
-    this.time = 0;
-    this.frame = 0;
-    this.frameTotal = this.duration * this.frameRate;
+    try {
+      this.deltaTime = 1 / this.frameRate;
+      this.time = 0;
+      this.frame = 0;
+      this.frameTotal = this.duration * this.frameRate;
 
-    const extension = this.getSupportedExtension();
-    const target = this.getSupportedTarget();
+      const extension = this.getSupportedExtension();
+      const target = this.getSupportedTarget();
 
-    this.startTime = new Date();
-    this.filename = filename
-      ? ensureExtension(filename, extension)
-      : this.getDefaultFileName(extension);
+      this.startTime = new Date();
+      this.filename = filename
+        ? ensureExtension(filename, extension)
+        : this.getDefaultFileName(extension);
 
-    await this.encoder.init({
-      encoderOptions: this.encoderOptions,
-      muxerOptions: this.muxerOptions,
-      canvas: this.context.canvas,
-      width: this.width,
-      height: this.height,
-      frameRate: this.frameRate,
-      extension,
-      target,
-      mimeType: Recorder.mimeTypes[extension],
-      filename: this.filename,
-      debug: this.debug,
-    });
+      await this.encoder.init({
+        encoderOptions: this.encoderOptions,
+        muxerOptions: this.muxerOptions,
+        canvas: this.context.canvas,
+        width: this.width,
+        height: this.height,
+        frameRate: this.frameRate,
+        extension,
+        target,
+        mimeType: Recorder.mimeTypes[extension],
+        filename: this.filename,
+        debug: this.debug,
+        onError: this.onError,
+      });
 
-    this.#updateStatus(RecorderStatus.Initialized);
+      this.#updateStatus(RecorderStatus.Initialized);
+    } catch (error) {
+      this.#updateStatus(RecorderStatus.Ready);
+      throw error;
+    }
   }
 
   /**
@@ -270,12 +276,6 @@ Speedup: x${(this.time / renderTime).toFixed(3)}`,
    */
   async start(startOptions = {}) {
     await this.init(startOptions);
-
-    // Ensure initializing worked
-    if (this.status !== RecorderStatus.Initialized) {
-      console.debug("canvas-record: recorder not initialized.");
-      return;
-    }
 
     this.#updateStatus(RecorderStatus.Recording);
 
