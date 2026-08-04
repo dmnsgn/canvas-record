@@ -58,8 +58,8 @@ const ensureExtension = (filename, extension) =>
  * @example
  * ```js
  * // Full HD (1080p)
- * const bitRate = estimateBitRate(1920, 1080, 30, "variable");
- * const bitRateMbps = bitRate * 1_000_000; // => 13 Mbps
+ * const bitRate = estimateBitRate(1920, 1080, 30, 4, "variable");
+ * const bitRateMbps = bitRate / 1_000_000; // => 13 Mbps
  * ```
  *
  * @param {number} width

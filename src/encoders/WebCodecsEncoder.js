@@ -129,7 +129,8 @@ class WebCodecsEncoder extends Encoder {
         this.width,
         this.height,
         this.frameRate,
-        this.encoderOptions.bitrateMode,
+        4,
+        this.encoderOptions?.bitrateMode,
       ),
       // bitrate: 1e6,
       // bitrateMode: "variable", // "constant"
