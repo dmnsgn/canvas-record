@@ -31,9 +31,10 @@ import {
 const RecorderStatus = Object.freeze({
   Ready: 0,
   Initializing: 1,
-  Recording: 2,
-  Stopping: 3,
-  Stopped: 4,
+  Initialized: 2,
+  Recording: 3,
+  Stopping: 4,
+  Stopped: 5,
 });
 
 /**
