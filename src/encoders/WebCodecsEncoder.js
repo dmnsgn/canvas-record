@@ -100,7 +100,7 @@ class WebCodecsEncoder extends Encoder {
         ? AVC.getCodec({ profile: "High", level: "5.2" }) // avc1.640034
         : VP.getCodec({ name: "VP9", profile: 0, level: "1", bitDepth: 8 })); // vp09.00.10.08
 
-    const [CCCC] = codec.split(".");
+    const [CCCC] = codec.split(".", 1);
 
     this.muxer = new Output({
       format,

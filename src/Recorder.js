@@ -179,7 +179,10 @@ Speedup: x${(this.time / renderTime).toFixed(3)}`,
       this.target,
     );
 
-    if (this.target === "file-system" && !("showSaveFilePicker" in globalThis)) {
+    if (
+      this.target === "file-system" &&
+      !("showSaveFilePicker" in globalThis)
+    ) {
       isTargetSupported = false;
     }
 

@@ -34,7 +34,7 @@ const captureCanvasRegion = (canvas, x, y, width, height) => {
 };
 
 const formatDate = (date) =>
-  date.toISOString().replaceAll(':', "-").replace("T", "@").replace("Z", "");
+  date.toISOString().replaceAll(":", "-").replace("T", "@").replace("Z", "");
 
 const formatSeconds = (seconds) => {
   const minutes = Math.floor(seconds / 60);
