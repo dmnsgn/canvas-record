@@ -264,8 +264,15 @@ const initRecorder = async (encoderName) => {
 const start = async (encoderName) => {
   await initRecorder(encoderName);
 
-  // Start and initialize
-  await canvasRecorder.start({ filename: CONFIG.filename, initOnly: true });
+  try {
+    // Start and initialize
+    await canvasRecorder.start({ filename: CONFIG.filename, initOnly: true });
+  } catch (error) {
+    // Fatal setup error (unsupported/invalid encoder config, cancelled file picker...).
+    detailElement.innerHTML = `Error: ${error.message}`;
+    console.error(error);
+    return;
+  }
 
   // Animate to start encoding
   tick();

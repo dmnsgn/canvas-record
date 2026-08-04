@@ -45,6 +45,16 @@ class MediaCaptureEncoder extends Encoder {
 
       if (this.deferred) this.deferred.resolve();
     };
+    // MediaRecorder reports runtime failures out-of-band. Reject a pending
+    // stop() so it can't hang waiting for data; otherwise surface it as a
+    // non-fatal error since there is no throw channel mid-capture.
+    this.recorder.onerror = (event) => {
+      if (this.deferred) {
+        this.deferred.reject(event.error);
+      } else {
+        this.onError(event.error);
+      }
+    };
   }
 
   async encode(frame, number) {

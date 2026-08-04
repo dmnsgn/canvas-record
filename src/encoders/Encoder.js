@@ -25,6 +25,12 @@ class Encoder {
   };
 
   /**
+   * A callback invoked with non-fatal errors (eg. a frame failing to write or a temporary file failing to clean up). Defaults to `console.error` and is overridden by the matching Recorder option.
+   * @type {(error: Error) => void}
+   */
+  onError = console.error;
+
+  /**
    * Base Encoder class. All Encoders extend it and its methods are called by the Recorder.
    * @class Encoder
    * @param {object} options

@@ -84,14 +84,14 @@ class FFmpegEncoder extends Encoder {
       try {
         this.encoder.deleteFile(getFrameName(i));
       } catch (error) {
-        console.error(error);
+        this.onError(error);
       }
     }
 
     try {
       this.encoder.deleteFile(outputFilename);
     } catch (error) {
-      console.error(error);
+      this.onError(error);
     }
 
     return data;

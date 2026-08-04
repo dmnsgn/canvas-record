@@ -44,6 +44,12 @@ const RecorderStatus = Object.freeze({
  */
 
 /**
+ * A callback to notify on a non-fatal error (eg. a single frame failing to write or a temporary file failing to clean up). Fatal setup errors reject `start()` instead.
+ * @callback onErrorCb
+ * @param {Error} error
+ */
+
+/**
  * @typedef {object} RecorderOptions Options for recording. All optional.
  * @property {string} [name=""] A name for the recorder, used as prefix for the default file name.
  * @property {number} [duration=10] The recording duration in seconds. If set to Infinity, `await canvasRecorder.stop()` needs to be called manually.
@@ -57,6 +63,7 @@ const RecorderStatus = Object.freeze({
  * @property {object} [muxerOptions] See "mediabunny" for a list of options.
  * @property {object} [frameOptions] Options for createImageBitmap(), VideoFrame, getImageData() or canvas-screenshot.
  * @property {onStatusChangeCb} [onStatusChange]
+ * @property {onErrorCb} [onError=console.error] Called with non-fatal errors that don't abort the recording. Fatal setup errors reject `start()` instead.
  */
 
 /**
@@ -79,6 +86,7 @@ class Recorder {
     extension: "mp4",
     target: "in-browser",
     onStatusChange: () => {},
+    onError: console.error,
   };
 
   /**

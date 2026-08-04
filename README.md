@@ -110,7 +110,6 @@ Note:
 
 Roadmap:
 
-- [ ] add debug logging
 - [ ] use WebWorkers for gifenc
 
 <!-- api-start -->

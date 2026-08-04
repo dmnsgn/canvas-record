@@ -46,7 +46,6 @@ class FrameEncoder extends Encoder {
       this.zip = new Zip(async (error, chunk, final) => {
         if (error) {
           this.deferred.reject(error);
-          console.error(error);
         } else {
           if (this.writableFileStream) {
             await this.writableFileStream.write(chunk);
@@ -91,7 +90,7 @@ class FrameEncoder extends Encoder {
         await new Promise((r) => setTimeout(r, 100));
       }
     } catch (error) {
-      console.error(error);
+      this.onError(error);
     }
   }
 
