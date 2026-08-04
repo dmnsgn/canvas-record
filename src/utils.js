@@ -21,11 +21,15 @@ const downloadBlob = (filename, blobPart, mimeType) => {
   }, 1);
 };
 
-let captureContext;
+const captureContexts = new WeakMap();
 const captureCanvasRegion = (canvas, x, y, width, height) => {
-  captureContext ||= createCanvasContext("2d", {
-    contextAttributes: { willReadFrequently: true },
-  }).context;
+  const captureContext = captureContexts.getOrInsertComputed(
+    canvas,
+    () =>
+      createCanvasContext("2d", {
+        contextAttributes: { willReadFrequently: true },
+      }).context,
+  );
   captureContext.canvas.width = width;
   captureContext.canvas.height = height;
 
