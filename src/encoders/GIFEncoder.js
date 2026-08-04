@@ -77,12 +77,6 @@ class GIFEncoder extends Encoder {
     this.encoder = GIFEnc();
   }
 
-  async start() {
-    await super.start();
-
-    this.step();
-  }
-
   encode(frame) {
     const palette = quantize(frame, this.maxColors, this.quantizeOptions);
 

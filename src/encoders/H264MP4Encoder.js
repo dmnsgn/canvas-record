@@ -51,12 +51,6 @@ class H264MP4Encoder extends Encoder {
     this.encoder.initialize();
   }
 
-  async start() {
-    await super.start();
-
-    this.step();
-  }
-
   encode(frame) {
     // TODO: addFrameYuv
     this.encoder.addFrameRgba(frame);
