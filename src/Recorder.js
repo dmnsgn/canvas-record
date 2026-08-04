@@ -327,9 +327,10 @@ Speedup: x${(this.time / renderTime).toFixed(3)}`,
         return;
       }
       case "imageData": {
+        const width = nextMultiple(this.width, 2);
+        const height = nextMultiple(this.height, 2);
+
         if (!this.is2D) {
-          const width = this.width;
-          const height = this.height;
           const length = width * height * 4;
           const pixels = new Uint8Array(length);
           const pixelsFlipped = new Uint8Array(length);
@@ -357,8 +358,8 @@ Speedup: x${(this.time / renderTime).toFixed(3)}`,
         return this.context.getImageData(
           this.x,
           this.yFlipped,
-          nextMultiple(this.width, 2),
-          nextMultiple(this.height, 2),
+          width,
+          height,
           this.frameOptions,
         ).data;
       }

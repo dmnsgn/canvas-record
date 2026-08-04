@@ -1,5 +1,7 @@
 import Encoder from "./Encoder.js";
 
+import { nextMultiple } from "../utils.js";
+
 let GIFEnc, quantize, applyPalette;
 
 /**
@@ -99,10 +101,16 @@ class GIFEncoder extends Encoder {
       }
     }
 
-    this.encoder.writeFrame(index, this.width, this.height, {
-      ...frameOptions,
-      ...this.encoderOptions,
-    });
+    // Match the even dimensions produced by the imageData frame method.
+    this.encoder.writeFrame(
+      index,
+      nextMultiple(this.width, 2),
+      nextMultiple(this.height, 2),
+      {
+        ...frameOptions,
+        ...this.encoderOptions,
+      },
+    );
   }
 
   stop() {
