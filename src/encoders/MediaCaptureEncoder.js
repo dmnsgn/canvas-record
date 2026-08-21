@@ -40,21 +40,21 @@ class MediaCaptureEncoder extends Encoder {
       // videoBitsPerSecond: 2500000, // 2.5 Mbit/sec
       ...this.encoderOptions,
     });
-    this.recorder.ondataavailable = (event) => {
+    this.recorder.addEventListener("dataavailable", (event) => {
       event.data.size && this.chunks.push(event.data);
 
       if (this.deferred) this.deferred.resolve();
-    };
+    });
     // MediaRecorder reports runtime failures out-of-band. Reject a pending
     // stop() so it can't hang waiting for data; otherwise surface it as a
     // non-fatal error since there is no throw channel mid-capture.
-    this.recorder.onerror = (event) => {
+    this.recorder.addEventListener("error", (event) => {
       if (this.deferred) {
         this.deferred.reject(event.error);
       } else {
         this.onError(event.error);
       }
-    };
+    });
   }
 
   async encode(frame, number) {
