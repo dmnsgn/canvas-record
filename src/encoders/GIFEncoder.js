@@ -59,7 +59,12 @@ class GIFEncoder extends Encoder {
   async init(options) {
     super.init(options);
 
-    ({ GIFEncoder: GIFEnc, quantize, applyPalette } = await import("gifenc"));
+    const gifenc = await import("gifenc");
+    ({
+      GIFEncoder: GIFEnc,
+      quantize,
+      applyPalette,
+    } = gifenc.GIFEncoder ? gifenc : gifenc.default);
 
     // GIF only supports 1-bit transparency: quantize with an alpha-aware format
     // and collapse alpha to fully transparent/opaque so a palette entry can be
