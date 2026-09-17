@@ -9,9 +9,13 @@ const getFrameName = (frame) => `${String(frame).padStart(5, "0")}.png`;
  * @property {FFmpegEncoderEncoderOptions} [encoderOptions={}]
  */
 /**
- * @typedef {import("@ffmpeg/ffmpeg/dist/esm/types.js").FFMessageLoadConfig & { alpha?: "keep" | "discard" }} FFmpegEncoderEncoderOptions
+ * @typedef {object} FFmpegEncoderEncoderOptions
+ * @property {string} [coreURL] `ffmpeg-core.js` URL.
+ * @property {string} [wasmURL] `ffmpeg-core.wasm` URL.
+ * @property {string} [workerURL] `ffmpeg-core.worker.js` URL.
+ * @property {"keep" | "discard"} [alpha] `alpha: "keep"` only compatible with a
+ *   `webm` extension (encoded as VP8 `yuva420p`).
  * @see [FFmpeg#load]{@link https://ffmpegwasm.netlify.app/docs/api/ffmpeg/classes/FFmpeg#load}
- * `alpha: "keep"` only compatible with a `webm` extension (encoded as VP8 `yuva420p`).
  */
 
 class FFmpegEncoder extends Encoder {
@@ -61,6 +65,7 @@ class FFmpegEncoder extends Encoder {
     this.frameCount++;
   }
 
+  /** @returns {Uint8Array | string} */
   async stop() {
     const outputFilename = `output.${this.extension}`;
     const isAlpha = this.alpha === "keep";

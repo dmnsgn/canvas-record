@@ -9,7 +9,8 @@
 class Encoder {
   /**
    * The extension the encoder supports
-   * @type {Extensions[]}
+   *
+   * @type {EncoderExtensions[]}
    */
   static supportedExtensions = ["mp4", "webm"];
   /**
@@ -26,7 +27,7 @@ class Encoder {
 
   /**
    * A callback invoked with non-fatal errors (eg. a frame failing to write or a temporary file failing to clean up). Defaults to `console.error` and is overridden by the matching Recorder option.
-   * @type {(error: Error) => void}
+   * @type {import("../Recorder.js").onErrorCb}
    */
   onError = console.error;
 
