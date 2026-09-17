@@ -1,10 +1,6 @@
-/**
- * @typedef {"mp4" | "webm" | "png" | "jpg" | "gif" | "mkv" | "mov"} EncoderExtensions
- */
+/** @typedef {"mp4" | "webm" | "png" | "jpg" | "gif" | "mkv" | "mov"} EncoderExtensions */
 
-/**
- * @typedef {"in-browser" | "file-system"} EncoderTarget
- */
+/** @typedef {"in-browser" | "file-system"} EncoderTarget */
 
 class Encoder {
   /**
@@ -15,6 +11,7 @@ class Encoder {
   static supportedExtensions = ["mp4", "webm"];
   /**
    * The target to download the file to.
+   *
    * @type {EncoderTarget[]}
    */
   static supportedTargets = ["in-browser"];
@@ -26,20 +23,24 @@ class Encoder {
   };
 
   /**
-   * A callback invoked with non-fatal errors (eg. a frame failing to write or a temporary file failing to clean up). Defaults to `console.error` and is overridden by the matching Recorder option.
+   * A callback invoked with non-fatal errors (eg. a frame failing to write or a
+   * temporary file failing to clean up). Defaults to `console.error` and is
+   * overridden by the matching Recorder option.
+   *
    * @type {import("../Recorder.js").onErrorCb}
    */
   onError = console.error;
 
   /**
-   * Base Encoder class. All Encoders extend it and its methods are called by the Recorder.
-   * @class Encoder
-   * @param {object} options
+   * Base Encoder class. All Encoders extend it and its methods are called by
+   * the Recorder.
    *
+   * @class Encoder
    * @property {EncoderTarget} target
    * @property {EncoderExtensions} extension
    * @property {object} [encoderOptions]
    * @property {object} [muxerOptions]
+   * @param {object} options
    */
   constructor(options) {
     Object.assign(this, options);
@@ -47,6 +48,7 @@ class Encoder {
 
   /**
    * Alpha for Encoders that support transparency.
+   *
    * @type {"keep" | "discard"}
    */
   get alpha() {
@@ -54,7 +56,9 @@ class Encoder {
   }
 
   /**
-   * Setup the encoder: load binary, instantiate muxers, setup file system target...
+   * Setup the encoder: load binary, instantiate muxers, setup file system
+   * target...
+   *
    * @param {object} options
    */
   async init(options) {
@@ -91,7 +95,9 @@ class Encoder {
 
   // Override methods
   /**
-   * Encode a single frame. The frameNumber is usually used for GOP (Group Of Pictures).
+   * Encode a single frame. The frameNumber is usually used for GOP (Group Of
+   * Pictures).
+   *
    * @param {number} frame
    * @param {number} [frameNumber]
    */
@@ -99,13 +105,12 @@ class Encoder {
 
   /**
    * Stop the encoding process and cleanup the temporary data.
-   * @returns {(ArrayBuffer|Uint8Array|Blob[]|undefined)}
+   *
+   * @returns {ArrayBuffer | Uint8Array | Blob[] | undefined}
    */
   async stop() {}
 
-  /**
-   * Clean up the encoder
-   */
+  /** Clean up the encoder */
   dispose() {}
 }
 

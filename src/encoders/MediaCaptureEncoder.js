@@ -20,9 +20,7 @@ class MediaCaptureEncoder extends Encoder {
     flushFrequency: 10,
   };
 
-  /**
-   * @param {MediaCaptureEncoderOptions} [options]
-   */
+  /** @param {MediaCaptureEncoderOptions} [options] */
   constructor(options) {
     super({ ...MediaCaptureEncoder.defaultOptions, ...options });
   }

@@ -2,6 +2,46 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+# [6.0.0](https://github.com/dmnsgn/canvas-record/compare/v5.5.1...v6.0.0) (2026-09-17)
+
+
+### Bug Fixes
+
+* add missing estimateBitRate argument ([73386e5](https://github.com/dmnsgn/canvas-record/commit/73386e52766548194994c456cf9ad37720c54bf3))
+* add missing Initialized to RecorderStatus enum ([cb32e68](https://github.com/dmnsgn/canvas-record/commit/cb32e6887ba26da8f66239817bd7d6521ad8c9be))
+* await zip chunk write in FrameEncoder ([222e48f](https://github.com/dmnsgn/canvas-record/commit/222e48fc768df54814a1b2018bfafe68ff4e1536))
+* remove unused start and step methods in encoders ([29d5e3f](https://github.com/dmnsgn/canvas-record/commit/29d5e3f3bd28627937f63af640d7b7e0c1290178))
+
+
+### Features
+
+* add alpha support for WebCodecs, FFmpeg and GIF encoders ([c93ac78](https://github.com/dmnsgn/canvas-record/commit/c93ac78fc065139dc8cc1a6f3490d90da40e76f7)), closes [#31](https://github.com/dmnsgn/canvas-record/issues/31)
+* add onError for non-fatal errors ([54c9839](https://github.com/dmnsgn/canvas-record/commit/54c98390be01e1db7a552833e925a61827a27363))
+* add support for zip in FrameEncoder ([5110922](https://github.com/dmnsgn/canvas-record/commit/5110922f6b1e918ee67895402759170b92431c8b))
+* don't rely on browser's download heuristic for filename extension ([b82e635](https://github.com/dmnsgn/canvas-record/commit/b82e6350e7b1e904fa4976b3356d7b006784ea86)), closes [#34](https://github.com/dmnsgn/canvas-record/issues/34)
+* enforce one capture context per source canvas when capturing a region ([dfd3513](https://github.com/dmnsgn/canvas-record/commit/dfd35132a3f44730c89c0d62952ef5a1a5006b7c))
+* handle gifenc.default import ([cbc93e1](https://github.com/dmnsgn/canvas-record/commit/cbc93e1a8a97710dc28fe2395b77da518bb7bba2))
+* improve downloadBlob for more FrameEncoder safety ([44a405e](https://github.com/dmnsgn/canvas-record/commit/44a405e0b456a3e319becfde61493de777be1cab))
+* make all encoders dependencies dynamic imports ([f4f9b36](https://github.com/dmnsgn/canvas-record/commit/f4f9b3607e4c990c6a858d7cb2c065d851d7db9d))
+* make h264-mp4-encoder a dynamic import ([361d1cf](https://github.com/dmnsgn/canvas-record/commit/361d1cf9e9881cfcdd5bd21a030c1d5ba4e44033))
+* normalize imageData in getFrame for even dimensions ([f35f580](https://github.com/dmnsgn/canvas-record/commit/f35f58010e95aaad8f66e4f1e437706015b2470d))
+* reset RecorderStatus on fatal error in init ([31a5cf7](https://github.com/dmnsgn/canvas-record/commit/31a5cf7dfe2d76c8dd98f7a677bb518452dc3b61))
+
+
+### Performance Improvements
+
+* simplify isWebCodecsSupported ([4496f5d](https://github.com/dmnsgn/canvas-record/commit/4496f5d4b8a7abc9f39449f3e99d5f747e93b1a5))
+
+
+### BREAKING CHANGES
+
+* GIF now correctly multiple of two
+* use mediabunny VideoSampleSource instead of WebCodecs VideoEncoder
+* automatically assign gifenc alpha options
+* change pixelformat for FFmpeg based on alpha
+
+
+
 ## [5.5.1](https://github.com/dmnsgn/canvas-record/compare/v5.5.0...v5.5.1) (2026-03-06)
 
 

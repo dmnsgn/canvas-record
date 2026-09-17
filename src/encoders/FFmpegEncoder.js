@@ -23,9 +23,7 @@ class FFmpegEncoder extends Encoder {
 
   static alphaCapableExtensions = ["webm"];
 
-  /**
-   * @param {FFmpegEncoderOptions} [options]
-   */
+  /** @param {FFmpegEncoderOptions} [options] */
   constructor(options) {
     super(options);
   }

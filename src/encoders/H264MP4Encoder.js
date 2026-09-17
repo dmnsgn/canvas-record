@@ -20,9 +20,7 @@ class H264MP4Encoder extends Encoder {
     frameMethod: "imageData",
   };
 
-  /**
-   * @param {H264MP4EncoderOptions} [options]
-   */
+  /** @param {H264MP4EncoderOptions} [options] */
   constructor(options) {
     super({ ...H264MP4Encoder.defaultOptions, ...options });
   }

@@ -17,16 +17,18 @@ import {
 
 /**
  * Enum for recorder status
- * @readonly
- * @enum {number}
  *
  * @example
+ *
  * ```js
  * // Check recorder status before continuing
  * if (canvasRecorder.status !== RecorderStatus.Stopped) {
  *   rAFId = requestAnimationFrame(() => tick());
  * }
  * ```
+ *
+ * @readonly
+ * @enum {number}
  */
 const RecorderStatus = Object.freeze({
   Ready: 0,
@@ -38,43 +40,65 @@ const RecorderStatus = Object.freeze({
 });
 
 /**
- * A callback to notify on the status change. To compare with RecorderStatus enum values.
+ * A callback to notify on the status change. To compare with RecorderStatus
+ * enum values.
+ *
  * @callback onStatusChangeCb
- * @param {number} RecorderStatus the status
+ * @param {number} RecorderStatus The status
  */
 
 /**
- * A callback to notify on a non-fatal error (eg. a single frame failing to write or a temporary file failing to clean up). Fatal setup errors reject `start()` instead.
+ * A callback to notify on a non-fatal error (eg. a single frame failing to
+ * write or a temporary file failing to clean up). Fatal setup errors reject
+ * `start()` instead.
+ *
  * @callback onErrorCb
  * @param {Error} error
  */
 
 /**
  * @typedef {object} RecorderOptions Options for recording. All optional.
- * @property {string} [name=""] A name for the recorder, used as prefix for the default file name.
- * @property {number} [duration=10] The recording duration in seconds. If set to Infinity, `await canvasRecorder.stop()` needs to be called manually.
- * @property {number} [frameRate=30] The frame rate in frame per seconds. Use `await canvasRecorder.step();` to go to the next frame.
- * @property {Array} [rect=[]] Sub-region [x, y, width, height] of the canvas to encode from bottom left. Default to 0, 0 and context.drawingBufferWidth/drawingBufferHeight or canvas.width/height.
- * @property {boolean} [download=true] Automatically download the recording when duration is reached or when `await canvasRecorder.stop()` is manually called.
- * @property {string} [extension="mp4"] Default file extension: infers which Encoder is selected.
- * @property {string} [target="in-browser"] Default writing target: in-browser or file-system when available.
- * @property {object} [encoder] A specific encoder. Default encoder based on options.extension: GIF > WebCodecs > H264MP4.
- * @property {object} [encoderOptions] See `src/encoders` or individual packages for a list of options.
+ * @property {string} [name=""] A name for the recorder, used as prefix for the
+ *   default file name.
+ * @property {number} [duration=10] The recording duration in seconds. If set to
+ *   Infinity, `await canvasRecorder.stop()` needs to be called manually.
+ * @property {number} [frameRate=30] The frame rate in frame per seconds. Use
+ *   `await canvasRecorder.step();` to go to the next frame.
+ * @property {Array} [rect=[]] Sub-region [x, y, width, height] of the canvas to
+ *   encode from bottom left. Default to 0, 0 and
+ *   context.drawingBufferWidth/drawingBufferHeight or canvas.width/height.
+ * @property {boolean} [download=true] Automatically download the recording when
+ *   duration is reached or when `await canvasRecorder.stop()` is manually
+ *   called.
+ * @property {string} [extension="mp4"] Default file extension: infers which
+ *   Encoder is selected.
+ * @property {string} [target="in-browser"] Default writing target: in-browser
+ *   or file-system when available.
+ * @property {object} [encoder] A specific encoder. Default encoder based on
+ *   options.extension: GIF > WebCodecs > H264MP4.
+ * @property {object} [encoderOptions] See `src/encoders` or individual packages
+ *   for a list of options.
  * @property {object} [muxerOptions] See "mediabunny" for a list of options.
- * @property {object} [frameOptions] Options for createImageBitmap(), VideoFrame, getImageData() or canvas-screenshot.
+ * @property {object} [frameOptions] Options for createImageBitmap(),
+ *   VideoFrame, getImageData() or canvas-screenshot.
  * @property {onStatusChangeCb} [onStatusChange]
- * @property {onErrorCb} [onError=console.error] Called with non-fatal errors that don't abort the recording. Fatal setup errors reject `start()` instead.
+ * @property {onErrorCb} [onError=console.error] Called with non-fatal errors
+ *   that don't abort the recording. Fatal setup errors reject `start()`
+ *   instead.
  */
 
 /**
- * @typedef {object} RecorderStartOptions Options for recording initialisation. All optional.
+ * @typedef {object} RecorderStartOptions Options for recording initialisation.
+ *   All optional.
  * @property {string} [filename] Overwrite the file name completely.
- * @property {boolean} [initOnly] Only initialised the recorder and don't call the first await recorder.step().
+ * @property {boolean} [initOnly] Only initialised the recorder and don't call
+ *   the first await recorder.step().
  */
 
 class Recorder {
   /**
    * Sensible defaults for recording so that the recorder "just works".
+   *
    * @type {RecorderOptions}
    */
   static defaultOptions = {
@@ -91,6 +115,7 @@ class Recorder {
 
   /**
    * A mapping of extension to their mime types
+   *
    * @type {object}
    */
   static mimeTypes = {
@@ -209,6 +234,7 @@ Speedup: x${(this.time / renderTime).toFixed(3)}`,
 
   /**
    * Create a Recorder instance
+   *
    * @class Recorder
    * @param {RenderingContext} context
    * @param {RecorderOptions} [options={}]
@@ -236,7 +262,9 @@ Speedup: x${(this.time / renderTime).toFixed(3)}`,
   }
 
   /**
-   * Sets up the recorder internals and the encoder depending on supported features.
+   * Sets up the recorder internals and the encoder depending on supported
+   * features.
+   *
    * @private
    */
   async init({ filename } = {}) {
@@ -279,7 +307,9 @@ Speedup: x${(this.time / renderTime).toFixed(3)}`,
   }
 
   /**
-   * Start the recording by initializing and optionally calling the initial step.
+   * Start the recording by initializing and optionally calling the initial
+   * step.
+   *
    * @param {RecorderStartOptions} [startOptions={}]
    */
   async start(startOptions = {}) {
@@ -292,6 +322,7 @@ Speedup: x${(this.time / renderTime).toFixed(3)}`,
 
   /**
    * Convert the context into something encodable (bitmap, blob, buffer...)
+   *
    * @private
    */
   async getFrame(frameMethod) {
@@ -392,8 +423,8 @@ Speedup: x${(this.time / renderTime).toFixed(3)}`,
   }
 
   /**
-   * Encode a frame and increment the time and the playhead.
-   * Calls `await canvasRecorder.stop()` when duration is reached.
+   * Encode a frame and increment the time and the playhead. Calls `await
+   * canvasRecorder.stop()` when duration is reached.
    */
   async step() {
     if (
@@ -412,10 +443,11 @@ Speedup: x${(this.time / renderTime).toFixed(3)}`,
   }
 
   /**
-   * Stop the recording and return the recorded buffer.
-   * If options.download is set, automatically start downloading the resulting file.
-   * Is called when duration is reached or manually.
-   * @returns {(ArrayBuffer|Uint8Array|Blob[]|undefined)}
+   * Stop the recording and return the recorded buffer. If options.download is
+   * set, automatically start downloading the resulting file. Is called when
+   * duration is reached or manually.
+   *
+   * @returns {ArrayBuffer | Uint8Array | Blob[] | undefined}
    */
   async stop() {
     if (this.status !== RecorderStatus.Recording) return;
@@ -436,9 +468,7 @@ Speedup: x${(this.time / renderTime).toFixed(3)}`,
     return buffer;
   }
 
-  /**
-   * Clean up the recorder and encoder
-   */
+  /** Clean up the recorder and encoder */
   async dispose() {
     await this.encoder.dispose();
   }

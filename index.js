@@ -1,5 +1,6 @@
 /**
  * Re-export Recorder, RecorderStatus, all Encoders and utils.
+ *
  * @module canvas-record
  */
 

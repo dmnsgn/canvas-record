@@ -157,8 +157,8 @@ Roadmap:
 
 <dl>
 <dt><a href="#estimateBitRate">estimateBitRate(width, height, frameRate, motionRank, bitrateMode)</a> ⇒ <code>number</code></dt>
-<dd><p>Estimate the bit rate of a video rounded to nearest megabit.
-Based on &quot;H.264 for the rest of us&quot; by Kush Amerasinghe.</p>
+<dd><p>Estimate the bit rate of a video rounded to nearest megabit. Based on &quot;H.264
+for the rest of us&quot; by Kush Amerasinghe.</p>
 </dd>
 </dl>
 
@@ -166,13 +166,20 @@ Based on &quot;H.264 for the rest of us&quot; by Kush Amerasinghe.</p>
 
 <dl>
 <dt><a href="#onStatusChangeCb">onStatusChangeCb</a> : <code>function</code></dt>
-<dd><p>A callback to notify on the status change. To compare with RecorderStatus enum values.</p>
+<dd><p>A callback to notify on the status change. To compare with RecorderStatus
+enum values.</p>
+</dd>
+<dt><a href="#onErrorCb">onErrorCb</a> : <code>function</code></dt>
+<dd><p>A callback to notify on a non-fatal error (eg. a single frame failing to
+write or a temporary file failing to clean up). Fatal setup errors reject
+<code>start()</code> instead.</p>
 </dd>
 <dt><a href="#RecorderOptions">RecorderOptions</a> : <code>object</code></dt>
 <dd><p>Options for recording. All optional.</p>
 </dd>
 <dt><a href="#RecorderStartOptions">RecorderStartOptions</a> : <code>object</code></dt>
-<dd><p>Options for recording initialisation. All optional.</p>
+<dd><p>Options for recording initialisation.
+  All optional.</p>
 </dd>
 <dt><a href="#EncoderExtensions">EncoderExtensions</a> : <code>&quot;mp4&quot;</code> | <code>&quot;webm&quot;</code> | <code>&quot;png&quot;</code> | <code>&quot;jpg&quot;</code> | <code>&quot;gif&quot;</code> | <code>&quot;mkv&quot;</code> | <code>&quot;mov&quot;</code></dt>
 <dd></dd>
@@ -180,7 +187,7 @@ Based on &quot;H.264 for the rest of us&quot; by Kush Amerasinghe.</p>
 <dd></dd>
 <dt><a href="#FFmpegEncoderOptions">FFmpegEncoderOptions</a> : <code>object</code></dt>
 <dd></dd>
-<dt><a href="#FFmpegEncoderEncoderOptions">FFmpegEncoderEncoderOptions</a> : <code>module:@ffmpeg/ffmpeg/dist/esm/types.js~FFMessageLoadConfig</code></dt>
+<dt><a href="#FFmpegEncoderEncoderOptions">FFmpegEncoderEncoderOptions</a> : <code>object</code></dt>
 <dd></dd>
 <dt><a href="#GIFEncoderOptions">GIFEncoderOptions</a> : <code>object</code></dt>
 <dd></dd>
@@ -258,7 +265,8 @@ A mapping of extension to their mime types
 
 ### recorder.start([startOptions])
 
-Start the recording by initializing and optionally calling the initial step.
+Start the recording by initializing and optionally calling the initial
+step.
 
 **Kind**: instance method of [<code>Recorder</code>](#Recorder)
 
@@ -270,17 +278,17 @@ Start the recording by initializing and optionally calling the initial step.
 
 ### recorder.step()
 
-Encode a frame and increment the time and the playhead.
-Calls `await canvasRecorder.stop()` when duration is reached.
+Encode a frame and increment the time and the playhead. Calls `await
+canvasRecorder.stop()` when duration is reached.
 
 **Kind**: instance method of [<code>Recorder</code>](#Recorder)
 <a name="Recorder+stop"></a>
 
 ### recorder.stop() ⇒ <code>ArrayBuffer</code> \| <code>Uint8Array</code> \| <code>Array.&lt;Blob&gt;</code> \| <code>undefined</code>
 
-Stop the recording and return the recorded buffer.
-If options.download is set, automatically start downloading the resulting file.
-Is called when duration is reached or manually.
+Stop the recording and return the recorded buffer. If options.download is
+set, automatically start downloading the resulting file. Is called when
+duration is reached or manually.
 
 **Kind**: instance method of [<code>Recorder</code>](#Recorder)
 <a name="Recorder+dispose"></a>
@@ -306,8 +314,10 @@ Clean up the recorder and encoder
 
 - [Encoder](#Encoder)
   - [new Encoder(options)](#new_Encoder_new)
-  - [.supportedExtensions](#Encoder+supportedExtensions) : <code>Array.&lt;Extensions&gt;</code>
+  - [.supportedExtensions](#Encoder+supportedExtensions) : [<code>Array.&lt;EncoderExtensions&gt;</code>](#EncoderExtensions)
   - [.supportedTargets](#Encoder+supportedTargets) : [<code>Array.&lt;EncoderTarget&gt;</code>](#EncoderTarget)
+  - [.onError](#Encoder+onError) : [<code>onErrorCb</code>](#onErrorCb)
+  - [.alpha](#Encoder+alpha) : <code>&quot;keep&quot;</code> \| <code>&quot;discard&quot;</code>
   - [.init(options)](#Encoder+init)
   - [.encode(frame, [frameNumber])](#Encoder+encode)
   - [.stop()](#Encoder+stop) ⇒ <code>ArrayBuffer</code> \| <code>Uint8Array</code> \| <code>Array.&lt;Blob&gt;</code> \| <code>undefined</code>
@@ -317,7 +327,8 @@ Clean up the recorder and encoder
 
 ### new Encoder(options)
 
-Base Encoder class. All Encoders extend it and its methods are called by the Recorder.
+Base Encoder class. All Encoders extend it and its methods are called by
+the Recorder.
 
 | Param   | Type                |
 | ------- | ------------------- |
@@ -325,7 +336,7 @@ Base Encoder class. All Encoders extend it and its methods are called by the Rec
 
 <a name="Encoder+supportedExtensions"></a>
 
-### encoder.supportedExtensions : <code>Array.&lt;Extensions&gt;</code>
+### encoder.supportedExtensions : [<code>Array.&lt;EncoderExtensions&gt;</code>](#EncoderExtensions)
 
 The extension the encoder supports
 
@@ -337,11 +348,28 @@ The extension the encoder supports
 The target to download the file to.
 
 **Kind**: instance property of [<code>Encoder</code>](#Encoder)
+<a name="Encoder+onError"></a>
+
+### encoder.onError : [<code>onErrorCb</code>](#onErrorCb)
+
+A callback invoked with non-fatal errors (eg. a frame failing to write or a
+temporary file failing to clean up). Defaults to `console.error` and is
+overridden by the matching Recorder option.
+
+**Kind**: instance property of [<code>Encoder</code>](#Encoder)
+<a name="Encoder+alpha"></a>
+
+### encoder.alpha : <code>&quot;keep&quot;</code> \| <code>&quot;discard&quot;</code>
+
+Alpha for Encoders that support transparency.
+
+**Kind**: instance property of [<code>Encoder</code>](#Encoder)
 <a name="Encoder+init"></a>
 
 ### encoder.init(options)
 
-Setup the encoder: load binary, instantiate muxers, setup file system target...
+Setup the encoder: load binary, instantiate muxers, setup file system
+target...
 
 **Kind**: instance method of [<code>Encoder</code>](#Encoder)
 
@@ -353,7 +381,8 @@ Setup the encoder: load binary, instantiate muxers, setup file system target...
 
 ### encoder.encode(frame, [frameNumber])
 
-Encode a single frame. The frameNumber is usually used for GOP (Group Of Pictures).
+Encode a single frame. The frameNumber is usually used for GOP (Group Of
+Pictures).
 
 **Kind**: instance method of [<code>Encoder</code>](#Encoder)
 
@@ -381,6 +410,11 @@ Clean up the encoder
 ## FFmpegEncoder
 
 **Kind**: global class
+
+- [FFmpegEncoder](#FFmpegEncoder)
+  - [new FFmpegEncoder([options])](#new_FFmpegEncoder_new)
+  - [.stop()](#FFmpegEncoder+stop) ⇒ <code>Uint8Array</code> \| <code>string</code>
+
 <a name="new_FFmpegEncoder_new"></a>
 
 ### new FFmpegEncoder([options])
@@ -389,6 +423,11 @@ Clean up the encoder
 | --------- | ---------------------------------------------------------- |
 | [options] | [<code>FFmpegEncoderOptions</code>](#FFmpegEncoderOptions) |
 
+<a name="FFmpegEncoder+stop"></a>
+
+### fFmpegEncoder.stop() ⇒ <code>Uint8Array</code> \| <code>string</code>
+
+**Kind**: instance method of [<code>FFmpegEncoder</code>](#FFmpegEncoder)
 <a name="FrameEncoder"></a>
 
 ## FrameEncoder
@@ -487,8 +526,8 @@ Check for WebCodecs support on the current platform.
 
 ## estimateBitRate(width, height, frameRate, motionRank, bitrateMode) ⇒ <code>number</code>
 
-Estimate the bit rate of a video rounded to nearest megabit.
-Based on "H.264 for the rest of us" by Kush Amerasinghe.
+Estimate the bit rate of a video rounded to nearest megabit. Based on "H.264
+for the rest of us" by Kush Amerasinghe.
 
 **Kind**: global function
 **Returns**: <code>number</code> - A bitrate value in bits per second
@@ -505,21 +544,36 @@ Based on "H.264 for the rest of us" by Kush Amerasinghe.
 
 ```js
 // Full HD (1080p)
-const bitRate = estimateBitRate(1920, 1080, 30, "variable");
-const bitRateMbps = bitRate * 1_000_000; // => 13 Mbps
+const bitRate = estimateBitRate(1920, 1080, 30, 4, "variable");
+const bitRateMbps = bitRate / 1_000_000; // => 13 Mbps
 ```
 
 <a name="onStatusChangeCb"></a>
 
 ## onStatusChangeCb : <code>function</code>
 
-A callback to notify on the status change. To compare with RecorderStatus enum values.
+A callback to notify on the status change. To compare with RecorderStatus
+enum values.
 
 **Kind**: global typedef
 
 | Param          | Type                | Description |
 | -------------- | ------------------- | ----------- |
-| RecorderStatus | <code>number</code> | the status  |
+| RecorderStatus | <code>number</code> | The status  |
+
+<a name="onErrorCb"></a>
+
+## onErrorCb : <code>function</code>
+
+A callback to notify on a non-fatal error (eg. a single frame failing to
+write or a temporary file failing to clean up). Fatal setup errors reject
+`start()` instead.
+
+**Kind**: global typedef
+
+| Param | Type               |
+| ----- | ------------------ |
+| error | <code>Error</code> |
 
 <a name="RecorderOptions"></a>
 
@@ -544,12 +598,14 @@ Options for recording. All optional.
 | [muxerOptions]   | <code>object</code>                                |                                                   | See "mediabunny" for a list of options.                                                                                                                               |
 | [frameOptions]   | <code>object</code>                                |                                                   | Options for createImageBitmap(), VideoFrame, getImageData() or canvas-screenshot.                                                                                     |
 | [onStatusChange] | [<code>onStatusChangeCb</code>](#onStatusChangeCb) |                                                   |                                                                                                                                                                       |
+| [onError]        | [<code>onErrorCb</code>](#onErrorCb)               | <code>console.error</code>                        | Called with non-fatal errors that don't abort the recording. Fatal setup errors reject `start()` instead.                                                             |
 
 <a name="RecorderStartOptions"></a>
 
 ## RecorderStartOptions : <code>object</code>
 
-Options for recording initialisation. All optional.
+Options for recording initialisation.
+All optional.
 
 **Kind**: global typedef
 **Properties**
@@ -582,10 +638,19 @@ Options for recording initialisation. All optional.
 
 <a name="FFmpegEncoderEncoderOptions"></a>
 
-## FFmpegEncoderEncoderOptions : <code>module:@ffmpeg/ffmpeg/dist/esm/types.js~FFMessageLoadConfig</code>
+## FFmpegEncoderEncoderOptions : <code>object</code>
 
 **Kind**: global typedef
 **See**: [FFmpeg#load](https://ffmpegwasm.netlify.app/docs/api/ffmpeg/classes/FFmpeg#load)
+**Properties**
+
+| Name        | Type                                                              | Description                                                                          |
+| ----------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| [coreURL]   | <code>string</code>                                               | `ffmpeg-core.js` URL.                                                                |
+| [wasmURL]   | <code>string</code>                                               | `ffmpeg-core.wasm` URL.                                                              |
+| [workerURL] | <code>string</code>                                               | `ffmpeg-core.worker.js` URL.                                                         |
+| [alpha]     | <code>&quot;keep&quot;</code> \| <code>&quot;discard&quot;</code> | `alpha: "keep"` only compatible with a `webm` extension (encoded as VP8 `yuva420p`). |
+
 <a name="GIFEncoderOptions"></a>
 
 ## GIFEncoderOptions : <code>object</code>
@@ -623,15 +688,16 @@ Options for recording initialisation. All optional.
 **See**: [WriteFrameOpts](https://github.com/mattdesl/gifenc#gifwriteframeindex-width-height-opts--)
 **Properties**
 
-| Name               | Type                                            | Default            |
-| ------------------ | ----------------------------------------------- | ------------------ |
-| [palette]          | <code>Array.&lt;Array.&lt;number&gt;&gt;</code> |                    |
-| [first]            | <code>boolean</code>                            | <code>false</code> |
-| [transparent]      | <code>boolean</code>                            | <code>0</code>     |
-| [transparentIndex] | <code>number</code>                             | <code>0</code>     |
-| [delay]            | <code>number</code>                             | <code>0</code>     |
-| [repeat]           | <code>number</code>                             | <code>0</code>     |
-| [dispose]          | <code>number</code>                             | <code>-1</code>    |
+| Name               | Type                                                              | Default            | Description                                                                                                      |
+| ------------------ | ----------------------------------------------------------------- | ------------------ | ---------------------------------------------------------------------------------------------------------------- |
+| [palette]          | <code>Array.&lt;Array.&lt;number&gt;&gt;</code>                   |                    |                                                                                                                  |
+| [first]            | <code>boolean</code>                                              | <code>false</code> |                                                                                                                  |
+| [transparent]      | <code>boolean</code>                                              | <code>0</code>     |                                                                                                                  |
+| [transparentIndex] | <code>number</code>                                               | <code>0</code>     |                                                                                                                  |
+| [delay]            | <code>number</code>                                               | <code>0</code>     |                                                                                                                  |
+| [repeat]           | <code>number</code>                                               | <code>0</code>     |                                                                                                                  |
+| [dispose]          | <code>number</code>                                               | <code>-1</code>    |                                                                                                                  |
+| [alpha]            | <code>&quot;keep&quot;</code> \| <code>&quot;discard&quot;</code> |                    | `alpha: "keep"` enables GIF's 1-bit transparency (auto-configures quantization and per-frame transparent index). |
 
 <a name="H264MP4EncoderOptions"></a>
 
@@ -695,11 +761,10 @@ Options for recording initialisation. All optional.
 **Kind**: global typedef
 **Properties**
 
-| Name              | Type                                                                           | Default         |
-| ----------------- | ------------------------------------------------------------------------------ | --------------- |
-| [groupOfPictures] | <code>number</code>                                                            | <code>20</code> |
-| [flushFrequency]  | <code>number</code>                                                            | <code>10</code> |
-| [encoderOptions]  | [<code>WebCodecsEncoderEncoderOptions</code>](#WebCodecsEncoderEncoderOptions) | <code>{}</code> |
+| Name              | Type                                                                           | Default         | Description                                                  |
+| ----------------- | ------------------------------------------------------------------------------ | --------------- | ------------------------------------------------------------ |
+| [groupOfPictures] | <code>number</code>                                                            | <code>20</code> | Used to derive mediabunny's `keyFrameInterval` (in seconds). |
+| [encoderOptions]  | [<code>WebCodecsEncoderEncoderOptions</code>](#WebCodecsEncoderEncoderOptions) | <code>{}</code> |                                                              |
 
 <a name="WebCodecsEncoderEncoderOptions"></a>
 
@@ -707,6 +772,7 @@ Options for recording initialisation. All optional.
 
 **Kind**: global typedef
 **See**: [VideoEncoder.configure](https://developer.mozilla.org/en-US/docs/Web/API/VideoEncoder/configure#config)
+`alpha: "keep"` only compatible with a `webm`/`mkv` extension
 <a name="WebCodecsMuxerOptions"></a>
 
 ## WebCodecsMuxerOptions : <code>module:mediabunny~OutputOptions</code>

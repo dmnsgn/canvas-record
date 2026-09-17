@@ -5,7 +5,8 @@ let VideoSample;
 
 /**
  * @typedef {object} WebCodecsEncoderOptions
- * @property {number} [groupOfPictures=20] Used to derive mediabunny's `keyFrameInterval` (in seconds).
+ * @property {number} [groupOfPictures=20] Used to derive mediabunny's
+ *   `keyFrameInterval` (in seconds).
  * @property {WebCodecsEncoderEncoderOptions} [encoderOptions={}]
  */
 /**
@@ -33,9 +34,7 @@ class WebCodecsEncoder extends Encoder {
     return "videoFrame";
   }
 
-  /**
-   * @param {WebCodecsEncoderOptions} [options]
-   */
+  /** @param {WebCodecsEncoderOptions} [options] */
   constructor(options) {
     super({ ...WebCodecsEncoder.defaultOptions, ...options });
   }

@@ -115,7 +115,7 @@ var YA = (() => {
         A || $(I);
       }
       function l(A, I, g) {
-        for (var B = I + g, Q = ""; !(I >= B); ) {
+        for (var B = I + g, Q = ""; !(I >= B);) {
           var i = A[I++];
           if (!i) return Q;
           if (!(i & 128)) {
@@ -353,7 +353,7 @@ var YA = (() => {
         return (Q().catch(y), {});
       }
       function sA(A) {
-        for (; A.length > 0; ) A.shift()(C);
+        for (; A.length > 0;) A.shift()(C);
       }
       function nI(A) {
         for (var I = [], g = 0; g < A.length; g++) {
@@ -405,7 +405,7 @@ var YA = (() => {
       }
       var pA = void 0;
       function H(A) {
-        for (var I = "", g = A; u[g]; ) I += pA[u[g++]];
+        for (var I = "", g = A; u[g];) I += pA[u[g++]];
         return I;
       }
       var AA = {},
@@ -635,7 +635,7 @@ var YA = (() => {
         return Q instanceof Object ? Q : B;
       }
       function XA(A) {
-        for (; A.length; ) {
+        for (; A.length;) {
           var I = A.pop(),
             g = A.pop();
           g(I);
@@ -1043,7 +1043,7 @@ return ret;
         return A.length * 2;
       }
       function TI(A, I) {
-        for (var g = 0, B = ""; !(g >= I / 4); ) {
+        for (var g = 0, B = ""; !(g >= I / 4);) {
           var Q = j[(A + g * 4) >> 2];
           if (Q == 0) break;
           if ((++g, Q >= 65536)) {
@@ -1511,7 +1511,7 @@ function fg(c) {
     s = [],
     y = c.byteLength,
     e = new Uint8Array(c);
-  for (; C + 4 < y; ) {
+  for (; C + 4 < y;) {
     let a = e[C];
     if (
       ((a = (a << 8) + e[C + 1]),

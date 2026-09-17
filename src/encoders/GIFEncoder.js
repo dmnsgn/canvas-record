@@ -29,7 +29,9 @@ let GIFEnc, quantize, applyPalette;
  * @property {number} [delay=0]
  * @property {number} [repeat=0]
  * @property {number} [dispose=-1]
- * @property {"keep" | "discard"} [alpha] `alpha: "keep"` enables GIF's 1-bit transparency (auto-configures quantization and per-frame transparent index).
+ * @property {"keep" | "discard"} [alpha] `alpha: "keep"` enables GIF's 1-bit
+ *   transparency (auto-configures quantization and per-frame transparent
+ *   index).
  * @see [WriteFrameOpts]{@link https://github.com/mattdesl/gifenc#gifwriteframeindex-width-height-opts--}
  */
 
@@ -49,9 +51,7 @@ class GIFEncoder extends Encoder {
     },
   };
 
-  /**
-   * @param {GIFEncoderOptions} [options]
-   */
+  /** @param {GIFEncoderOptions} [options] */
   constructor(options) {
     super({ ...GIFEncoder.defaultOptions, ...options });
   }

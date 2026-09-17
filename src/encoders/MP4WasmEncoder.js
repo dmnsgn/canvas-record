@@ -28,9 +28,7 @@ class MP4WasmEncoder extends Encoder {
     return "bitmap";
   }
 
-  /**
-   * @param {MP4WasmEncoderOptions} [options]
-   */
+  /** @param {MP4WasmEncoderOptions} [options] */
   constructor(options) {
     super({ ...MP4WasmEncoder.defaultOptions, ...options });
   }
