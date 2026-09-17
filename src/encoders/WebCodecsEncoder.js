@@ -1,36 +1,17 @@
-import {
-  Output,
-  Mp4OutputFormat,
-  MovOutputFormat,
-  WebMOutputFormat,
-  MkvOutputFormat,
-  BufferTarget,
-  EncodedVideoPacketSource,
-  EncodedPacket,
-  StreamTarget,
-} from "mediabunny";
-
-import { AVC, VP } from "media-codecs";
-
 import Encoder from "./Encoder.js";
 import { estimateBitRate } from "../utils.js";
 
-const extensionToOutputFormat = {
-  mp4: Mp4OutputFormat,
-  mov: MovOutputFormat,
-  webm: WebMOutputFormat,
-  mkv: MkvOutputFormat,
-};
+let VideoSample;
 
 /**
  * @typedef {object} WebCodecsEncoderOptions
- * @property {number} [groupOfPictures=20]
- * @property {number} [flushFrequency=10]
+ * @property {number} [groupOfPictures=20] Used to derive mediabunny's `keyFrameInterval` (in seconds).
  * @property {WebCodecsEncoderEncoderOptions} [encoderOptions={}]
  */
 /**
  * @typedef {VideoEncoderConfig} WebCodecsEncoderEncoderOptions
  * @see [VideoEncoder.configure]{@link https://developer.mozilla.org/en-US/docs/Web/API/VideoEncoder/configure#config}
+ * `alpha: "keep"` only compatible with a `webm`/`mkv` extension
  */
 /**
  * @typedef {import("mediabunny").OutputOptions} WebCodecsMuxerOptions
@@ -41,10 +22,11 @@ class WebCodecsEncoder extends Encoder {
   static supportedExtensions = ["mp4", "mov", "webm", "mkv"];
   static supportedTargets = ["in-browser", "file-system"];
 
+  static alphaCapableExtensions = ["webm", "mkv"];
+
   static defaultOptions = {
     extension: WebCodecsEncoder.supportedExtensions[0],
     groupOfPictures: 20,
-    flushFrequency: 10,
   };
 
   get frameMethod() {
@@ -61,18 +43,51 @@ class WebCodecsEncoder extends Encoder {
   async init(options) {
     super.init(options);
 
+    const {
+      Output,
+      Mp4OutputFormat,
+      MovOutputFormat,
+      WebMOutputFormat,
+      MkvOutputFormat,
+      BufferTarget,
+      VideoSampleSource,
+      StreamTarget,
+    } = await import("mediabunny");
+    ({ VideoSample } = await import("mediabunny"));
+    const { AVC, VP } = await import("media-codecs");
+
+    if (
+      this.alpha === "keep" &&
+      !WebCodecsEncoder.alphaCapableExtensions.includes(this.extension)
+    ) {
+      throw new Error(
+        `canvas-record: Transparency (alpha: "keep") requires one of the following extensions: ${WebCodecsEncoder.alphaCapableExtensions
+          .map((extension) => `"${extension}"`)
+          .join(", ")}. Got "${this.extension}".`,
+      );
+    }
+
     if (this.target === "file-system") {
       const fileHandle = await this.getFileHandle(this.filename, {
         types: [
           {
             description: "Video File",
-            accept: { [this.mimeType.split(";")[0]]: [`.${this.extension}`] },
+            accept: {
+              [this.mimeType.split(";", 1)[0]]: [`.${this.extension}`],
+            },
           },
         ],
       });
 
       this.writableFileStream = await this.getWritableFileStream(fileHandle);
     }
+
+    const extensionToOutputFormat = {
+      mp4: Mp4OutputFormat,
+      mov: MovOutputFormat,
+      webm: WebMOutputFormat,
+      mkv: MkvOutputFormat,
+    };
 
     const format = new extensionToOutputFormat[this.extension]({
       fastStart: this.writableFileStream ? false : "in-memory",
@@ -85,7 +100,7 @@ class WebCodecsEncoder extends Encoder {
         ? AVC.getCodec({ profile: "High", level: "5.2" }) // avc1.640034
         : VP.getCodec({ name: "VP9", profile: 0, level: "1", bitDepth: 8 })); // vp09.00.10.08
 
-    const [CCCC] = codec.split(".");
+    const [CCCC] = codec.split(".", 1);
 
     this.muxer = new Output({
       format,
@@ -95,7 +110,7 @@ class WebCodecsEncoder extends Encoder {
       ...this.muxerOptions,
     });
 
-    let videoCodec; // Supported: "avc" | "hevc" | "av1" | "vp8" | "vp9" | "av1"
+    let videoCodec; // Supported: "avc" | "hevc" | "av1" | "vp8" | "vp9"
     // https://www.w3.org/TR/webcodecs-hevc-codec-registration/#fully-qualified-codec-strings
     if (CCCC.startsWith("hev") || CCCC.startsWith("hvc")) {
       videoCodec = "hevc";
@@ -109,66 +124,45 @@ class WebCodecsEncoder extends Encoder {
       ).name.toLowerCase();
     }
 
-    const videoSource = new EncodedVideoPacketSource(videoCodec);
-    this.muxer.addVideoTrack(videoSource, { frameRate: this.frameRate });
-
-    this.encoder = new VideoEncoder({
-      output: async (chunk, meta) => {
-        await videoSource.add(EncodedPacket.fromEncodedChunk(chunk), meta);
-      },
-      error: (e) => console.error(e),
-    });
-
-    const config = {
-      width: this.width,
-      height: this.height,
-      framerate: this.frameRate,
+    const videoSource = new VideoSampleSource({
       bitrate: estimateBitRate(
         this.width,
         this.height,
         this.frameRate,
-        this.encoderOptions.bitrateMode,
+        4,
+        this.encoderOptions?.bitrateMode,
       ),
       // bitrate: 1e6,
-      // alpha: "discard", // "keep"
       // bitrateMode: "variable", // "constant"
       // latencyMode: "quality", // "realtime" (faster encoding)
       // hardwareAcceleration: "no-preference", // "prefer-hardware" "prefer-software"
+      keyFrameInterval: this.groupOfPictures / this.frameRate,
+      alpha: this.alpha,
       ...this.encoderOptions,
-      codec,
-    };
-
-    this.encoder.configure(config);
-    if (!(await VideoEncoder.isConfigSupported(config)).supported) {
-      throw new Error(
-        `canvas-record: Unsupported VideoEncoder config\n ${JSON.stringify(
-          config,
-        )}`,
-      );
-    }
+      codec: videoCodec,
+      fullCodecString: codec,
+    });
+    this.muxer.addVideoTrack(videoSource, { frameRate: this.frameRate });
+    this.videoSource = videoSource;
   }
 
   async encode(frame, number) {
     if (number === 0) await this.muxer.start();
 
-    const keyFrame = number % this.groupOfPictures === 0;
-
-    this.encoder.encode(frame, { keyFrame });
-    frame.close();
-    if (this.flushFrequency && (number + 1) % this.flushFrequency === 0) {
-      await this.encoder.flush();
-    }
+    const sample = new VideoSample(frame);
+    await this.videoSource.add(sample);
+    sample.close();
   }
 
   async stop() {
-    await this.encoder.flush();
     await this.muxer.finalize();
 
     return this.muxer.target?.buffer;
   }
 
   async dispose() {
-    this.encoder = null;
+    this.videoSource = null;
+    this.muxer = null;
   }
 }
 

@@ -10,14 +10,14 @@
 [![linted with eslint](https://img.shields.io/badge/linted_with-ES_Lint-4B32C3.svg?logo=eslint)](https://github.com/eslint/eslint)
 [![license](https://img.shields.io/github/license/dmnsgn/canvas-record)](https://github.com/dmnsgn/canvas-record/blob/main/LICENSE.md)
 
-Record a video in the browser or directly on the File System from a canvas region (2D/WebGL/WebGPU) as MP4, WebM, MKV, MOV, GIF, PNG/JPG Sequence using WebCodecs and Wasm when available.
+Record a video in the browser or directly on the File System from a canvas region (2D/WebGL/WebGPU) as MP4, WebM, MKV, MOV, GIF, PNG/JPG Sequence (zipped or not) using WebCodecs and Wasm when available.
 
 [![paypal](https://img.shields.io/badge/donate-paypal-informational?logo=paypal)](https://paypal.me/dmnsgn)
 [![coinbase](https://img.shields.io/badge/donate-coinbase-informational?logo=coinbase)](https://commerce.coinbase.com/checkout/56cbdf28-e323-48d8-9c98-7019e72c97f3)
 [![twitter](https://img.shields.io/twitter/follow/dmnsgn?style=social)](https://twitter.com/dmnsgn)
 [![bluesky](https://img.shields.io/badge/-blue?logo=bluesky&label=Follow%20%40dmnsgn.me&style=social)](https://bsky.app/profile/dmnsgn.me)
 
-![](https://raw.githubusercontent.com/dmnsgn/canvas-record/main/screenshot.gif)
+[![canvas-record screenshot](https://raw.githubusercontent.com/dmnsgn/canvas-record/main/screenshot.gif)](https://dmnsgn.github.io/canvas-record/)
 
 ## Installation
 
@@ -26,6 +26,8 @@ npm install canvas-record
 ```
 
 ## Usage
+
+See the [demo](https://dmnsgn.github.io/canvas-record/) and its [source](https://github.com/dmnsgn/canvas-record/blob/main/example/index.js).
 
 ```js
 import { Recorder, RecorderStatus, Encoders } from "canvas-record";
@@ -89,15 +91,15 @@ tick(canvasRecorder);
 
 Encoder comparison:
 
-| Encoder        | Extension                      | Required Web API   | WASM                  | Speed    |
-| -------------- | ------------------------------ | ------------------ | --------------------- | -------- |
-| `WebCodecs`    | `mp4` / `webm` / `mkv` / `mov` | WebCodecs          | ❌                    | Fast     |
-| `MP4Wasm`      | `mp4`                          | WebCodecs          | ✅ (embed)            | Fast     |
-| `H264MP4`      | `mp4`                          |                    | ✅ (embed)            | Medium   |
-| `FFmpeg`       | `mp4` / `webm`                 | SharedArrayBuffer  | ✅ (need binary path) | Slow     |
-| `GIF`          | `gif`                          | WebWorkers (wip)   | ❌                    | Fast     |
-| `Frame`        | `png` / `jpg`                  | File System Access | ❌                    | Fast     |
-| `MediaCapture` | `mkv` / `webm`                 | MediaStream        | ❌                    | Realtime |
+| Encoder        | Extension                      | Used Web API                    | WASM                  | Speed    |
+| -------------- | ------------------------------ | ------------------------------- | --------------------- | -------- |
+| `WebCodecs`    | `mp4` / `webm` / `mkv` / `mov` | WebCodecs, [File System Access] | ❌                    | Fast     |
+| `MP4Wasm`      | `mp4`                          | WebCodecs                       | ✅ (embed)            | Fast     |
+| `H264MP4`      | `mp4`                          |                                 | ✅ (embed)            | Medium   |
+| `FFmpeg`       | `mp4` / `webm`                 | SharedArrayBuffer               | ✅ (need binary path) | Slow     |
+| `GIF`          | `gif`                          | WebWorkers (wip)                | ❌                    | Fast     |
+| `Frame`        | `png` / `jpg` / `zip`          | [File System Access]            | ❌                    | Fast     |
+| `MediaCapture` | `mkv` / `webm`                 | MediaStream                     | ❌                    | Realtime |
 
 Note:
 
@@ -108,7 +110,6 @@ Note:
 
 Roadmap:
 
-- [ ] add debug logging
 - [ ] use WebWorkers for gifenc
 
 <!-- api-start -->

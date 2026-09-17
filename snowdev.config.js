@@ -20,16 +20,28 @@ try {
 }
 
 export default {
+  rolldown: {
+    input: {
+      experimental: {
+        attachDebugInfo: "none",
+        resolveNewUrlToAsset: false,
+      },
+    },
+  },
   eslint: [
     {
       ignores: ["src/encoders/mp4.embed.js"],
     },
   ],
+  resolve: {
+    exclude: ["**/fflate/esm/index.mjs"],
+  },
   dependencies: [
     "@ffmpeg/ffmpeg",
     "@ffmpeg/core",
     "@ffmpeg/core-mt",
     "@ffmpeg/util",
+    "fflate",
     "canvas-screenshot",
     "gifenc",
     "h264-mp4-encoder",
@@ -40,6 +52,7 @@ export default {
     "es-module-shims",
     "pex-context",
     "pex-color",
+    "pex-gpu",
     "tweakpane",
   ],
   // resolve: {

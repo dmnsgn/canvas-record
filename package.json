@@ -1,7 +1,7 @@
 {
   "name": "canvas-record",
   "version": "5.5.1",
-  "description": "Record a video in the browser or directly on the File System from a canvas region (2D/WebGL/WebGPU) as MP4, WebM, MKV, MOV, GIF, PNG/JPG Sequence using WebCodecs and wasm when available.",
+  "description": "Record a video in the browser or directly on the File System from a canvas region (2D/WebGL/WebGPU) as MP4, WebM, MKV, MOV, GIF, PNG/JPG Sequence (zipped or not) using WebCodecs and Wasm when available.",
   "keywords": [
     "canvas",
     "record",
@@ -44,8 +44,8 @@
       "default": "./index.js"
     }
   },
-  "main": "index.js",
-  "types": "types/index.d.ts",
+  "main": "./index.js",
+  "types": "./types/index.d.ts",
   "scripts": {
     "build": "npx snowdev build",
     "deps": "npx snowdev install",
@@ -56,18 +56,20 @@
     "@ffmpeg/util": "^0.12.1",
     "canvas-context": "^3.3.1",
     "canvas-screenshot": "^4.2.2",
+    "fflate": "^0.8.3",
     "gifenc": "^1.0.3",
     "h264-mp4-encoder": "^1.0.12",
-    "media-codecs": "^2.0.2",
-    "mediabunny": "^1.24.2"
+    "media-codecs": "^3.0.0",
+    "mediabunny": "^1.58.0"
   },
   "devDependencies": {
-    "@web/rollup-plugin-import-meta-assets": "^2.3.0",
-    "es-module-shims": "^2.6.2",
+    "@web/rollup-plugin-import-meta-assets": "^3.0.0",
+    "es-module-shims": "^2.8.4",
     "mp4-wasm": "^1.0.6",
     "pex-color": "^2.3.0",
-    "pex-context": "^4.0.0",
-    "rollup": "^4.52.5",
+    "pex-context": "^4.1.0",
+    "pex-gpu": "^0.0.3",
+    "rollup": "^4.63.3",
     "tweakpane": "^4.0.5"
   },
   "optionalDependencies": {
@@ -76,7 +78,8 @@
   },
   "engines": {
     "node": ">=22.0.0",
-    "npm": ">=10.5.1",
-    "snowdev": ">=2.6.x"
-  }
+    "snowdev": ">=3.0.0-alpha.1",
+    "npm": ">=10.5.1"
+  },
+  "packageManager": "npm@10.5.1"
 }

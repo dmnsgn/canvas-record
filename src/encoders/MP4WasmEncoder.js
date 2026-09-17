@@ -1,5 +1,3 @@
-import MP4Wasm from "./mp4.embed.js"; // mp4-wasm
-
 import Encoder from "./Encoder.js";
 import { estimateBitRate } from "../utils.js";
 
@@ -40,7 +38,10 @@ class MP4WasmEncoder extends Encoder {
   async init(options) {
     super.init(options);
 
-    mp4wasm ||= await MP4Wasm(); // { wasmBinary }
+    if (!mp4wasm) {
+      const { default: MP4Wasm } = await import("./mp4.embed.js"); // mp4-wasm
+      mp4wasm = await MP4Wasm(); // { wasmBinary }
+    }
 
     this.encoder = mp4wasm.createWebCodecsEncoder({
       // codec: "avc1.420034", // Baseline 4.2
@@ -54,7 +55,8 @@ class MP4WasmEncoder extends Encoder {
           this.width,
           this.height,
           this.frameRate,
-          this.encoderOptions.bitrateMode,
+          4,
+          this.encoderOptions?.bitrateMode,
         ),
         ...this.encoderOptions,
       },

@@ -1,4 +1,3 @@
-import HME from "h264-mp4-encoder";
 import Encoder from "./Encoder.js";
 
 import { estimateBitRate, nextMultiple } from "../utils.js";
@@ -31,6 +30,7 @@ class H264MP4Encoder extends Encoder {
   async init(options) {
     super.init(options);
 
+    const { default: HME } = await import("h264-mp4-encoder");
     this.encoder = await HME.createH264MP4Encoder();
 
     Object.assign(this.encoder, {
@@ -49,12 +49,6 @@ class H264MP4Encoder extends Encoder {
     });
 
     this.encoder.initialize();
-  }
-
-  async start() {
-    await super.start();
-
-    this.step();
   }
 
   encode(frame) {

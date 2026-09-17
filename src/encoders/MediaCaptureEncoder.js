@@ -1,7 +1,5 @@
 import Encoder from "./Encoder.js";
 
-import { Deferred } from "../utils.js";
-
 /**
  * @typedef {object} MediaCaptureEncoderOptions
  * @property {number} [flushFrequency=10]
@@ -42,11 +40,21 @@ class MediaCaptureEncoder extends Encoder {
       // videoBitsPerSecond: 2500000, // 2.5 Mbit/sec
       ...this.encoderOptions,
     });
-    this.recorder.ondataavailable = (event) => {
+    this.recorder.addEventListener("dataavailable", (event) => {
       event.data.size && this.chunks.push(event.data);
 
-      if (this.q) this.q.resolve();
-    };
+      if (this.deferred) this.deferred.resolve();
+    });
+    // MediaRecorder reports runtime failures out-of-band. Reject a pending
+    // stop() so it can't hang waiting for data; otherwise surface it as a
+    // non-fatal error since there is no throw channel mid-capture.
+    this.recorder.addEventListener("error", (event) => {
+      if (this.deferred) {
+        this.deferred.reject(event.error);
+      } else {
+        this.onError(event.error);
+      }
+    });
   }
 
   async encode(frame, number) {
@@ -54,21 +62,19 @@ class MediaCaptureEncoder extends Encoder {
       this.chunks = [];
       this.recorder.start();
     }
-    if (!this.frameRate !== 0) {
-      (this.stream.getVideoTracks?.()?.[0] || this.stream).requestFrame();
-    }
+    (this.stream.getVideoTracks?.()?.[0] || this.stream).requestFrame();
     if (this.flushFrequency && (number + 1) % this.flushFrequency === 0) {
       this.recorder.requestData();
     }
   }
 
   async stop() {
-    this.q = new Deferred();
+    this.deferred = Promise.withResolvers();
 
     this.recorder.stop();
-    await this.q.promise;
+    await this.deferred.promise;
 
-    delete this.q;
+    delete this.deferred;
 
     return this.chunks;
   }

@@ -25,6 +25,12 @@ class Encoder {
   };
 
   /**
+   * A callback invoked with non-fatal errors (eg. a frame failing to write or a temporary file failing to clean up). Defaults to `console.error` and is overridden by the matching Recorder option.
+   * @type {(error: Error) => void}
+   */
+  onError = console.error;
+
+  /**
    * Base Encoder class. All Encoders extend it and its methods are called by the Recorder.
    * @class Encoder
    * @param {object} options
@@ -39,6 +45,14 @@ class Encoder {
   }
 
   /**
+   * Alpha for Encoders that support transparency.
+   * @type {"keep" | "discard"}
+   */
+  get alpha() {
+    return this.encoderOptions?.alpha === "keep" ? "keep" : "discard";
+  }
+
+  /**
    * Setup the encoder: load binary, instantiate muxers, setup file system target...
    * @param {object} options
    */
@@ -48,8 +62,8 @@ class Encoder {
 
   // File System API
   async getDirectory() {
-    if (!("showDirectoryPicker" in window)) return;
-    return await window.showDirectoryPicker();
+    if (!("showDirectoryPicker" in globalThis)) return;
+    return await showDirectoryPicker();
   }
 
   async getDirectoryHandle(directory, name) {
@@ -61,12 +75,9 @@ class Encoder {
       return await this.directoryHandle.getFileHandle(name, { create: true });
     }
 
-    if (!("showSaveFilePicker" in window)) return;
+    if (!("showSaveFilePicker" in globalThis)) return;
 
-    return await window.showSaveFilePicker({
-      suggestedName: name,
-      ...options,
-    });
+    return await showSaveFilePicker({ suggestedName: name, ...options });
   }
 
   async getWritableFileStream(fileHandle) {

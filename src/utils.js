@@ -4,32 +4,32 @@ import createCanvasContext from "canvas-context";
  * Check for WebCodecs support on the current platform.
  * @type {boolean}
  */
-const isWebCodecsSupported =
-  typeof window !== "undefined" && typeof window.VideoEncoder === "function";
-
-let link;
+const isWebCodecsSupported = typeof VideoEncoder === "function";
 
 const downloadBlob = (filename, blobPart, mimeType) => {
-  link ||= document.createElement("a");
+  const link = document.createElement("a");
   link.download = filename;
 
   const blob = new Blob(blobPart, { type: mimeType });
   const url = URL.createObjectURL(blob);
   link.href = url;
 
-  const event = new MouseEvent("click");
-  link.dispatchEvent(event);
+  link.click();
 
   setTimeout(() => {
     URL.revokeObjectURL(url);
   }, 1);
 };
 
-let captureContext;
+const captureContexts = new WeakMap();
 const captureCanvasRegion = (canvas, x, y, width, height) => {
-  captureContext ||= createCanvasContext("2d", {
-    contextAttributes: { willReadFrequently: true },
-  }).context;
+  const captureContext = captureContexts.getOrInsertComputed(
+    canvas,
+    () =>
+      createCanvasContext("2d", {
+        contextAttributes: { willReadFrequently: true },
+      }).context,
+  );
   captureContext.canvas.width = width;
   captureContext.canvas.height = height;
 
@@ -38,7 +38,7 @@ const captureCanvasRegion = (canvas, x, y, width, height) => {
 };
 
 const formatDate = (date) =>
-  date.toISOString().replace(/:/g, "-").replace("T", "@").replace("Z", "");
+  date.toISOString().replaceAll(":", "-").replace("T", "@").replace("Z", "");
 
 const formatSeconds = (seconds) => {
   const minutes = Math.floor(seconds / 60);
@@ -50,17 +50,10 @@ const formatSeconds = (seconds) => {
 
 const nextMultiple = (x, n = 2) => Math.ceil(x / n) * n;
 
-class Deferred {
-  constructor() {
-    this.resolve = null;
-    this.reject = null;
-    this.promise = new Promise((resolve, reject) => {
-      this.resolve = resolve;
-      this.reject = reject;
-    });
-    Object.freeze(this);
-  }
-}
+const ensureExtension = (filename, extension) =>
+  filename.toLowerCase().endsWith(`.${extension.toLowerCase()}`)
+    ? filename
+    : `${filename}.${extension}`;
 
 /**
  * Estimate the bit rate of a video rounded to nearest megabit.
@@ -69,8 +62,8 @@ class Deferred {
  * @example
  * ```js
  * // Full HD (1080p)
- * const bitRate = estimateBitRate(1920, 1080, 30, "variable");
- * const bitRateMbps = bitRate * 1_000_000; // => 13 Mbps
+ * const bitRate = estimateBitRate(1920, 1080, 30, 4, "variable");
+ * const bitRateMbps = bitRate / 1_000_000; // => 13 Mbps
  * ```
  *
  * @param {number} width
@@ -105,6 +98,6 @@ export {
   formatDate,
   formatSeconds,
   nextMultiple,
-  Deferred,
+  ensureExtension,
   estimateBitRate,
 };

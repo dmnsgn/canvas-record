@@ -12,6 +12,7 @@ import {
   isWebCodecsSupported,
   nextMultiple,
   captureCanvasRegion,
+  ensureExtension,
 } from "./utils.js";
 
 /**
@@ -30,15 +31,22 @@ import {
 const RecorderStatus = Object.freeze({
   Ready: 0,
   Initializing: 1,
-  Recording: 2,
-  Stopping: 3,
-  Stopped: 4,
+  Initialized: 2,
+  Recording: 3,
+  Stopping: 4,
+  Stopped: 5,
 });
 
 /**
  * A callback to notify on the status change. To compare with RecorderStatus enum values.
  * @callback onStatusChangeCb
  * @param {number} RecorderStatus the status
+ */
+
+/**
+ * A callback to notify on a non-fatal error (eg. a single frame failing to write or a temporary file failing to clean up). Fatal setup errors reject `start()` instead.
+ * @callback onErrorCb
+ * @param {Error} error
  */
 
 /**
@@ -55,6 +63,7 @@ const RecorderStatus = Object.freeze({
  * @property {object} [muxerOptions] See "mediabunny" for a list of options.
  * @property {object} [frameOptions] Options for createImageBitmap(), VideoFrame, getImageData() or canvas-screenshot.
  * @property {onStatusChangeCb} [onStatusChange]
+ * @property {onErrorCb} [onError=console.error] Called with non-fatal errors that don't abort the recording. Fatal setup errors reject `start()` instead.
  */
 
 /**
@@ -77,6 +86,7 @@ class Recorder {
     extension: "mp4",
     target: "in-browser",
     onStatusChange: () => {},
+    onError: console.error,
   };
 
   /**
@@ -89,6 +99,7 @@ class Recorder {
     webm: "video/webm",
     mp4: "video/mp4",
     gif: "image/gif",
+    zip: "application/zip",
   };
 
   set width(value) {
@@ -122,6 +133,7 @@ class Recorder {
   }
 
   get stats() {
+    // eslint-disable-next-line unicorn/no-useless-undefined -- getter-return requires an explicit value
     if (this.status !== RecorderStatus.Recording) return undefined;
 
     const renderTime = (Date.now() - this.startTime.getTime()) / 1000;
@@ -176,7 +188,10 @@ Speedup: x${(this.time / renderTime).toFixed(3)}`,
       this.target,
     );
 
-    if (this.target === "file-system" && !("showSaveFilePicker" in window)) {
+    if (
+      this.target === "file-system" &&
+      !("showSaveFilePicker" in globalThis)
+    ) {
       isTargetSupported = false;
     }
 
@@ -207,7 +222,7 @@ Speedup: x${(this.time / renderTime).toFixed(3)}`,
     if (!this.encoder) {
       if (this.extension === "gif") {
         this.encoder = new GIFEncoder(opts);
-      } else if (["png", "jpg"].includes(this.extension)) {
+      } else if (["png", "jpg", "zip"].includes(this.extension)) {
         this.encoder = new FrameEncoder(opts);
       } else {
         this.encoder = isWebCodecsSupported
@@ -227,32 +242,40 @@ Speedup: x${(this.time / renderTime).toFixed(3)}`,
   async init({ filename } = {}) {
     this.#updateStatus(RecorderStatus.Initializing);
 
-    this.deltaTime = 1 / this.frameRate;
-    this.time = 0;
-    this.frame = 0;
-    this.frameTotal = this.duration * this.frameRate;
+    try {
+      this.deltaTime = 1 / this.frameRate;
+      this.time = 0;
+      this.frame = 0;
+      this.frameTotal = this.duration * this.frameRate;
 
-    const extension = this.getSupportedExtension();
-    const target = this.getSupportedTarget();
+      const extension = this.getSupportedExtension();
+      const target = this.getSupportedTarget();
 
-    this.startTime = new Date();
-    this.filename = filename || this.getDefaultFileName(extension);
+      this.startTime = new Date();
+      this.filename = filename
+        ? ensureExtension(filename, extension)
+        : this.getDefaultFileName(extension);
 
-    await this.encoder.init({
-      encoderOptions: this.encoderOptions,
-      muxerOptions: this.muxerOptions,
-      canvas: this.context.canvas,
-      width: this.width,
-      height: this.height,
-      frameRate: this.frameRate,
-      extension,
-      target,
-      mimeType: Recorder.mimeTypes[extension],
-      filename: this.filename,
-      debug: this.debug,
-    });
+      await this.encoder.init({
+        encoderOptions: this.encoderOptions,
+        muxerOptions: this.muxerOptions,
+        canvas: this.context.canvas,
+        width: this.width,
+        height: this.height,
+        frameRate: this.frameRate,
+        extension,
+        target,
+        mimeType: Recorder.mimeTypes[extension],
+        filename: this.filename,
+        debug: this.debug,
+        onError: this.onError,
+      });
 
-    this.#updateStatus(RecorderStatus.Initialized);
+      this.#updateStatus(RecorderStatus.Initialized);
+    } catch (error) {
+      this.#updateStatus(RecorderStatus.Ready);
+      throw error;
+    }
   }
 
   /**
@@ -261,12 +284,6 @@ Speedup: x${(this.time / renderTime).toFixed(3)}`,
    */
   async start(startOptions = {}) {
     await this.init(startOptions);
-
-    // Ensure initializing worked
-    if (this.status !== RecorderStatus.Initialized) {
-      console.debug("canvas-record: recorder not initialized.");
-      return;
-    }
 
     this.#updateStatus(RecorderStatus.Recording);
 
@@ -280,18 +297,16 @@ Speedup: x${(this.time / renderTime).toFixed(3)}`,
   async getFrame(frameMethod) {
     switch (frameMethod) {
       case "bitmap": {
-        return await createImageBitmap(
-          this.context.canvas,
-          ...(this.rect.length
-            ? [
-                this.x,
-                this.yFlipped,
-                this.width,
-                this.height,
-                this.frameOptions,
-              ]
-            : [this.frameOptions]),
-        );
+        return this.rect.length
+          ? await createImageBitmap(
+              this.context.canvas,
+              this.x,
+              this.yFlipped,
+              this.width,
+              this.height,
+              this.frameOptions,
+            )
+          : await createImageBitmap(this.context.canvas, this.frameOptions);
       }
       case "videoFrame": {
         let { canvas } = this.context;
@@ -312,16 +327,18 @@ Speedup: x${(this.time / renderTime).toFixed(3)}`,
           timestamp: this.time * 1_000_000, // in µs
           duration: 1_000_000 / this.frameRate,
           visibleRect,
+          alpha: this.encoder.alpha,
           ...this.frameOptions,
         });
       }
       case "requestFrame": {
-        return undefined;
+        return;
       }
       case "imageData": {
+        const width = nextMultiple(this.width, 2);
+        const height = nextMultiple(this.height, 2);
+
         if (!this.is2D) {
-          const width = this.width;
-          const height = this.height;
           const length = width * height * 4;
           const pixels = new Uint8Array(length);
           const pixelsFlipped = new Uint8Array(length);
@@ -349,8 +366,8 @@ Speedup: x${(this.time / renderTime).toFixed(3)}`,
         return this.context.getImageData(
           this.x,
           this.yFlipped,
-          nextMultiple(this.width, 2),
-          nextMultiple(this.height, 2),
+          width,
+          height,
           this.frameOptions,
         ).data;
       }
