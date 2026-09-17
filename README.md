@@ -17,7 +17,7 @@ Record a video in the browser or directly on the File System from a canvas regio
 [![twitter](https://img.shields.io/twitter/follow/dmnsgn?style=social)](https://twitter.com/dmnsgn)
 [![bluesky](https://img.shields.io/badge/-blue?logo=bluesky&label=Follow%20%40dmnsgn.me&style=social)](https://bsky.app/profile/dmnsgn.me)
 
-![](https://raw.githubusercontent.com/dmnsgn/canvas-record/main/screenshot.gif)
+[![canvas-record screenshot](https://raw.githubusercontent.com/dmnsgn/canvas-record/main/screenshot.gif)](https://dmnsgn.github.io/canvas-record/)
 
 ## Installation
 
@@ -27,7 +27,7 @@ npm install canvas-record
 
 ## Usage
 
-See the [demo](https://dmnsgn.github.io/canvas-record/) and its [source](https://raw.githubusercontent.com/dmnsgn/canvas-record/refs/heads/main/example/index.js).
+See the [demo](https://dmnsgn.github.io/canvas-record/) and its [source](https://github.com/dmnsgn/canvas-record/blob/main/example/index.js).
 
 ```js
 import { Recorder, RecorderStatus, Encoders } from "canvas-record";

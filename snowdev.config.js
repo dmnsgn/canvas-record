@@ -20,6 +20,14 @@ try {
 }
 
 export default {
+  rolldown: {
+    input: {
+      experimental: {
+        attachDebugInfo: "none",
+        resolveNewUrlToAsset: false,
+      },
+    },
+  },
   eslint: [
     {
       ignores: ["src/encoders/mp4.embed.js"],
@@ -44,6 +52,7 @@ export default {
     "es-module-shims",
     "pex-context",
     "pex-color",
+    "pex-gpu",
     "tweakpane",
   ],
   // resolve: {

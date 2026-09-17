@@ -19,6 +19,8 @@
     "mediabunny": "./mediabunny.js",
     "pex-color": "./pex-color.js",
     "pex-context": "./pex-context.js",
+    "pex-gpu": "./pex-gpu.js",
+    "pex-gpu/internals": "./pex-gpu/internals.js",
     "tweakpane": "./tweakpane.js"
   }
 }

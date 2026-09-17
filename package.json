@@ -44,8 +44,8 @@
       "default": "./index.js"
     }
   },
-  "main": "index.js",
-  "types": "types/index.d.ts",
+  "main": "./index.js",
+  "types": "./types/index.d.ts",
   "scripts": {
     "build": "npx snowdev build",
     "deps": "npx snowdev install",
@@ -60,7 +60,7 @@
     "gifenc": "^1.0.3",
     "h264-mp4-encoder": "^1.0.12",
     "media-codecs": "^3.0.0",
-    "mediabunny": "^1.52.3"
+    "mediabunny": "^1.58.0"
   },
   "devDependencies": {
     "@web/rollup-plugin-import-meta-assets": "^3.0.0",
@@ -68,7 +68,8 @@
     "mp4-wasm": "^1.0.6",
     "pex-color": "^2.3.0",
     "pex-context": "^4.1.0",
-    "rollup": "^4.62.4",
+    "pex-gpu": "^0.0.3",
+    "rollup": "^4.63.3",
     "tweakpane": "^4.0.5"
   },
   "optionalDependencies": {
@@ -77,7 +78,8 @@
   },
   "engines": {
     "node": ">=22.0.0",
-    "npm": ">=10.5.1",
-    "snowdev": ">=3.0.0-alpha.1"
-  }
+    "snowdev": ">=3.0.0-alpha.1",
+    "npm": ">=10.5.1"
+  },
+  "packageManager": "npm@10.5.1"
 }

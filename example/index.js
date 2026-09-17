@@ -2,11 +2,19 @@ import { Recorder, RecorderStatus, Encoders } from "../index.js";
 
 import createCanvasContext from "canvas-context";
 import createPexContext from "pex-context";
+import * as gpu from "pex-gpu";
 import { create as createColor, fromHex } from "pex-color";
 import { Pane } from "tweakpane";
 import { toBlobURL } from "@ffmpeg/util";
 
-import { vert, frag } from "./shaders.js";
+import {
+  drawSchotter2d,
+  vert,
+  debugGLSL,
+  schotterFragGLSL,
+  debugWGSL,
+  schotterWGSL,
+} from "./render.js";
 
 const params = new URLSearchParams(location.search);
 
@@ -25,7 +33,7 @@ const CONFIG = {
   target: "in-browser",
   filename: "",
   rect: { x: 0, y: 0, z: drawWidth, w: drawHeight },
-  contextType: "gl",
+  contextType: "webgl",
   transparent: false,
   ...Object.fromEntries(params),
 };
@@ -62,7 +70,7 @@ pane.addBinding(CONFIG, "rect", {
 });
 
 pane.addBinding(CONFIG, "contextType", {
-  options: ["2d", "gl"].map((value) => ({ text: value, value })),
+  options: ["2d", "webgl", "webgpu"].map((value) => ({ text: value, value })),
 });
 pane.addBinding(CONFIG, "transparent").on("change", () => render());
 
@@ -83,24 +91,21 @@ const { context, canvas } = createCanvasContext("2d", {
   contextAttributes: { willReadFrequently: true, alpha: true },
 });
 Object.assign(canvas.style, { width: `${width}px`, height: `${height}px` });
+document.querySelector(".Canvas-wrapper--2d").prepend(canvas);
 
-const element = document.querySelector(".Canvases");
-element.append(canvas);
+const ctxWebGL = createPexContext({ width, height, pixelRatio, alpha: true });
+document.querySelector(".Canvas-wrapper--webgl").prepend(ctxWebGL.gl.canvas);
 
-const ctx = createPexContext({
-  width,
-  height,
-  pixelRatio,
-  element,
-  alpha: true,
-});
-const clearCmd = {
-  pass: ctx.pass({ clearColor: [0, 0, 0, 0] }),
+const clearWebGLCmd = {
+  pass: ctxWebGL.pass({ clearColor: [0, 0, 0, 0] }),
 };
-const drawCmd = {
-  pipeline: ctx.pipeline({ vert, frag }),
+const drawWebGLCmd = {
+  pipeline: ctxWebGL.pipeline({
+    vert,
+    frag: params.has("debug") ? debugGLSL : schotterFragGLSL,
+  }),
   attributes: {
-    aPosition: ctx.vertexBuffer(Float32Array.of(-1, -1, 3, -1, -1, 3)), // Fullscreen triangle
+    aPosition: ctxWebGL.vertexBuffer(Float32Array.of(-1, -1, 3, -1, -1, 3)), // Fullscreen triangle
   },
   uniforms: {
     uColor: getPexColor("accent"),
@@ -108,6 +113,34 @@ const drawCmd = {
   },
   count: 3,
 };
+
+const ctxWebGPU = await gpu.createContext({
+  width,
+  height,
+  pixelRatio,
+  alphaMode: "premultiplied",
+});
+document.querySelector(".Canvas-wrapper--webgpu").prepend(ctxWebGPU.canvas);
+
+const drawWebGPUCmd = gpu.defineCommand({
+  label: "draw",
+  pass: { clearValue: [0, 0, 0, 0], depthClearValue: 1 },
+  pipeline: {
+    vertex: params.has("debug") ? debugWGSL : schotterWGSL,
+    fragment: params.has("debug") ? debugWGSL : schotterWGSL,
+  },
+  attributes: {
+    aPosition: gpu.createBuffer(ctxWebGPU, {
+      usage: "vertex",
+      data: Float32Array.of(-1, -1, 3, -1, -1, 3),
+    }),
+  },
+  uniforms: {
+    uColor: getPexColor("accent"),
+    uBackgroundColor: getPexColor("dark"),
+  },
+  count: 3,
+});
 
 const detailElement = document.querySelector(".Detail");
 
@@ -125,7 +158,6 @@ function render(canvasRecorder = {}) {
   const x = width * 0.02;
   const y = height * 0.025;
   const fontSize = 12 * pixelRatio;
-  const lineHeight = 1.6;
 
   // 2D
   {
@@ -141,10 +173,15 @@ function render(canvasRecorder = {}) {
 
     // Interpolated element
     context.save();
-    context.translate(width * 0.5, height * 0.5);
-    context.scale(t, t);
-    context.fillStyle = getColor("accent");
-    context.fillRect(-width * 0.5, -height * 0.5, width, height);
+    if (params.has("debug")) {
+      context.fillStyle = getColor("accent");
+      context.translate(width * 0.5, height * 0.5);
+      context.scale(t, t);
+      context.fillRect(-width * 0.5, -height * 0.5, width, height);
+    } else {
+      context.strokeStyle = getColor("accent");
+      drawSchotter2d(context, width, t);
+    }
     context.restore();
 
     // Frame text
@@ -157,15 +194,28 @@ function render(canvasRecorder = {}) {
 
   // WebGL
   {
-    ctx.submit(clearCmd);
-    ctx.submit(drawCmd, {
+    ctxWebGL.submit(clearWebGLCmd);
+    ctxWebGL.submit(drawWebGLCmd, {
       uniforms: {
         uProgress: t,
         uTextValue: currentFrame,
-        uTextPosition: [x, height - y - (fontSize / 2) * lineHeight],
+        uTextPosition: [x, height - y - fontSize],
         uTransparent: CONFIG.transparent,
+        uResolution: width,
       },
     });
+  }
+
+  // WebGPU
+  {
+    Object.assign(drawWebGPUCmd.uniforms, {
+      uProgress: t,
+      uTextValue: currentFrame,
+      uTextPosition: [x, y],
+      uTransparent: CONFIG.transparent,
+      uResolution: width,
+    });
+    gpu.submit(ctxWebGPU, drawWebGPUCmd);
   }
 }
 
@@ -249,7 +299,22 @@ const initRecorder = async (encoderName) => {
 
   const { contextType, rect, ...configOptions } = CONFIG;
 
-  canvasRecorder = new Recorder(contextType === "2d" ? context : ctx.gl, {
+  let ctx;
+
+  switch (contextType) {
+    case "2d":
+      ctx = context;
+      break;
+    case "webgl":
+      ctx = ctxWebGL.gl;
+      break;
+
+    default:
+      ctx = ctxWebGPU.canvasContext;
+      break;
+  }
+
+  canvasRecorder = new Recorder(ctx, {
     name: `canvas-record-example-${encoderName || "default"}-${contextType}`,
     ...configOptions,
     rect: [rect.x, rect.y, rect.z, rect.w],
@@ -279,7 +344,9 @@ const start = async (encoderName) => {
 };
 
 startButton.on("click", async () => {
-  await start(CONFIG.encoder);
+  if (canvasRecorder?.status !== RecorderStatus.Recording) {
+    await start(CONFIG.encoder);
+  }
 });
 
 stopButton.on("click", async () => {

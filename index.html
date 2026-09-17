@@ -34,6 +34,7 @@
 
       canvas {
         max-width: 100%;
+        max-height: 100%;
         background-color: #fff;
         background-image: conic-gradient(
           var(--color-checker) 25%,
@@ -54,7 +55,20 @@
       }
       .Canvases {
         display: flex;
-        gap: 10px;
+        gap: 24px;
+        max-width: 100%;
+      }
+      .Canvas-item {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        min-width: 0;
+        margin: 0;
+      }
+      .Canvas-wrapper {
+        width: 512px;
+        max-width: 100%;
+        aspect-ratio: 1 / 1;
       }
     </style>
   </head>
@@ -62,7 +76,20 @@
     <main>
       <h1>canvas-record</h1>
       <pre class="Detail">Details</pre>
-      <div class="Canvases"></div>
+      <div class="Canvases">
+        <figure class="Canvas-item">
+          <div class="Canvas-wrapper Canvas-wrapper--2d"></div>
+          <figcaption>2D</figcaption>
+        </figure>
+        <figure class="Canvas-item">
+          <div class="Canvas-wrapper Canvas-wrapper--webgl"></div>
+          <figcaption>WebGL</figcaption>
+        </figure>
+        <figure class="Canvas-item">
+          <div class="Canvas-wrapper Canvas-wrapper--webgpu"></div>
+          <figcaption>WebGPU</figcaption>
+        </figure>
+      </div>
     </main>
 
     <script async src="web_modules/es-module-shims.js" type="module"></script>
