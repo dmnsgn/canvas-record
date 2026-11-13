@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [6.0.1](https://github.com/dmnsgn/canvas-record/compare/v6.0.0...v6.0.1) (2026-11-13)
+
+### Bug Fixes
+
+* support WebGPU in imageData frame method ([95bbf1f](https://github.com/dmnsgn/canvas-record/commit/95bbf1f6d34bdaeaf0b683b7f905f5da97731148))
+
+### Performance Improvements
+
+* reuse capture canvas across frames in captureCanvasRegion ([c0de838](https://github.com/dmnsgn/canvas-record/commit/c0de838d822aa3ccfd11c5310f1b66a99f221240))
+
 # [6.0.0](https://github.com/dmnsgn/canvas-record/compare/v5.5.1...v6.0.0) (2026-09-17)
 
 
