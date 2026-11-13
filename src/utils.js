@@ -31,11 +31,18 @@ const captureCanvasRegion = (canvas, x, y, width, height) => {
         contextAttributes: { willReadFrequently: true },
       }).context,
   );
-  captureContext.canvas.width = width;
-  captureContext.canvas.height = height;
+  if (
+    captureContext.canvas.width !== width ||
+    captureContext.canvas.height !== height
+  ) {
+    captureContext.canvas.width = width;
+    captureContext.canvas.height = height;
+  }
 
+  // Don't composite transparent pixels over the previous frame
+  captureContext.globalCompositeOperation = "copy";
   captureContext.drawImage(canvas, x, y, width, height, 0, 0, width, height);
-  return captureContext.canvas;
+  return captureContext;
 };
 
 const formatDate = (date) =>

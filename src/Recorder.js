@@ -350,7 +350,7 @@ Speedup: x${(this.time / renderTime).toFixed(3)}`,
           if (this.is2D) {
             visibleRect = { x, y, width, height };
           } else {
-            canvas = captureCanvasRegion(canvas, x, y, width, height);
+            canvas = captureCanvasRegion(canvas, x, y, width, height).canvas;
           }
         }
 
@@ -410,7 +410,7 @@ Speedup: x${(this.time / renderTime).toFixed(3)}`,
               this.yFlipped,
               this.width,
               this.height,
-            )
+            ).canvas
           : this.context.canvas;
         return await canvasScreenshot(canvas, {
           useBlob: true,
