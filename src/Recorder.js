@@ -369,38 +369,21 @@ Speedup: x${(this.time / renderTime).toFixed(3)}`,
         const width = nextMultiple(this.width, 2);
         const height = nextMultiple(this.height, 2);
 
-        if (!this.is2D) {
-          const length = width * height * 4;
-          const pixels = new Uint8Array(length);
-          const pixelsFlipped = new Uint8Array(length);
-
-          this.context.readPixels(
-            this.x,
-            this.y,
-            width,
-            height,
-            this.context.RGBA,
-            this.context.UNSIGNED_BYTE,
-            pixels,
-          );
-
-          // Flip vertically
-          const row = width * 4;
-          const end = (height - 1) * row;
-          for (let i = 0; i < length; i += row) {
-            pixelsFlipped.set(pixels.subarray(i, i + row), end - i);
-          }
-
-          return pixelsFlipped;
-        }
-
-        return this.context.getImageData(
-          this.x,
-          this.yFlipped,
-          width,
-          height,
-          this.frameOptions,
-        ).data;
+        return this.is2D
+          ? this.context.getImageData(
+              this.x,
+              this.yFlipped,
+              width,
+              height,
+              this.frameOptions,
+            ).data
+          : captureCanvasRegion(
+              this.context.canvas,
+              this.x,
+              this.yFlipped,
+              this.width,
+              this.height,
+            ).getImageData(0, 0, width, height, this.frameOptions).data;
       }
       default: {
         const canvas = this.rect.length
