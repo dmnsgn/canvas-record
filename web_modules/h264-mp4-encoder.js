@@ -1,5 +1,5 @@
-import { i as __toCommonJS, t as __commonJSMin } from "./_chunks/rolldown-runtime-CRAsKsZc.js";
-import { a as init__polyfill_node_fs, c as Buffer, d as init__polyfill_node_process, i as _polyfill_node_fs_exports, l as init__polyfill_node_buffer, n as _polyfill_node_crypto_exports, o as _polyfill_node_path_exports, r as init__polyfill_node_crypto, s as init__polyfill_node_path, u as browser$1 } from "./_chunks/polyfills-bhUCZgV4.js";
+import { i as __toCommonJS, t as __commonJSMin } from "./_chunks/rolldown-runtime-BuyAiOSE.js";
+import { a as init__polyfill_node_fs, c as Buffer, d as init__polyfill_node_process, i as _polyfill_node_fs_exports, l as init__polyfill_node_buffer, n as _polyfill_node_crypto_exports, o as _polyfill_node_path_exports, r as init__polyfill_node_crypto, s as init__polyfill_node_path, u as browser$1 } from "./_chunks/polyfills-CIayRlbL.js";
 
 var require_h264_mp4_encoder_node = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 	init__polyfill_node_process();
@@ -161,8 +161,8 @@ var require_h264_mp4_encoder_node = /* @__PURE__ */ __commonJSMin(((exports, mod
 					}
 					var t, n, d, r, e, l, x, Z, f, b = "undefined" != typeof TextDecoder ? new TextDecoder("utf-16le") : void 0;
 					function p(A) {
-						var B;
-						for (B = A >> 1; r[B];) ++B;
+						var B = A >> 1;
+						for (; r[B];) ++B;
 						if (32 < (B <<= 1) - A && b) return b.decode(d.subarray(A, B));
 						B = 0;
 						for (var Q = "";;) {

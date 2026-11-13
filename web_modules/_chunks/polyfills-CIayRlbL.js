@@ -1,4 +1,4 @@
-import { n as __esmMin, r as __exportAll } from "./rolldown-runtime-CRAsKsZc.js";
+import { n as __esmMin, r as __exportAll } from "./rolldown-runtime-BuyAiOSE.js";
 
 var _polyfill_node_global_default;
 var init__polyfill_node_global = __esmMin((() => {
@@ -487,18 +487,23 @@ function bidirectionalIndexOf(buffer, val, byteOffset, encoding, dir) {
 	byteOffset = +byteOffset;
 	if (isNaN(byteOffset)) byteOffset = dir ? 0 : buffer.length - 1;
 	if (byteOffset < 0) byteOffset = buffer.length + byteOffset;
-	if (byteOffset >= buffer.length) if (dir) return -1;
-	else byteOffset = buffer.length - 1;
-	else if (byteOffset < 0) if (dir) byteOffset = 0;
-	else return -1;
+	if (byteOffset >= buffer.length) {
+		if (dir) return -1;
+		else byteOffset = buffer.length - 1;
+	} else if (byteOffset < 0) {
+		if (dir) byteOffset = 0;
+		else return -1;
+	}
 	if (typeof val === "string") val = Buffer.from(val, encoding);
 	if (internalIsBuffer(val)) {
 		if (val.length === 0) return -1;
 		return arrayIndexOf(buffer, val, byteOffset, encoding, dir);
 	} else if (typeof val === "number") {
 		val = val & 255;
-		if (Buffer.TYPED_ARRAY_SUPPORT && typeof Uint8Array.prototype.indexOf === "function") if (dir) return Uint8Array.prototype.indexOf.call(buffer, val, byteOffset);
-		else return Uint8Array.prototype.lastIndexOf.call(buffer, val, byteOffset);
+		if (Buffer.TYPED_ARRAY_SUPPORT && typeof Uint8Array.prototype.indexOf === "function") {
+			if (dir) return Uint8Array.prototype.indexOf.call(buffer, val, byteOffset);
+			else return Uint8Array.prototype.lastIndexOf.call(buffer, val, byteOffset);
+		}
 		return arrayIndexOf(buffer, [val], byteOffset, encoding, dir);
 	}
 	throw new TypeError("val must be string, number or Buffer");

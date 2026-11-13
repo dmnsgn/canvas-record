@@ -51,7 +51,7 @@ function F(t = 256) {
 	function n(r) {
 		var o = s.length;
 		if (o >= r) return;
-		r = Math.max(r, o * (o < 1024 * 1024 ? 2 : 1.125) >>> 0), o != 0 && (r = Math.max(r, 256));
+		r = Math.max(r, o * (o < 1048576 ? 2 : 1.125) >>> 0), o != 0 && (r = Math.max(r, 256));
 		let c = s;
 		s = new Uint8Array(r), e > 0 && s.set(c.subarray(0, e), 0);
 	}
@@ -230,8 +230,8 @@ function xt(t, e) {
 	return !1;
 }
 function U(t, e) {
-	var s = 0, n;
-	for (n = 0; n < t.length; n++) {
+	var s = 0, n = 0;
+	for (; n < t.length; n++) {
 		let r = t[n] - e[n];
 		s += r * r;
 	}
@@ -254,14 +254,14 @@ function nt(t, e, s = "rgb565") {
 	if (e.length > 256) throw new Error("applyPalette() only works with 256 colors or less");
 	let n = new Uint32Array(t.buffer), r = n.length, o = s === "rgb444" ? 4096 : 65536, i = new Uint8Array(r), c = new Array(o);
 	if (s === "rgba4444") for (let a = 0; a < r; a++) {
-		let l = n[a], f = l >> 24 & 255, g = l >> 16 & 255, h = l >> 8 & 255, b = l & 255, w = G(b, h, g, f);
-		i[a] = w in c ? c[w] : c[w] = gt(b, h, g, f, e);
+		let l = n[a], f = l >> 24 & 255, g = l >> 16 & 255, h = l >> 8 & 255, b = l & 255, w = G(b, h, g, f), _ = w in c ? c[w] : c[w] = gt(b, h, g, f, e);
+		i[a] = _;
 	}
 	else {
 		let a = s === "rgb444" ? j : D;
 		for (let l = 0; l < r; l++) {
-			let f = n[l], g = f >> 16 & 255, h = f >> 8 & 255, b = f & 255, w = a(b, h, g);
-			i[l] = w in c ? c[w] : c[w] = bt(b, h, g, e);
+			let f = n[l], g = f >> 16 & 255, h = f >> 8 & 255, b = f & 255, w = a(b, h, g), _ = w in c ? c[w] : c[w] = bt(b, h, g, e);
+			i[l] = _;
 		}
 	}
 	return i;

@@ -1,4 +1,4 @@
-import { r as __exportAll } from "./_chunks/rolldown-runtime-CRAsKsZc.js";
+import { r as __exportAll } from "./_chunks/rolldown-runtime-BuyAiOSE.js";
 
 /** @module utils */
 var utils_exports = /* @__PURE__ */ __exportAll({
@@ -331,7 +331,7 @@ const lchToLuv = (L, C, H, out) => {
 	return out;
 };
 const hpLuvOrHsluvToLch = (H, S, L, out, getChroma) => {
-	if (L > 1 - L_EPSILON) {
+	if (L > .9999999999) {
 		out[0] = 1;
 		out[1] = 0;
 	} else if (L < L_EPSILON) out[0] = out[1] = 0;
@@ -344,7 +344,7 @@ const hpLuvOrHsluvToLch = (H, S, L, out, getChroma) => {
 };
 const lchToHpluvOrHsluv = (L, C, H, out, getChroma) => {
 	out[0] = H;
-	if (L > 1 - L_EPSILON) {
+	if (L > .9999999999) {
 		out[1] = 0;
 		out[2] = 1;
 	} else if (L < L_EPSILON) out[1] = out[2] = 0;
@@ -1047,9 +1047,7 @@ function toHSL([r, g, b, a], out = []) {
 			case g:
 				out[0] = (b - r) / d + 2;
 				break;
-			case b:
-				out[0] = (r - g) / d + 4;
-				break;
+			case b: out[0] = (r - g) / d + 4;
 		}
 		out[0] /= 6;
 	}
@@ -1149,7 +1147,6 @@ function fromHSV(color, h, s, v, a) {
 			color[0] = v;
 			color[1] = p;
 			color[2] = q;
-			break;
 	}
 	return setAlpha(color, a);
 }
@@ -1175,9 +1172,7 @@ function toHSV([r, g, b, a], out = []) {
 			case g:
 				out[0] = (b - r) / d + 2;
 				break;
-			case b:
-				out[0] = (r - g) / d + 4;
-				break;
+			case b: out[0] = (r - g) / d + 4;
 		}
 		out[0] /= 6;
 	}
@@ -1466,18 +1461,19 @@ function toOkhsl(color, out = []) {
 	out[0] = .5 + .5 * Math.atan2(-out[2], -out[1]) / Math.PI;
 	const [C0, Cmid, Cmax] = getCs(L, a_, b_);
 	out[2] = toe(L);
-	if (out[2] !== 0 && out[2] !== 1 && C !== 0) if (C < Cmid) {
-		const k0 = 0;
-		const k1 = .8 * C0;
-		const k2 = 1 - k1 / Cmid;
-		out[1] = (C - k0) / (k1 + k2 * (C - k0)) * .8;
-	} else {
-		const k0 = Cmid;
-		const k1 = .2 * Cmid * Cmid * 1.25 * 1.25 / C0;
-		const k2 = 1 - k1 / (Cmax - Cmid);
-		out[1] = .8 + .2 * ((C - k0) / (k1 + k2 * (C - k0)));
-	}
-	else out[1] = 0;
+	if (out[2] !== 0 && out[2] !== 1 && C !== 0) {
+		if (C < Cmid) {
+			const k0 = 0;
+			const k1 = .8 * C0;
+			const k2 = 1 - k1 / Cmid;
+			out[1] = (C - k0) / (k1 + k2 * (C - k0)) * .8;
+		} else {
+			const k0 = Cmid;
+			const k1 = .2 * Cmid * Cmid * 1.25 * 1.25 / C0;
+			const k2 = 1 - k1 / (Cmax - Cmid);
+			out[1] = .8 + .2 * ((C - k0) / (k1 + k2 * (C - k0)));
+		}
+	} else out[1] = 0;
 	let εL = 1e-7;
 	const achromatic = Math.abs(out[1]) < 1e-4;
 	if (achromatic || Math.abs(1 - out[2]) < εL) {

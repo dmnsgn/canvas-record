@@ -37,9 +37,10 @@ const readFromBlobOrFile = (blob) => new Promise((resolve, reject) => {
 */
 const fetchFile = async (file) => {
 	let data;
-	if (typeof file === "string") if (/data:_data\/([a-zA-Z]*);base64,([^"]*)/.test(file)) data = atob(file.split(",")[1]).split("").map((c) => c.charCodeAt(0));
-	else data = await (await fetch(file)).arrayBuffer();
-	else if (file instanceof URL) data = await (await fetch(file)).arrayBuffer();
+	if (typeof file === "string") {
+		if (/data:_data\/([a-zA-Z]*);base64,([^"]*)/.test(file)) data = atob(file.split(",")[1]).split("").map((c) => c.charCodeAt(0));
+		else data = await (await fetch(file)).arrayBuffer();
+	} else if (file instanceof URL) data = await (await fetch(file)).arrayBuffer();
 	else if (file instanceof File || file instanceof Blob) data = await readFromBlobOrFile(file);
 	else return /* @__PURE__ */ new Uint8Array();
 	return new Uint8Array(data);

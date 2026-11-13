@@ -1,5 +1,3 @@
-const CORE_VERSION = "0.12.1";
-const CORE_URL = `https://unpkg.com/@ffmpeg/core@${CORE_VERSION}/dist/umd/ffmpeg-core.js`;
 var FFMessageType;
 (function(FFMessageType) {
 	FFMessageType["LOAD"] = "LOAD";
@@ -77,9 +75,7 @@ var FFmpeg = class {
 				case FFMessageType.PROGRESS:
 					this.#progressEventCallbacks.forEach((f) => f(data));
 					break;
-				case FFMessageType.ERROR:
-					this.#rejects[id](data);
-					break;
+				case FFMessageType.ERROR: this.#rejects[id](data);
 			}
 			delete this.#resolves[id];
 			delete this.#rejects[id];
@@ -121,7 +117,7 @@ var FFmpeg = class {
 	*/
 	load = (config = {}, { signal } = {}) => {
 		if (!this.#worker) {
-			this.#worker = new Worker(new URL(new URL("../assets/worker-BIbGGrl-.js", import.meta.url).href), { type: "module" });
+			this.#worker = new Worker(new URL(new URL("../assets/worker-BIXL5Pu2.js", import.meta.url).href), { type: "module" });
 			this.#registerHandlers();
 		}
 		return this.#send({

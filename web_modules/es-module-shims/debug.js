@@ -185,11 +185,12 @@
 			const parentProtocol = parentUrl.slice(0, parentUrl.indexOf(":") + 1);
 			if (parentProtocol === "blob:") throw new TypeError(`Failed to resolve module specifier "${relUrl}". Invalid relative url or base scheme isn't hierarchical.`);
 			let pathname;
-			if (parentUrl[parentProtocol.length + 1] === "/") if (parentProtocol !== "file:") {
-				pathname = parentUrl.slice(parentProtocol.length + 2);
-				pathname = pathname.slice(pathname.indexOf("/") + 1);
-			} else pathname = parentUrl.slice(8);
-			else pathname = parentUrl.slice(parentProtocol.length + (parentUrl[parentProtocol.length] === "/"));
+			if (parentUrl[parentProtocol.length + 1] === "/") {
+				if (parentProtocol !== "file:") {
+					pathname = parentUrl.slice(parentProtocol.length + 2);
+					pathname = pathname.slice(pathname.indexOf("/") + 1);
+				} else pathname = parentUrl.slice(8);
+			} else pathname = parentUrl.slice(parentProtocol.length + (parentUrl[parentProtocol.length] === "/"));
 			if (relUrl[0] === "/") return parentUrl.slice(0, parentUrl.length - pathname.length - 1) + relUrl;
 			const segmented = pathname.slice(0, pathname.lastIndexOf("/") + 1) + relUrl;
 			const output = [];
@@ -418,7 +419,6 @@
 										case 44:
 											w = 100;
 											break e;
-										default:
 									}
 									if (c ? se(a) | 0 : 0) {
 										w = 100;
@@ -586,10 +586,7 @@
 												if (!(h(p) | 0)) {
 													switch (c << 16 >> 16) {
 														case 0: break r;
-														case 47:
-															if (i[799] | 0) break r;
-															break;
-														default:
+														case 47: if (i[799] | 0) break r;
 													}
 													w = f[64] | 0;
 													if ((w | 0 ? p >>> 0 >= (f[w >> 2] | 0) >>> 0 : 0) ? p >>> 0 <= (f[w + 4 >> 2] | 0) >>> 0 : 0) {
@@ -673,7 +670,6 @@
 										case 125:
 											a = 1;
 											break a;
-										default:
 									}
 									a = 0;
 								}
@@ -886,10 +882,7 @@
 												if (!(h(e) | 0)) {
 													switch (a << 16 >> 16) {
 														case 0: break r;
-														case 47:
-															if (i[799] | 0) break r;
-															break;
-														default:
+														case 47: if (i[799] | 0) break r;
 													}
 													c = f[64] | 0;
 													if ((c | 0 ? e >>> 0 >= (f[c >> 2] | 0) >>> 0 : 0) ? e >>> 0 <= (f[c + 4 >> 2] | 0) >>> 0 : 0) {
@@ -1140,7 +1133,6 @@
 										c = r;
 										t = 62;
 										break e;
-									default:
 								}
 								a = f[71] | 0;
 								t = 60;
@@ -1303,8 +1295,6 @@
 													n = r;
 													u = 30;
 												}
-												break;
-											default:
 										}
 										r: do
 											if ((u | 0) == 21 ? (i = f[71] | 0, (S(i + 2 | 0, 54, 14) | 0) == 0) : 0) {
@@ -1718,10 +1708,7 @@
 									break e;
 								}
 								break;
-							case 92:
-								e = r + 4 | 0;
-								break;
-							default:
+							case 92: e = r + 4 | 0;
 						}
 						r = e;
 					}
@@ -1833,7 +1820,6 @@
 								case 93:
 									e = 1;
 									break e;
-								default:
 							}
 							e = (O(a) | 0) ^ 1;
 						}
@@ -1913,13 +1899,10 @@
 							case 92:
 								e = a + 4 | 0;
 								break;
-							case 36:
-								if ((s[a + 4 >> 1] | 0) == 123) {
-									a = 7;
-									break e;
-								}
-								break;
-							default:
+							case 36: if ((s[a + 4 >> 1] | 0) == 123) {
+								a = 7;
+								break e;
+							}
 						}
 						a = e;
 					}
@@ -1950,10 +1933,7 @@
 							case 93:
 								a = 7;
 								break e;
-							case 92:
-								e = a + 4 | 0;
-								break;
-							default:
+							case 92: e = a + 4 | 0;
 						}
 						a = e;
 					}
@@ -1985,10 +1965,7 @@
 							case 91:
 								m() | 0;
 								break;
-							case 92:
-								f[71] = e + 4;
-								break;
-							default:
+							case 92: f[71] = e + 4;
 						}
 					}
 					if ((a | 0) == 7) ee();
@@ -2082,7 +2059,6 @@
 									case 94:
 										e = 1;
 										break e;
-									default:
 								}
 								e = (e + -123 & 65535) < 4;
 							}
@@ -2101,7 +2077,6 @@
 								switch (e << 16 >> 16) {
 									case 91:
 									case 94: break e;
-									default:
 								}
 								return e << 16 >> 16 != 125 & (e + -123 & 65535) < 4 | 0;
 							}
@@ -2120,7 +2095,6 @@
 								case 32:
 									a = 1;
 									break e;
-								default:
 							}
 							if (O(a) | 0) return a << 16 >> 16 != 46 | (N(e) | 0) | 0;
 							else a = 0;
@@ -2228,7 +2202,6 @@
 								case 160:
 									e = 1;
 									break e;
-								default:
 							}
 							e = e << 16 >> 16 != 46 & (O(e) | 0);
 						}
@@ -2260,7 +2233,6 @@
 								case 95:
 									e = 1;
 									break e;
-								default:
 							}
 							e = (e & 65535) > 127;
 						}
@@ -3016,10 +2988,13 @@
 				let source = void 0;
 				if (a > 0 && !shimMode && nativePassthrough) {
 					const assertion = load.S.slice(a, se - 1);
-					if (assertion.includes("json")) if (supportsJsonType) source = "";
-					else load.n = true;
-					else if (assertion.includes("css")) if (supportsCssType) source = "";
-					else load.n = true;
+					if (assertion.includes("json")) {
+						if (supportsJsonType) source = "";
+						else load.n = true;
+					} else if (assertion.includes("css")) {
+						if (supportsCssType) source = "";
+						else load.n = true;
+					}
 				}
 				if (d !== -1 || !n) return;
 				const resolved = resolve(n, load.r || load.u);

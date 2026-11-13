@@ -1,5 +1,6 @@
 import { copyFile } from "node:fs/promises";
-import { rollup } from "rollup";
+
+import { rolldown } from "rolldown";
 import { importMetaAssets } from "@web/rollup-plugin-import-meta-assets";
 
 try {
@@ -27,6 +28,27 @@ export default {
         resolveNewUrlToAsset: false,
       },
     },
+    extraPlugins: [
+      importMetaAssets({
+        include: ["**/@ffmpeg/ffmpeg/**"],
+        async transform(_, assetPath) {
+          // Bundle worker
+          // https://github.com/rollup/rollup/issues/3842
+          if (assetPath.endsWith("worker.js")) {
+            const bundle = await rolldown({ input: assetPath });
+            const { output } = await bundle.generate({
+              format: "iife",
+              codeSplitting: false,
+            });
+
+            await bundle.close();
+            return output[0].code;
+          }
+
+          return null;
+        },
+      }),
+    ],
   },
   eslint: [
     {
@@ -62,27 +84,4 @@ export default {
   //   ],
   // },
   crossOriginIsolation: true,
-  rollup: {
-    extraPlugins: [
-      importMetaAssets({
-        include: ["**/@ffmpeg/ffmpeg/**"],
-        async transform(_, assetPath) {
-          // Bundle worker
-          // https://github.com/rollup/rollup/issues/3842
-          if (assetPath.endsWith("worker.js")) {
-            const bundle = await rollup({ input: assetPath });
-            const { output } = await bundle.generate({
-              format: "iife",
-              manualChunks: () => "_",
-            });
-
-            await bundle.close();
-            return output[0].code;
-          }
-
-          return null;
-        },
-      }),
-    ],
-  },
 };

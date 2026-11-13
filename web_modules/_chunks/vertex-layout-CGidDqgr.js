@@ -1,122 +1,3 @@
-const RESOURCE_COUNTS_KEYS = ["buffers", "textures"];
-const CACHE_COUNTS_KEYS = [
-	"shaderModules",
-	"renderPipelines",
-	"computePipelines",
-	"bindGroupLayouts",
-	"pipelineLayouts",
-	"bindGroups"
-];
-const createResourceCounts = () => ({
-	alive: 0,
-	created: 0,
-	disposed: 0,
-	bytes: 0
-});
-const createCacheCounts = () => ({
-	created: 0,
-	hits: 0
-});
-const createResourceCountsRecord = () => Object.fromEntries(RESOURCE_COUNTS_KEYS.map((key) => [key, createResourceCounts()]));
-const createCacheCountsRecord = () => Object.fromEntries(CACHE_COUNTS_KEYS.map((key) => [key, createCacheCounts()]));
-const states$1 = /* @__PURE__ */ new WeakMap();
-const state = (device) => states$1.getOrInsertComputed(device, () => ({
-	stats: {
-		lifetime: {
-			...createResourceCountsRecord(),
-			...createCacheCountsRecord()
-		},
-		frame: {
-			renderPasses: 0,
-			computePasses: 0,
-			draws: 0,
-			dispatches: 0,
-			bundles: 0,
-			uniformBytes: 0,
-			...createCacheCountsRecord()
-		}
-	},
-	log: false,
-	groups: false
-}));
-/**
-* Live mutable counters for a device — incremented by the instrumented
-* internals.
-*/
-const debugCounters = (device) => state(device).stats;
-/**
-* Record a get-or-create cache lookup against both the lifetime and per-frame
-* counters.
-*/
-function recordCacheAccess(device, key, hit) {
-	const stats = debugCounters(device);
-	const lifetime = stats.lifetime[key];
-	const frame = stats.frame[key];
-	if (hit) {
-		lifetime.hits++;
-		frame.hits++;
-	} else {
-		lifetime.created++;
-		frame.created++;
-	}
-}
-const resetCacheCounts = (cache) => {
-	cache.created = 0;
-	cache.hits = 0;
-};
-/** Reset the per-frame counters; called by frame() at the start of each tick. */
-function resetFrameCounters(device) {
-	const frame = state(device).stats.frame;
-	frame.renderPasses = 0;
-	frame.computePasses = 0;
-	frame.draws = 0;
-	frame.dispatches = 0;
-	frame.bundles = 0;
-	frame.uniformBytes = 0;
-	for (const key of CACHE_COUNTS_KEYS) resetCacheCounts(frame[key]);
-}
-/** Whether GPU debug groups should be emitted, per {@link debug}. */
-const debugGroupsEnabled = (device) => states$1.get(device)?.groups ?? false;
-/**
-* Log a debug message when the level is enabled. The message is built lazily so
-* disabled logging costs a WeakMap lookup.
-*/
-function debugLog(device, level, message) {
-	const log = states$1.get(device)?.log;
-	if (log === "commands" || log === level) console.debug(`pex-gpu: ${message()}`);
-}
-/**
-* Toggle debug logging and GPU debug groups. Counters ({@link debugStats}) are
-* always on — this only controls reporting.
-*
-* ```js
-* gpu.debug(ctx); // log: "resources", groups: true
-* gpu.debug(ctx, { log: "commands" }); // full submit stream, no groups
-* gpu.debug(ctx, false); // all reporting off
-* ```
-*/
-function debug(ctx, options = true) {
-	const value = state(ctx.device);
-	if (typeof options === "boolean") {
-		value.log = options && "resources";
-		value.groups = options;
-	} else {
-		value.log = options.log ?? false;
-		value.groups = options.groups ?? false;
-	}
-}
-/**
-* Snapshot of the context's resource/rendering pressure counters.
-*
-* ```js
-* const { lifetime, frame } = gpu.debugStats(ctx);
-* console.log(`${lifetime.buffers.alive} buffers, ${frame.draws} draws`);
-* ```
-*/
-function debugStats(ctx) {
-	return structuredClone(state(ctx.device).stats);
-}
-
 /** Round `value` up to the next multiple of `alignment`. */
 const alignTo = (value, alignment) => Math.ceil(value / alignment) * alignment;
 const isTypedArray = (data) => ArrayBuffer.isView(data) && !(data instanceof DataView);
@@ -237,11 +118,11 @@ function blockInfo(format) {
 		bytes
 	};
 	const astc = ASTC_BLOCK.exec(format);
-	if (astc) return {
+	return astc ? {
 		width: Number(astc[1]),
 		height: Number(astc[2]),
 		bytes: 16
-	};
+	} : void 0;
 }
 /** Whether `format` stores texels in compressed blocks. */
 const isCompressedFormat = (format) => blockInfo(format) !== void 0;
@@ -292,6 +173,712 @@ function assertBlockAlignedOrigin(format, origin) {
 	if (x % block.width || y % block.height) throw new Error(`pex-gpu: "${format}" copies must start on a ${block.width}×${block.height} block boundary, got origin ${x},${y}`);
 }
 
+/**
+* State shared between copies of pex-gpu loaded in the same realm.
+*
+* Module-scope caches (the context and commands WeakMaps, the id counters, the
+* debug counters) are per-copy, so two copies on a page each build their own: a
+* context created by one is unknown to the other, and the second silently
+* allocates a duplicate ring allocator and canvas depth texture that the first
+* one's dispose() can't reach. Holding them in a registry on `globalThis` under
+* a well-known symbol lets copies find each other instead.
+*
+* Two layers, because sharing is only safe between copies that agree on the
+* shape of what's shared:
+*
+* - The root is **frozen forever**: a counter and an object-to-number WeakMap,
+*   which have no shape to disagree on. Ids live here rather than under a
+*   schema because resources cross copies whatever their version — every
+*   is-a-GpuBuffer check is structural — and two id spaces starting at 1 would
+*   collide in the bind group cache. Never rename or repurpose its fields.
+* - `schemas` partitions the structured state by {@link SCHEMA}. Copies that agree
+*   share it; copies that don't stay isolated and throw on the first crossing
+*   ({@link assertSchema}) instead of reading fields that aren't there.
+*
+* Per-realm, like `Symbol.for` itself: workers and iframes get their own
+* registry, as they do their own GPUDevice.
+*/
+const ROOT = Symbol.for("pex-gpu");
+const BRAND = Symbol.for("pex-gpu.schema");
+/**
+* Shape version of everything reachable from the `schemas` registry — not just
+* its six values (`ContextState`, `CommandsState`, `DebugState`, `TimingState`,
+* `MipmapPipelines`, `ShaderReflection`) but what they hold: `RingAllocator`,
+* `FrameState`/`ActivePass`, the cached-pipeline records, the debug counters
+* and timing pools, and `ShaderReflection` down to `StructLayout`, which
+* `packStruct` writes against. Bump it in the same commit as any change to
+* those.
+*
+* The edits that need it most are the ones that still typecheck on both sides:
+* a field added to `CommandsState` that the other copy never flushes, or a
+* `StructLayout` offset convention the other copy packs against.
+*/
+const SCHEMA = 4;
+const globals = globalThis;
+const existing = globals[ROOT];
+const root = globals[ROOT] ??= {
+	nextId: 1,
+	objectIds: /* @__PURE__ */ new WeakMap(),
+	schemas: /* @__PURE__ */ new Map()
+};
+if (existing) {
+	const incompatible = [...existing.schemas.keys()].filter((s) => s !== 4);
+	console.warn(incompatible.length ? `pex-gpu: incompatible copies loaded (state schema ${4} and ${incompatible.join(", ")}). Each keeps its own state and a context cannot cross between them. Deduplicate pex-gpu in your bundler or import map.` : `pex-gpu: multiple copies loaded (state schema ${4}). They share state, but the page ships pex-gpu more than once. Deduplicate it in your bundler or import map.`);
+}
+const registry = root.schemas.getOrInsertComputed(4, () => /* @__PURE__ */ new Map());
+/**
+* Get or create a process-wide singleton, shared with every loaded copy of
+* pex-gpu that declares the same {@link SCHEMA}. `name` is its key in the
+* registry and must be unique within the package.
+*/
+const shared = (name, factory) => registry.getOrInsertComputed(name, factory);
+/**
+* Ids for resources and for objects that carry none (GPUSampler,
+* GPUTextureView, GPURenderBundle).
+*/
+const nextId = () => root.nextId++;
+const objectId = (object) => root.objectIds.getOrInsertComputed(object, nextId);
+/** Record the creating copy's schema so other copies can diagnose a mismatch. */
+const brand = (object) => {
+	Object.defineProperty(object, BRAND, { value: 4 });
+};
+/**
+* Throw if an object was branded by a copy this one can't share state with.
+* Unbranded objects pass: they predate branding, and the caller's own "unknown
+* context" error says more than a guess would.
+*/
+function assertSchema(object) {
+	const schema = object[BRAND];
+	if (schema === void 0 || schema === 4) return;
+	throw new Error(`pex-gpu: this context was created by a copy of pex-gpu with state schema ${schema}, but this copy is schema ${4} — incompatible versions are loaded on this page`);
+}
+
+/**
+* Type guard for {@link GpuBuffer} resource objects (raw GPUBuffers also have a
+* similar shape — discriminate on `id`).
+*/
+const isGpuBuffer = (value) => typeof value === "object" && value !== null && "id" in value && "buffer" in value;
+/**
+* Usage presets for {@link createBuffer}: common GPUBufferUsage flag
+* combinations by name.
+*/
+const BUFFER_USAGE_PRESETS = {
+	vertex: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+	index: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST,
+	indirect: GPUBufferUsage.INDIRECT | GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+	uniform: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+	storage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC,
+	"read-only-storage": GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+	upload: GPUBufferUsage.MAP_WRITE | GPUBufferUsage.COPY_SRC,
+	readback: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST,
+	"query-resolve": GPUBufferUsage.QUERY_RESOLVE | GPUBufferUsage.COPY_SRC
+};
+/**
+* Coerce input to a typed array, additionally converting index data to one of
+* the two WebGPU index formats: libraries like primitive-geometry hand out
+* Uint8Array cells for small geometries, which uint16/uint32 draws misread. An
+* explicit `indexFormat` is authoritative; otherwise it is derived from the
+* data (uint32 when any index exceeds 65535). Raw ArrayBuffers are trusted to
+* already contain data in the right format.
+*/
+function toBufferData(data, index, indexFormat) {
+	const typed = toTypedArray(data, { index });
+	if (!index || data instanceof ArrayBuffer) return typed;
+	const values = typed;
+	if ((indexFormat ?? (typed instanceof Uint32Array ? "uint32" : typed instanceof Uint16Array ? "uint16" : Array.prototype.some.call(values, (value) => value > 65535) ? "uint32" : "uint16")) === "uint32") return typed instanceof Uint32Array ? typed : new Uint32Array(values);
+	return typed instanceof Uint16Array ? typed : new Uint16Array(values);
+}
+/**
+* Create a GPU buffer.
+*
+* ```js
+* const positions = gpu.createBuffer(ctx, {
+*   usage: "vertex",
+*   data: geometry.positions,
+* });
+* const indices = gpu.createBuffer(ctx, {
+*   usage: "index",
+*   data: geometry.cells,
+* });
+* ```
+*/
+function createBuffer(ctx, options) {
+	const usage = typeof options.usage === "string" ? BUFFER_USAGE_PRESETS[options.usage] : options.usage;
+	const index = (usage & GPUBufferUsage.INDEX) !== 0;
+	const data = options.data === void 0 ? void 0 : toBufferData(options.data, index, options.indexFormat);
+	const size = alignTo(Math.max(options.size ?? 0, data?.byteLength ?? 0), 4);
+	if (size === 0) throw new Error("pex-gpu: createBuffer needs data or a size");
+	const buffer = ctx.device.createBuffer({
+		size,
+		usage,
+		...data && { mappedAtCreation: true },
+		...options.label && { label: options.label }
+	});
+	if (data) {
+		new Uint8Array(buffer.getMappedRange()).set(new Uint8Array(data.buffer, data.byteOffset, data.byteLength));
+		buffer.unmap();
+	}
+	const id = nextId();
+	trackResource(ctx.device, "buffers", {
+		id,
+		...options.label && { label: options.label },
+		usage: buffer.usage,
+		bytes: size
+	});
+	debugLog(ctx.device, "resources", () => `createBuffer ${options.label ? `"${options.label}" ` : ""}${size} bytes`);
+	let disposed = false;
+	function dispose() {
+		if (disposed) return;
+		disposed = true;
+		untrackResource(ctx.device, "buffers", id);
+		buffer.destroy();
+	}
+	return {
+		buffer,
+		size,
+		usage: buffer.usage,
+		id,
+		...data && { length: data.length },
+		...index && { indexFormat: options.indexFormat ?? (data instanceof Uint32Array ? "uint32" : "uint16") },
+		dispose,
+		[Symbol.dispose]: dispose
+	};
+}
+/**
+* Upload data into an existing buffer.
+*
+* ```js
+* gpu.updateBuffer(ctx, positions, newPositions);
+* ```
+*/
+function updateBuffer(ctx, target, data, byteOffset = 0) {
+	const typed = toBufferData(data, (target.usage & GPUBufferUsage.INDEX) !== 0, target.indexFormat);
+	let bytes = new Uint8Array(typed.buffer, typed.byteOffset, typed.byteLength);
+	if (bytes.byteLength % 4 !== 0) {
+		const padded = new Uint8Array(alignTo(bytes.byteLength, 4));
+		padded.set(bytes);
+		bytes = padded;
+	}
+	ctx.device.queue.writeBuffer(target.buffer, byteOffset, bytes);
+	if (byteOffset === 0 && target.length !== void 0) target.length = typed.length;
+}
+
+/**
+* GPU timestamp measurement. Requires creating the context with
+* `requiredFeatures: ["timestamp-query"]`.
+*
+* One query set plus a ring of readback buffers; `debug(ctx, { timing: true })`
+* builds on the same object to time every pass automatically.
+*
+* ```js
+* const query = gpu.createTimestampQuery(ctx);
+* // pass descriptor: { ..., timestampWrites: query.timestampWrites }
+* query.resolve(encoder);
+* const timestamps = await query.read();
+* if (timestamps)
+*   console.log(`${Number(timestamps[1] - timestamps[0]) / 1e6} ms`);
+* ```
+*/
+function createTimestampQuery(ctx, options = {}) {
+	if (!ctx.device.features.has("timestamp-query")) throw new Error("pex-gpu: createTimestampQuery requires the \"timestamp-query\" feature; pass requiredFeatures: [\"timestamp-query\"] to createContext");
+	const { count = 2, label = "pex-gpu timestamps" } = options;
+	const buffering = Math.max(1, options.buffering ?? 1);
+	const size = count * 8;
+	const querySet = ctx.device.createQuerySet({
+		label,
+		type: "timestamp",
+		count
+	});
+	const querySetId = nextId();
+	trackResource(ctx.device, "querySets", {
+		id: querySetId,
+		label: querySet.label,
+		type: "timestamp",
+		count,
+		bytes: size
+	});
+	const slots = [];
+	for (let index = 0; index < buffering; index++) {
+		const suffix = buffering > 1 ? ` ${index}` : "";
+		const resolve = ctx.device.createBuffer({
+			label: `${label} resolve${suffix}`,
+			size,
+			usage: BUFFER_USAGE_PRESETS["query-resolve"]
+		});
+		const read = ctx.device.createBuffer({
+			label: `${label} read${suffix}`,
+			size,
+			usage: BUFFER_USAGE_PRESETS.readback
+		});
+		const resolveId = nextId();
+		const readId = nextId();
+		for (const [id, buffer] of [[resolveId, resolve], [readId, read]]) trackResource(ctx.device, "buffers", {
+			id,
+			label: buffer.label,
+			usage: buffer.usage,
+			bytes: size
+		});
+		slots.push({
+			resolve,
+			read,
+			resolveId,
+			readId,
+			busy: false,
+			count
+		});
+	}
+	let armed = null;
+	let mapping = 0;
+	let disposed = false;
+	function destroy() {
+		untrackResource(ctx.device, "querySets", querySetId);
+		querySet.destroy();
+		for (const slot of slots) {
+			untrackResource(ctx.device, "buffers", slot.resolveId);
+			untrackResource(ctx.device, "buffers", slot.readId);
+			slot.resolve.destroy();
+			slot.read.destroy();
+		}
+	}
+	function dispose() {
+		if (disposed) return;
+		disposed = true;
+		if (!mapping) destroy();
+	}
+	return {
+		querySet,
+		count,
+		timestampWrites: {
+			querySet,
+			beginningOfPassWriteIndex: 0,
+			endOfPassWriteIndex: 1
+		},
+		resolve(encoder, resolveCount = count) {
+			const slot = armed ?? slots.find((slot) => !slot.busy);
+			if (!slot) return false;
+			slot.busy = true;
+			slot.count = resolveCount;
+			armed = slot;
+			encoder.resolveQuerySet(querySet, 0, resolveCount, slot.resolve, 0);
+			encoder.copyBufferToBuffer(slot.resolve, 0, slot.read, 0, resolveCount * 8);
+			return true;
+		},
+		async read() {
+			const slot = armed;
+			armed = null;
+			if (!slot) return null;
+			mapping++;
+			try {
+				await new Promise((resolve) => setTimeout(resolve, 0));
+				await slot.read.mapAsync(GPUMapMode.READ);
+				const timestamps = new BigInt64Array(slot.read.getMappedRange(0, slot.count * 8).slice(0));
+				slot.read.unmap();
+				return timestamps;
+			} catch {
+				return null;
+			} finally {
+				slot.busy = false;
+				mapping--;
+				if (disposed && !mapping) destroy();
+			}
+		},
+		dispose,
+		[Symbol.dispose]: dispose
+	};
+}
+
+const RESOURCE_COUNTS_KEYS = [
+	"buffers",
+	"textures",
+	"querySets",
+	"samplers",
+	"renderBundles"
+];
+const CACHE_COUNTS_KEYS = [
+	"shaderReflections",
+	"shaderModules",
+	"renderPipelines",
+	"computePipelines",
+	"bindGroupLayouts",
+	"pipelineLayouts",
+	"bindGroups"
+];
+const BUFFER_USAGE_NAMES = [
+	[1, "map-read"],
+	[2, "map-write"],
+	[4, "copy-src"],
+	[8, "copy-dst"],
+	[16, "index"],
+	[32, "vertex"],
+	[64, "uniform"],
+	[128, "storage"],
+	[256, "indirect"],
+	[512, "query-resolve"]
+];
+const TEXTURE_USAGE_NAMES = [
+	[1, "copy-src"],
+	[2, "copy-dst"],
+	[4, "texture-binding"],
+	[8, "storage-binding"],
+	[16, "render-attachment"]
+];
+/**
+* Split raw usage flags into WebGPU's flag names, in bit order — for grouping
+* or printing {@link DebugResources} entries.
+*
+* ```js
+* usageNames(positions.usage, "buffer").join("|"); // "copy-dst|vertex"
+* ```
+*/
+const usageNames = (usage, type) => (type === "buffer" ? BUFFER_USAGE_NAMES : TEXTURE_USAGE_NAMES).filter(([bit]) => (usage & bit) !== 0).map(([, name]) => name);
+const createResourceCounts = () => ({
+	alive: 0,
+	created: 0,
+	disposed: 0,
+	bytes: 0
+});
+const createCacheCounts = () => ({
+	created: 0,
+	hits: 0,
+	ms: 0
+});
+const createResourceCountsRecord = () => Object.fromEntries(RESOURCE_COUNTS_KEYS.map((key) => [key, createResourceCounts()]));
+const createCacheCountsRecord = () => Object.fromEntries(CACHE_COUNTS_KEYS.map((key) => [key, createCacheCounts()]));
+const createLiveResources = () => Object.fromEntries(RESOURCE_COUNTS_KEYS.map((key) => [key, /* @__PURE__ */ new Map()]));
+const states$1 = shared("debugState", () => /* @__PURE__ */ new WeakMap());
+const state = (device) => states$1.getOrInsertComputed(device, () => ({
+	counters: {
+		lifetime: {
+			...createResourceCountsRecord(),
+			...createCacheCountsRecord()
+		},
+		frame: {
+			renderPasses: 0,
+			computePasses: 0,
+			draws: 0,
+			dispatches: 0,
+			bundles: 0,
+			uniformBytes: 0,
+			...createCacheCountsRecord()
+		}
+	},
+	live: createLiveResources(),
+	log: false,
+	groups: false,
+	timing: false
+}));
+/**
+* Live mutable counters for a device — incremented by the instrumented
+* internals.
+*/
+const debugCounters = (device) => state(device).counters;
+/**
+* List a created resource and bump its type's lifetime counters. Takes
+* ownership of `entry` and freezes it. Entries hold plain data, never the GPU
+* handle: that would pin an undisposed resource that is otherwise unreachable,
+* turning a recoverable leak into a permanent one.
+*/
+function trackResource(device, type, entry) {
+	const { counters, live } = state(device);
+	const counts = counters.lifetime[type];
+	counts.created++;
+	counts.alive++;
+	counts.bytes += entry.bytes;
+	Object.freeze(entry);
+	live[type].set(entry.id, entry);
+}
+/** Drop a disposed resource. A second call for the same id is a no-op. */
+function untrackResource(device, type, id) {
+	const { counters, live } = state(device);
+	const entry = live[type].get(id);
+	if (!entry) return;
+	live[type].delete(id);
+	const counts = counters.lifetime[type];
+	counts.alive--;
+	counts.disposed++;
+	counts.bytes -= entry.bytes;
+}
+const collected = new FinalizationRegistry(({ device, type, id }) => {
+	const value = device.deref();
+	if (value) untrackResource(value, type, id);
+});
+/**
+* Like {@link trackResource}, for resources WebGPU reclaims with the JS object
+* instead of a destroy() — samplers and render bundles, which own no dispose()
+* to untrack them. Entries drop once `object` is collected.
+*/
+function trackCollectable(device, type, object, entry) {
+	trackResource(device, type, entry);
+	collected.register(object, {
+		device: new WeakRef(device),
+		type,
+		id: entry.id
+	});
+}
+/**
+* Record a get-or-create cache lookup against both the lifetime and per-frame
+* counters. `ms` is how long the miss took to produce its entry; null records a
+* hit, which by definition produced nothing.
+*/
+function recordCacheAccess(device, key, ms) {
+	const counters = debugCounters(device);
+	const lifetime = counters.lifetime[key];
+	const frame = counters.frame[key];
+	if (ms === null) {
+		lifetime.hits++;
+		frame.hits++;
+	} else {
+		lifetime.created++;
+		frame.created++;
+		lifetime.ms += ms;
+		frame.ms += ms;
+	}
+}
+const resetCacheCounts = (cache) => {
+	cache.created = 0;
+	cache.hits = 0;
+	cache.ms = 0;
+};
+/** Reset the per-frame counters; called by frame() at the start of each tick. */
+function resetFrameCounters(device) {
+	const frame = state(device).counters.frame;
+	frame.renderPasses = 0;
+	frame.computePasses = 0;
+	frame.draws = 0;
+	frame.dispatches = 0;
+	frame.bundles = 0;
+	frame.uniformBytes = 0;
+	for (const key of CACHE_COUNTS_KEYS) resetCacheCounts(frame[key]);
+}
+/** Whether GPU debug groups should be emitted, per {@link debug}. */
+const debugGroupsEnabled = (device) => states$1.get(device)?.groups ?? false;
+/** Whether pass timing should be collected, per {@link debug}. */
+const timingEnabled = (device) => states$1.get(device)?.timing ?? false;
+/**
+* Log a debug message when the level is enabled. The message is built lazily so
+* disabled logging costs a WeakMap lookup.
+*/
+function debugLog(device, level, message) {
+	const log = states$1.get(device)?.log;
+	if (log === "commands" || log === level) console.debug(`pex-gpu: ${message()}`);
+}
+/**
+* Toggle debug logging and GPU debug groups. Counters ({@link debugStats}) are
+* always on — this only controls reporting.
+*
+* Timing is absent from the boolean shorthand on purpose: it needs a device
+* feature and changes what the GPU records, so it is only ever switched on by
+* asking for it.
+*
+* ```js
+* gpu.debug(ctx); // log: "resources", groups: true
+* gpu.debug(ctx, { log: "commands" }); // full submit stream, no groups
+* gpu.debug(ctx, { timing: true }); // pass timings, no logging
+* gpu.debug(ctx, false); // all reporting off
+* ```
+*/
+function debug(ctx, options = true) {
+	const value = state(ctx.device);
+	if (typeof options === "boolean") {
+		value.log = options && "resources";
+		value.groups = options;
+		value.timing = false;
+	} else {
+		value.log = options.log ?? false;
+		value.groups = options.groups ?? false;
+		const timing = options.timing ?? false;
+		if (timing && !ctx.device.features.has("timestamp-query")) console.warn("pex-gpu: debug timing needs the \"timestamp-query\" feature — pass optionalFeatures: [\"timestamp-query\"] to createContext");
+		value.timing = timing && ctx.device.features.has("timestamp-query");
+	}
+}
+/**
+* Snapshot of the context's resource/rendering pressure counters and of every
+* live resource.
+*
+* ```js
+* const { lifetime, frame, resources } = gpu.debugStats(ctx);
+* console.log(`${lifetime.buffers.alive} buffers, ${frame.draws} draws`);
+* console.table(resources.textures);
+* ```
+*/
+function debugStats(ctx) {
+	const { counters, live } = state(ctx.device);
+	return {
+		...structuredClone(counters),
+		resources: Object.fromEntries(RESOURCE_COUNTS_KEYS.map((key) => [key, [...live[key].values()]])),
+		timings: timingStates.get(ctx)?.last ?? null
+	};
+}
+/** Two queries per pass; the spec caps a query set at 4096. */
+const INITIAL_QUERIES = 256;
+const MAX_QUERIES = 4096;
+/**
+* Readback buffers. Two frames may be in flight
+* (`FrameOptions.maxFramesInFlight`) and a third is mapping, so three is what
+* it takes to time every frame without ever waiting on one.
+*/
+const BUFFERING = 3;
+/** Chrome's default timestamp bucket, in nanoseconds. */
+const QUANTUM = 100000n;
+const timingStates = shared("timingState", () => /* @__PURE__ */ new WeakMap());
+const timingState = (ctx) => timingStates.getOrInsertComputed(ctx, () => ({
+	query: null,
+	capacity: INITIAL_QUERIES,
+	frameIndex: -1,
+	cursor: 0,
+	needed: 0,
+	passes: [],
+	armed: null,
+	dropped: 0,
+	last: null
+}));
+/**
+* Start a frame's timings: called by beginFrame. Grows the query set when the
+* previous frame ran out of it — a set can't be resized, so the passes that
+* overflowed went untimed and the next frame gets the bigger one.
+*/
+function resetFrameTiming(ctx) {
+	if (!timingEnabled(ctx.device)) return;
+	const timing = timingState(ctx);
+	if (timing.needed > timing.capacity) {
+		const capacity = Math.min(MAX_QUERIES, 2 ** Math.ceil(Math.log2(timing.needed)));
+		if (capacity > timing.capacity) {
+			timing.capacity = capacity;
+			timing.query?.dispose();
+			timing.query = null;
+			debugLog(ctx.device, "resources", () => `pass timing query set grown to ${capacity} queries`);
+		}
+	}
+	timing.frameIndex++;
+	timing.cursor = 0;
+	timing.needed = 0;
+	timing.passes = [];
+}
+/**
+* Claim a begin/end query pair for a pass being opened, and return the writes
+* to put in its descriptor. Undefined when timing is off, when `userWrites`
+* already claims the descriptor's single `timestampWrites` slot, or when the
+* query set is full — the pass is still listed, with a null time.
+*
+* Render and compute timestamp writes are the same shape, so one return type
+* serves both descriptors.
+*/
+function trackPassTiming(ctx, label, kind, userWrites) {
+	if (!timingEnabled(ctx.device)) return;
+	const timing = timingState(ctx);
+	if (userWrites) {
+		timing.passes.push({
+			label,
+			kind,
+			query: null
+		});
+		return;
+	}
+	timing.needed += 2;
+	const query = timing.query ??= createTimestampQuery(ctx, {
+		label: "pex-gpu pass timings",
+		count: timing.capacity,
+		buffering: BUFFERING
+	});
+	if (timing.cursor + 2 > query.count) {
+		timing.passes.push({
+			label,
+			kind,
+			query: null
+		});
+		return;
+	}
+	const begin = timing.cursor;
+	timing.cursor += 2;
+	timing.passes.push({
+		label,
+		kind,
+		query: begin
+	});
+	return {
+		querySet: query.querySet,
+		beginningOfPassWriteIndex: begin,
+		endOfPassWriteIndex: begin + 1
+	};
+}
+/**
+* Encode this frame's query resolution: called by endFrame, after every pass
+* has ended and before the encoder is finished.
+*/
+function resolveFrameTiming(ctx, encoder) {
+	if (!timingEnabled(ctx.device)) return;
+	const timing = timingState(ctx);
+	if (!timing.query || timing.cursor === 0) return;
+	if (!timing.query.resolve(encoder, timing.cursor)) {
+		timing.dropped++;
+		return;
+	}
+	timing.armed = {
+		frameIndex: timing.frameIndex,
+		passes: timing.passes,
+		latency: null
+	};
+}
+function buildTimings(timing, armed, timestamps) {
+	let gpuTime = 0;
+	let timed = 0;
+	let quantized = true;
+	const passes = armed.passes.map((pass, index) => {
+		let ms = null;
+		if (pass.query !== null) {
+			const begin = timestamps[pass.query];
+			const end = timestamps[pass.query + 1];
+			if (begin > 0n && end > begin) {
+				const ns = end - begin;
+				quantized &&= ns % QUANTUM === 0n;
+				ms = Number(ns) / 1e6;
+				gpuTime += ms;
+				timed++;
+			}
+		}
+		return {
+			index,
+			label: pass.label,
+			kind: pass.kind,
+			ms
+		};
+	});
+	return {
+		frameIndex: armed.frameIndex,
+		latency: armed.latency,
+		gpuTime: timed ? gpuTime : null,
+		passes,
+		quantized: timed > 0 && quantized,
+		dropped: timing.dropped
+	};
+}
+/**
+* Close a frame's timings: called by endFrame right after the queue submit,
+* which is both when the resolved buffer may be mapped and when frame latency
+* starts counting.
+*/
+function completeFrameTiming(ctx) {
+	if (!timingEnabled(ctx.device)) return;
+	const timing = timingState(ctx);
+	const armed = timing.armed;
+	timing.armed = null;
+	if (!armed || !timing.query) return;
+	const submittedAt = performance.now();
+	ctx.device.queue.onSubmittedWorkDone().then(() => {
+		armed.latency = performance.now() - submittedAt;
+	}, () => {});
+	timing.query.read().then((timestamps) => {
+		if (timestamps) timing.last = buildTimings(timing, armed, timestamps);
+	});
+}
+/** Release the query set and readback buffers. Called by context dispose. */
+function disposeTiming(ctx) {
+	const timing = timingStates.get(ctx);
+	if (!timing) return;
+	timing.query?.dispose();
+	timingStates.delete(ctx);
+}
+
 const SCALARS = {
 	f32: {
 		size: 4,
@@ -326,7 +913,8 @@ function normalizeType(type) {
 		h: "f16"
 	}[suffix]}>`);
 }
-function typeInfo(type, structs) {
+const layoutKey = (space, name) => `${space}:${name}`;
+function typeInfo(type, space, structs) {
 	const scalar = SCALARS[type];
 	if (scalar) return scalar;
 	let match = /^vec([234])<(\w+)>$/.exec(type);
@@ -344,13 +932,13 @@ function typeInfo(type, structs) {
 	match = /^mat([234])x([234])<(\w+)>$/.exec(type);
 	if (match) {
 		const [cols, rows] = [Number(match[1]), Number(match[2])];
-		const column = typeInfo(`vec${rows}<${match[3]}>`, structs);
+		const column = typeInfo(`vec${rows}<${match[3]}>`, space, structs);
 		return {
 			size: cols * alignTo(column.size, column.align),
 			align: column.align
 		};
 	}
-	const struct = structs.get(type);
+	const struct = structs.get(layoutKey(space, type));
 	if (struct) return {
 		size: struct.size,
 		align: struct.align,
@@ -358,12 +946,16 @@ function typeInfo(type, structs) {
 	};
 	throw reflectionError(`unsupported type "${type}" in buffer layout`);
 }
-/** Element stride of an array<T, N> in the uniform address space. */
-function arrayInfo(elementType, structs) {
-	const element = typeInfo(elementType, structs);
-	return {
-		stride: alignTo(alignTo(element.size, element.align), 16),
+/** Element stride and alignment of an array<T, N> under `space`'s rules. */
+function arrayInfo(elementType, space, structs) {
+	const element = typeInfo(elementType, space, structs);
+	const stride = alignTo(element.size, element.align);
+	return space === "uniform" ? {
+		stride: alignTo(stride, 16),
 		align: alignTo(element.align, 16)
+	} : {
+		stride,
+		align: element.align
 	};
 }
 const reflectionError = (message) => /* @__PURE__ */ new Error(`pex-gpu: WGSL reflection: ${message}`);
@@ -425,11 +1017,11 @@ function parseStructs(source) {
 	return structs;
 }
 /**
-* Compute (and cache) the uniform-address-space byte layout of a struct,
-* recursing into nested struct and array element types.
+* Compute (and cache) a struct's byte layout under `space`'s rules, recursing
+* into nested struct and array element types.
 */
-function computeLayout(name, rawStructs, layouts) {
-	const cached = layouts.get(name);
+function computeLayout(name, space, rawStructs, layouts) {
+	const cached = layouts.get(layoutKey(space, name));
 	if (cached) return cached;
 	const raw = rawStructs.get(name);
 	if (!raw) throw reflectionError(`unknown struct "${name}"`);
@@ -444,8 +1036,8 @@ function computeLayout(name, rawStructs, layouts) {
 		const array = /^array<(.+?)(?:,\s*(\d+)\s*)?>$/.exec(type);
 		if (array) {
 			const elementType = array[1];
-			if (rawStructs.has(elementType)) computeLayout(elementType, rawStructs, layouts);
-			const element = arrayInfo(elementType, layouts);
+			if (rawStructs.has(elementType)) computeLayout(elementType, space, rawStructs, layouts);
+			const element = arrayInfo(elementType, space, layouts);
 			arrayCount = array[2] ? Number(array[2]) : void 0;
 			arrayStride = element.stride;
 			if (arrayCount === void 0) throw reflectionError(`runtime-sized array "${memberName}" is only allowed as the last member of a storage buffer struct; bind it as a whole buffer instead`);
@@ -454,9 +1046,9 @@ function computeLayout(name, rawStructs, layouts) {
 				align: element.align
 			};
 		} else {
-			if (rawStructs.has(type)) computeLayout(type, rawStructs, layouts);
-			info = typeInfo(type, layouts);
-			if (layouts.has(type)) info = {
+			if (rawStructs.has(type)) computeLayout(type, space, rawStructs, layouts);
+			info = typeInfo(type, space, layouts);
+			if (space === "uniform" && info.structLayout) info = {
 				...info,
 				align: alignTo(info.align, 16)
 			};
@@ -470,7 +1062,8 @@ function computeLayout(name, rawStructs, layouts) {
 			size: attributes.size ?? info.size,
 			align,
 			...arrayCount !== void 0 && { arrayCount },
-			...arrayStride !== void 0 && { arrayStride }
+			...arrayStride !== void 0 && { arrayStride },
+			...info.structLayout && { structLayout: info.structLayout }
 		});
 		offset += attributes.size ?? info.size;
 		structAlign = Math.max(structAlign, align);
@@ -481,7 +1074,7 @@ function computeLayout(name, rawStructs, layouts) {
 		size: alignTo(offset, structAlign || 4),
 		members
 	};
-	layouts.set(name, layout);
+	layouts.set(layoutKey(space, name), layout);
 	return layout;
 }
 const TEXTURE_TYPES = {
@@ -540,7 +1133,7 @@ function parseBindings(source, structs, rawStructs, visibility) {
 			binding
 		};
 		if (addressSpace?.startsWith("uniform")) {
-			const layout = resolveBufferLayout(type, structs, rawStructs);
+			const layout = resolveBufferLayout(type, "uniform", structs, rawStructs);
 			bindings.push({
 				...base,
 				kind: "uniform",
@@ -552,7 +1145,7 @@ function parseBindings(source, structs, rawStructs, visibility) {
 			const readOnly = !addressSpace.includes("read_write");
 			const kind = readOnly ? "read-only-storage" : "storage";
 			const elementType = /^array<([^,]+)>$/.exec(type)?.[1];
-			const element = elementType && rawStructs.has(elementType) ? computeLayout(elementType, rawStructs, structs) : void 0;
+			const element = elementType && rawStructs.has(elementType) ? computeLayout(elementType, "storage", rawStructs, structs) : void 0;
 			bindings.push({
 				...base,
 				kind,
@@ -600,15 +1193,15 @@ function parseBindings(source, structs, rawStructs, visibility) {
 	return bindings;
 }
 /** Layout for a buffer binding: struct type, or a single-value synthetic layout. */
-function resolveBufferLayout(type, structs, rawStructs) {
-	if (rawStructs.has(type)) return computeLayout(type, rawStructs, structs);
+function resolveBufferLayout(type, space, structs, rawStructs) {
+	if (rawStructs.has(type)) return computeLayout(type, space, rawStructs, structs);
 	const array = /^array<(.+?)(?:,\s*(\d+)\s*)?>$/.exec(type);
 	if (array && array[2]) {
 		const elementType = array[1];
 		const count = Number(array[2]);
 		const isStructElement = rawStructs.has(elementType);
-		if (isStructElement) computeLayout(elementType, rawStructs, structs);
-		const { stride, align } = arrayInfo(elementType, structs);
+		if (isStructElement) computeLayout(elementType, space, rawStructs, structs);
+		const { stride, align } = arrayInfo(elementType, space, structs);
 		const size = stride * count;
 		return {
 			name: "",
@@ -622,11 +1215,11 @@ function resolveBufferLayout(type, structs, rawStructs) {
 				align,
 				arrayCount: count,
 				arrayStride: stride,
-				...isStructElement && { elementLayout: structs.get(elementType) }
+				...isStructElement && { elementLayout: structs.get(layoutKey(space, elementType)) }
 			}]
 		};
 	}
-	const info = typeInfo(type, structs);
+	const info = typeInfo(type, space, structs);
 	return {
 		name: "",
 		size: alignTo(info.size, info.align),
@@ -666,7 +1259,7 @@ function parseEntryPoints(source) {
 function parseVertexInputs(paramsText, rawStructs) {
 	const inputs = [];
 	const addInput = (name, type, location) => {
-		const info = typeInfo(type, /* @__PURE__ */ new Map());
+		const info = typeInfo(type, "storage", /* @__PURE__ */ new Map());
 		if (!info.vertexFormat) throw reflectionError(`type "${type}" of vertex input "${name}" has no vertex format`);
 		inputs.push({
 			name,
@@ -829,11 +1422,10 @@ function markNonFilteringSamplers(source, bindings) {
 		const idents = splitTopLevel(args, "([", ")]").map((arg) => /[A-Za-z_]\w*/.exec(arg)?.[0]);
 		for (let i = 1; i < idents.length; i++) if (samplers.has(idents[i]) && depthTextures.has(idents[i - 1])) nonFiltering.add(idents[i]);
 	}
-	if (!nonFiltering.size) return bindings;
-	return bindings.map((b) => b.kind === "sampler" && nonFiltering.has(b.name) ? {
+	return nonFiltering.size ? bindings.map((b) => b.kind === "sampler" && nonFiltering.has(b.name) ? {
 		...b,
 		nonFiltering: true
-	} : b);
+	} : b) : bindings;
 }
 /** Group bindings by `@group` index, sorted by binding number within each group. */
 function bindingsToGroups(bindings) {
@@ -842,7 +1434,7 @@ function bindingsToGroups(bindings) {
 	for (const group of groups.values()) group.sort((a, b) => a.binding - b.binding);
 	return groups;
 }
-const reflectionCache = /* @__PURE__ */ new Map();
+const reflectionCache = shared("reflectionCache", () => /* @__PURE__ */ new Map());
 /**
 * Parse a WGSL source string into a {@link ShaderReflection}. Results are cached
 * by source identity: parsing the same string twice is free.
@@ -869,6 +1461,44 @@ function parseWGSL(source) {
 		overrides: overridesByEntryPoint(stripped, entryPoints)
 	};
 	reflectionCache.set(source, reflection);
+	return reflection;
+}
+/**
+* {@link parseWGSL} accounted against a device's `shaderReflections` cache
+* counters — what the package itself calls, so the cost of reflecting a new
+* shader is visible next to compiling one. `parseWGSL` stays device-free:
+* reflection is pure and runs outside a WebGPU host.
+*/
+function reflectWGSL(device, source) {
+	const cached = reflectionCache.get(source);
+	if (cached) {
+		recordCacheAccess(device, "shaderReflections", null);
+		return cached;
+	}
+	debugLog(device, "resources", () => `parseWGSL (${source.length} chars)`);
+	const start = performance.now();
+	const reflection = parseWGSL(source);
+	recordCacheAccess(device, "shaderReflections", performance.now() - start);
+	return reflection;
+}
+/**
+* The reflection for one pipeline's stages: {@link reflectWGSL} per source plus
+* {@link mergeReflections} when they differ, charged to the device's
+* `shaderReflections` counters as a single access. The merge is not cached and
+* runs per pipeline, so it belongs in the same number as the parses it joins.
+*/
+function reflectStages(device, vertex, fragment) {
+	if (!fragment || fragment === vertex) return reflectWGSL(device, vertex);
+	const cachedVertex = reflectionCache.get(vertex);
+	const cachedFragment = reflectionCache.get(fragment);
+	if (cachedVertex && cachedFragment) {
+		recordCacheAccess(device, "shaderReflections", null);
+		return mergeReflections(cachedVertex, cachedFragment);
+	}
+	debugLog(device, "resources", () => `parseWGSL vertex+fragment (${vertex.length}+${fragment.length} chars)`);
+	const start = performance.now();
+	const reflection = mergeReflections(cachedVertex ?? parseWGSL(vertex), cachedFragment ?? parseWGSL(fragment));
+	recordCacheAccess(device, "shaderReflections", performance.now() - start);
 	return reflection;
 }
 /**
@@ -949,19 +1579,19 @@ async function reportShaderDiagnostics(code, module, scopeError, label) {
 	const warnings = messages.filter((message) => message.type !== "error");
 	if (warnings.length) console.warn(`pex-gpu: WGSL warnings${name}\n${warnings.map((message) => formatCompilationMessage(code, message)).join("\n")}`);
 	const errors = messages.filter((message) => message.type === "error");
-	if (errors.length || error) {
-		const details = errors.length ? errors.map((message) => formatCompilationMessage(code, message)).join("\n") : error.message;
-		console.error(`pex-gpu: WGSL compilation failed${name}\n${details}`);
-	}
+	if (!(errors.length || error)) return;
+	const details = errors.length ? errors.map((message) => formatCompilationMessage(code, message)).join("\n") : error.message;
+	console.error(`pex-gpu: WGSL compilation failed${name}\n${details}`);
 }
+/** Resolves to whether the pipeline failed validation. */
 async function reportPipelineError(scopeError, label, stages) {
 	let error = null;
 	try {
 		error = await scopeError;
 	} catch {
-		return;
+		return false;
 	}
-	if (!error) return;
+	if (!error) return false;
 	const details = [];
 	for (const { stage, code, module } of stages) {
 		let messages = [];
@@ -973,6 +1603,7 @@ async function reportPipelineError(scopeError, label, stages) {
 		for (const message of messages) details.push(`[${stage}] ${formatCompilationMessage(code, message)}`);
 	}
 	console.error(`pex-gpu: pipeline creation failed in "${label}"\n${error.message}${details.length ? `\n\n${details.join("\n")}` : ""}`);
+	return true;
 }
 /**
 * Caches shader modules by source and pipelines by their full descriptor, so
@@ -990,8 +1621,19 @@ var PipelineCache = class {
 	#renderPipelines = /* @__PURE__ */ new Map();
 	/** Compute source → serialized state */
 	#computePipelines = /* @__PURE__ */ new Map();
+	#failed = /* @__PURE__ */ new WeakSet();
 	constructor(device) {
 		this.#device = device;
+	}
+	/**
+	* Time already charged to the nested caches a pipeline creation goes through,
+	* subtracted from the pipeline's own `ms` so the counters stay disjoint and
+	* additive. The lifetime counters are monotonic, so the delta across a
+	* factory call is exactly what that call triggered.
+	*/
+	#nestedTime() {
+		const { lifetime } = debugCounters(this.#device);
+		return lifetime.shaderReflections.ms + lifetime.shaderModules.ms;
 	}
 	get size() {
 		let size = 0;
@@ -1009,8 +1651,10 @@ var PipelineCache = class {
 	*/
 	getShaderModule(code, label) {
 		let created = false;
+		let start = 0;
 		const module = this.#modules.getOrInsertComputed(code, (code) => {
 			created = true;
+			start = performance.now();
 			debugLog(this.#device, "resources", () => `createShaderModule ${label ? `"${label}" ` : ""}(${code.length} chars)`);
 			this.#device.pushErrorScope("validation");
 			const module = this.#device.createShaderModule({
@@ -1020,7 +1664,7 @@ var PipelineCache = class {
 			reportShaderDiagnostics(code, module, this.#device.popErrorScope(), label);
 			return module;
 		});
-		recordCacheAccess(this.#device, "shaderModules", !created);
+		recordCacheAccess(this.#device, "shaderModules", created ? performance.now() - start : null);
 		return module;
 	}
 	/**
@@ -1030,9 +1674,19 @@ var PipelineCache = class {
 	*/
 	#captureValidation(label, create, stages) {
 		this.#device.pushErrorScope("validation");
-		const result = create();
-		reportPipelineError(this.#device.popErrorScope(), label, stages);
-		return result;
+		const pipeline = create();
+		reportPipelineError(this.#device.popErrorScope(), label, stages).then((failed) => {
+			if (failed) this.#failed.add(pipeline);
+		});
+		return pipeline;
+	}
+	/**
+	* Whether a pipeline from this cache failed validation. Known asynchronously:
+	* false until its error scope resolves, so the first submits using it are
+	* already encoded.
+	*/
+	hasFailed(pipeline) {
+		return this.#failed.has(pipeline);
 	}
 	getRenderPipeline(source) {
 		const { vertex, fragment } = resolveShaders(source);
@@ -1049,14 +1703,20 @@ var PipelineCache = class {
 			source.layoutKey ?? "auto"
 		]);
 		let created = false;
+		let start = 0;
+		let nestedTime = 0;
 		const pipeline = byState.getOrInsertComputed(state, () => {
 			created = true;
+			start = performance.now();
+			nestedTime = this.#nestedTime();
 			const label = source.label ?? "pex-gpu pipeline";
 			debugLog(this.#device, "resources", () => `createRenderPipeline "${label}" ${state}`);
 			const vertexModule = this.getShaderModule(vertex, source.label);
-			const fragmentModule = fragment ? this.getShaderModule(fragment, source.label) : void 0;
+			let fragmentModule;
+			if (fragment) fragmentModule = fragment === vertex ? vertexModule : this.getShaderModule(fragment, source.label);
 			const vertexReflection = parseWGSL(vertex);
-			const fragmentReflection = fragment ? parseWGSL(fragment) : void 0;
+			let fragmentReflection;
+			if (fragment) fragmentReflection = fragment === vertex ? vertexReflection : parseWGSL(fragment);
 			const vertexEntryPoint = source.vertexEntryPoint ?? vertexReflection.entryPoints.vertex;
 			const fragmentEntryPoint = source.fragmentEntryPoint ?? fragmentReflection?.entryPoints.fragment;
 			const vertexConstants = scopeConstants(source.constants, vertexEntryPoint ? vertexReflection.overrides.get(vertexEntryPoint) : void 0);
@@ -1091,7 +1751,7 @@ var PipelineCache = class {
 				...source.multisample && { multisample: source.multisample }
 			}), stages);
 		});
-		recordCacheAccess(this.#device, "renderPipelines", !created);
+		recordCacheAccess(this.#device, "renderPipelines", created ? performance.now() - start - (this.#nestedTime() - nestedTime) : null);
 		return pipeline;
 	}
 	getComputePipeline(source) {
@@ -1102,8 +1762,12 @@ var PipelineCache = class {
 			source.layoutKey ?? "auto"
 		]);
 		let created = false;
+		let start = 0;
+		let nestedTime = 0;
 		const pipeline = byState.getOrInsertComputed(state, () => {
 			created = true;
+			start = performance.now();
+			nestedTime = this.#nestedTime();
 			const label = source.label ?? "pex-gpu compute pipeline";
 			debugLog(this.#device, "resources", () => `createComputePipeline "${label}" ${state}`);
 			const reflection = parseWGSL(source.compute);
@@ -1124,7 +1788,7 @@ var PipelineCache = class {
 				module
 			}]);
 		});
-		recordCacheAccess(this.#device, "computePipelines", !created);
+		recordCacheAccess(this.#device, "computePipelines", created ? performance.now() - start - (this.#nestedTime() - nestedTime) : null);
 		return pipeline;
 	}
 	clear() {
@@ -1133,115 +1797,6 @@ var PipelineCache = class {
 		this.#computePipelines.clear();
 	}
 };
-
-let nextBufferId = 1;
-/**
-* Type guard for {@link GpuBuffer} resource objects (raw GPUBuffers also have a
-* similar shape — discriminate on `id`).
-*/
-const isGpuBuffer = (value) => typeof value === "object" && value !== null && "id" in value && "buffer" in value;
-/**
-* Usage presets for {@link createBuffer}: common GPUBufferUsage flag
-* combinations by name.
-*/
-const BUFFER_USAGE_PRESETS = {
-	vertex: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
-	index: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST,
-	indirect: GPUBufferUsage.INDIRECT | GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
-	uniform: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-	storage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC,
-	"read-only-storage": GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
-	upload: GPUBufferUsage.MAP_WRITE | GPUBufferUsage.COPY_SRC,
-	readback: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST,
-	"query-resolve": GPUBufferUsage.QUERY_RESOLVE | GPUBufferUsage.COPY_SRC
-};
-/**
-* Coerce input to a typed array, additionally converting index data to one of
-* the two WebGPU index formats: libraries like primitive-geometry hand out
-* Uint8Array cells for small geometries, which uint16/uint32 draws misread. An
-* explicit `indexFormat` is authoritative; otherwise it is derived from the
-* data (uint32 when any index exceeds 65535). Raw ArrayBuffers are trusted to
-* already contain data in the right format.
-*/
-function toBufferData(data, index, indexFormat) {
-	const typed = toTypedArray(data, { index });
-	if (!index || data instanceof ArrayBuffer) return typed;
-	const values = typed;
-	if ((indexFormat ?? (typed instanceof Uint32Array ? "uint32" : typed instanceof Uint16Array ? "uint16" : Array.prototype.some.call(values, (value) => value > 65535) ? "uint32" : "uint16")) === "uint32") return typed instanceof Uint32Array ? typed : new Uint32Array(values);
-	return typed instanceof Uint16Array ? typed : new Uint16Array(values);
-}
-/**
-* Create a GPU buffer.
-*
-* ```js
-* const positions = gpu.createBuffer(ctx, {
-*   usage: "vertex",
-*   data: geometry.positions,
-* });
-* const indices = gpu.createBuffer(ctx, {
-*   usage: "index",
-*   data: geometry.cells,
-* });
-* ```
-*/
-function createBuffer(ctx, options) {
-	const usage = typeof options.usage === "string" ? BUFFER_USAGE_PRESETS[options.usage] : options.usage;
-	const index = (usage & GPUBufferUsage.INDEX) !== 0;
-	const data = options.data === void 0 ? void 0 : toBufferData(options.data, index, options.indexFormat);
-	const size = alignTo(Math.max(options.size ?? 0, data?.byteLength ?? 0), 4);
-	if (size === 0) throw new Error("pex-gpu: createBuffer needs data or a size");
-	const buffer = ctx.device.createBuffer({
-		size,
-		usage,
-		...data && { mappedAtCreation: true },
-		...options.label && { label: options.label }
-	});
-	if (data) {
-		new Uint8Array(buffer.getMappedRange()).set(new Uint8Array(data.buffer, data.byteOffset, data.byteLength));
-		buffer.unmap();
-	}
-	const counters = debugCounters(ctx.device).lifetime.buffers;
-	counters.created++;
-	counters.alive++;
-	counters.bytes += size;
-	debugLog(ctx.device, "resources", () => `createBuffer ${options.label ? `"${options.label}" ` : ""}${size} bytes`);
-	let disposed = false;
-	function dispose() {
-		if (disposed) return;
-		disposed = true;
-		counters.alive--;
-		counters.disposed++;
-		counters.bytes -= size;
-		buffer.destroy();
-	}
-	return {
-		buffer,
-		size,
-		usage: buffer.usage,
-		id: nextBufferId++,
-		...data && { length: data.length },
-		...index && { indexFormat: options.indexFormat ?? (data instanceof Uint32Array ? "uint32" : "uint16") },
-		dispose,
-		[Symbol.dispose]: dispose
-	};
-}
-/**
-* Upload data into an existing buffer.
-*
-* ```js
-* gpu.updateBuffer(ctx, positions, newPositions);
-* ```
-*/
-function updateBuffer(ctx, target, data, byteOffset = 0) {
-	const typed = toBufferData(data, (target.usage & GPUBufferUsage.INDEX) !== 0, target.indexFormat);
-	let bytes = new Uint8Array(typed.buffer, typed.byteOffset, typed.byteLength);
-	if (bytes.byteLength % 4 !== 0) {
-		const padded = new Uint8Array(alignTo(bytes.byteLength, 4));
-		padded.set(bytes);
-		bytes = padded;
-	}
-	ctx.device.queue.writeBuffer(target.buffer, byteOffset, bytes);
-}
 
 /**
 * Per-frame ring buffer. Each draw's structs are packed into CPU staging at
@@ -1262,7 +1817,7 @@ var RingAllocator = class {
 	#cursor = 0;
 	#alignment;
 	#retired = [];
-	constructor(device, kind = "uniform", initialSize = 256 * 1024) {
+	constructor(device, kind = "uniform", initialSize = 262144) {
 		this.#device = device;
 		this.#kind = kind;
 		this.#alignment = kind === "uniform" ? device.limits.minUniformBufferOffsetAlignment : device.limits.minStorageBufferOffsetAlignment;
@@ -1270,11 +1825,22 @@ var RingAllocator = class {
 		this.buffer = this.#createBuffer(initialSize);
 	}
 	#createBuffer(size) {
-		return this.#device.createBuffer({
+		const buffer = this.#device.createBuffer({
 			label: `pex-gpu ${this.#kind === "uniform" ? "uniforms" : "storage"}`,
 			size,
 			usage: BUFFER_USAGE_PRESETS[this.#kind]
 		});
+		trackResource(this.#device, "buffers", {
+			id: objectId(buffer),
+			label: buffer.label,
+			usage: buffer.usage,
+			bytes: size
+		});
+		return buffer;
+	}
+	#destroyBuffer(buffer) {
+		untrackResource(this.#device, "buffers", objectId(buffer));
+		buffer.destroy();
 	}
 	get staging() {
 		return this.#staging;
@@ -1287,6 +1853,7 @@ var RingAllocator = class {
 			return this.allocate(size);
 		}
 		this.#cursor = offset + size;
+		new Uint8Array(this.#staging, offset, size).fill(0);
 		return offset;
 	}
 	#grow(newSize) {
@@ -1306,17 +1873,18 @@ var RingAllocator = class {
 	/** Start a new frame: reclaim the cursor and destroy retired buffers. */
 	reset() {
 		this.#cursor = 0;
-		for (const buffer of this.#retired) buffer.destroy();
+		for (const buffer of this.#retired) this.#destroyBuffer(buffer);
 		this.#retired.length = 0;
 	}
 	dispose() {
 		this.reset();
-		this.buffer.destroy();
+		this.#destroyBuffer(this.buffer);
 	}
 };
-const states = /* @__PURE__ */ new WeakMap();
+const states = shared("commandsState", () => /* @__PURE__ */ new WeakMap());
 function commandsState(ctx) {
 	return states.getOrInsertComputed(ctx, () => {
+		assertSchema(ctx);
 		const bindGroups = /* @__PURE__ */ new Map();
 		const bindGroupsByResource = /* @__PURE__ */ new Map();
 		const bindGroupFinalizer = new FinalizationRegistry((id) => {
@@ -1335,6 +1903,7 @@ function commandsState(ctx) {
 			bindGroupFinalizer,
 			renderPipelines: /* @__PURE__ */ new WeakMap(),
 			computePipelines: /* @__PURE__ */ new WeakMap(),
+			failedPipelines: /* @__PURE__ */ new WeakSet(),
 			canvasDepthStencil: null,
 			frame: null
 		};
@@ -1370,13 +1939,7 @@ function frameState(ctx) {
 	if (!state) throw new Error("pex-gpu: submit() must be called between beginFrame() and endFrame() eg. frame() callback");
 	return state;
 }
-let nextObjectId = 1;
-const objectIds = /* @__PURE__ */ new WeakMap();
-function objectId(object) {
-	return objectIds.getOrInsertComputed(object, () => nextObjectId++);
-}
 
-let nextTextureId = 1;
 const DEPTH_STENCIL_TEXEL_BYTES = {
 	stencil8: 1,
 	depth16unorm: 2,
@@ -1498,15 +2061,12 @@ function createTexture(ctx, options) {
 		usage: options.usage ?? (isCompressedFormat(format) ? GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST : GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT),
 		...options.label && { label: options.label }
 	});
-	const counters = debugCounters(ctx.device).lifetime.textures;
-	let bytes = 0;
+	const id = nextId();
 	let disposed = false;
 	function dispose() {
 		if (disposed) return;
 		disposed = true;
-		counters.alive--;
-		counters.disposed++;
-		counters.bytes -= bytes;
+		untrackResource(ctx.device, "textures", id);
 		texture.destroy();
 	}
 	const result = {
@@ -1520,14 +2080,24 @@ function createTexture(ctx, options) {
 		sampleCount: options.sampleCount ?? 1,
 		dimension,
 		viewDimension,
-		id: nextTextureId++,
+		id,
 		dispose,
 		[Symbol.dispose]: dispose
 	};
-	bytes = textureByteSize(result);
-	counters.created++;
-	counters.alive++;
-	counters.bytes += bytes;
+	const bytes = textureByteSize(result);
+	trackResource(ctx.device, "textures", {
+		id,
+		...options.label && { label: options.label },
+		usage: texture.usage,
+		format,
+		width,
+		height,
+		depthOrArrayLayers,
+		mipLevelCount,
+		sampleCount: result.sampleCount,
+		dimension,
+		bytes
+	});
 	debugLog(ctx.device, "resources", () => `createTexture ${options.label ? `"${options.label}" ` : ""}${width}×${height}${depthOrArrayLayers > 1 ? `×${depthOrArrayLayers}` : ""} ${format}, ~${bytes} bytes`);
 	if (images) for (const [layer, image] of images.entries()) copyExternalImage(ctx, result, image, {
 		origin: [
@@ -1620,7 +2190,7 @@ fn fragmentMain(input: Out) -> @location(0) vec4<f32> {
   return textureSample(sourceTexture, sourceSampler, input.uv);
 }
 `;
-const mipmapCache = /* @__PURE__ */ new WeakMap();
+const mipmapCache = shared("mipmapCache", () => /* @__PURE__ */ new WeakMap());
 /**
 * Generate the full mip chain of a 2D or 2D-array texture by downsampling each
 * level with a linear-filtered blit.
@@ -1746,6 +2316,10 @@ function writeMember(view, member, value) {
 		}
 		return;
 	}
+	if (member.structLayout) {
+		packStruct(view.buffer, member.structLayout, value, view.byteOffset + member.offset);
+		return;
+	}
 	writeValue(view, member.offset, member.type, value);
 }
 /**
@@ -1758,6 +2332,10 @@ function writeMember(view, member, value) {
 function assertPackable(layout, member, value) {
 	const label = member.name ? `member "${member.name}" of struct "${layout.name}" (${member.type})` : `binding of type "${member.type}"`;
 	if (value === void 0 || value === null) throw new Error(`pex-gpu: ${label} is ${value}. Omit the key to leave the member unwritten.`);
+	if (member.structLayout) {
+		if (isScalar(value) || Array.isArray(value) || isTypedArray(value)) throw new Error(`pex-gpu: ${label} is a struct, expected an object of its members`);
+		return;
+	}
 	if (!isScalar(value) && !Array.isArray(value) && !isTypedArray(value)) throw new Error(`pex-gpu: ${label} expects a number, boolean, array or typed array, got ${typeof value}`);
 }
 /**
@@ -1848,15 +2426,17 @@ function bindGroupLayout(ctx, bindings) {
 	const state = commandsState(ctx);
 	const key = layoutKeyFor(bindings);
 	let created = false;
+	let start = 0;
 	const layout = state.bindGroupLayouts.getOrInsertComputed(key, () => {
 		created = true;
+		start = performance.now();
 		debugLog(ctx.device, "resources", () => `createBindGroupLayout [${key}]`);
 		return ctx.device.createBindGroupLayout({
 			label: "pex-gpu bind group layout",
 			entries: bindings.map(layoutEntry)
 		});
 	});
-	recordCacheAccess(ctx.device, "bindGroupLayouts", !created);
+	recordCacheAccess(ctx.device, "bindGroupLayouts", created ? performance.now() - start : null);
 	return {
 		layout,
 		key
@@ -1879,15 +2459,17 @@ function pipelineLayout(ctx, reflection) {
 	}
 	const key = keys.join("||") || "empty";
 	let created = false;
+	let start = 0;
 	const layout = state.pipelineLayouts.getOrInsertComputed(key, () => {
 		created = true;
+		start = performance.now();
 		debugLog(ctx.device, "resources", () => `createPipelineLayout [${key}]`);
 		return ctx.device.createPipelineLayout({
 			label: "pex-gpu pipeline layout",
 			bindGroupLayouts: layouts
 		});
 	});
-	recordCacheAccess(ctx.device, "pipelineLayouts", !created);
+	recordCacheAccess(ctx.device, "pipelineLayouts", created ? performance.now() - start : null);
 	return {
 		layout,
 		key
@@ -2020,21 +2602,21 @@ function buildBindGroups(ctx, reflection, uniforms, overrides) {
 						resource: ctx.device.importExternalTexture({ source: value })
 					});
 					cacheable = false;
-					break;
 			}
 		}
 		let bindGroup;
 		const cacheKey = keyParts.join(",");
 		if (cacheable) bindGroup = state.bindGroups.get(cacheKey);
-		if (bindGroup) recordCacheAccess(ctx.device, "bindGroups", true);
+		if (bindGroup) recordCacheAccess(ctx.device, "bindGroups", null);
 		else {
-			recordCacheAccess(ctx.device, "bindGroups", false);
 			if (cacheable) debugLog(ctx.device, "resources", () => `createBindGroup [${cacheKey}]`);
+			const start = performance.now();
 			bindGroup = ctx.device.createBindGroup({
 				label: "pex-gpu bind group",
 				layout,
 				entries
 			});
+			recordCacheAccess(ctx.device, "bindGroups", performance.now() - start);
 			if (cacheable) state.bindGroups.set(cacheKey, bindGroup);
 		}
 		if (cacheable) for (const { id, wrapper } of trackedResources) trackBindGroupResource(state, id, wrapper, cacheKey);
@@ -2089,4 +2671,4 @@ function resolveVertexState(vertexInputs, attributes) {
 	};
 }
 
-export { bytesPerTexel as A, recordCacheAccess as B, resolveShaders as C, alignTo as D, parseWGSL as E, debug as F, debugCounters as I, debugGroupsEnabled as L, physicalExtent as M, texelCopyLayout as N, assertBlockAlignedOrigin as O, toTypedArray as P, debugLog as R, PipelineCache as S, normalizeType as T, resetFrameCounters as V, peekCommandsState as _, copyExternalImage as a, isGpuBuffer as b, generateMipmaps as c, textureByteSize as d, updateTexture as f, objectId as g, frameState as h, packStruct as i, isCompressedFormat as j, blockInfo as k, isGpuTexture as l, commandsState as m, buildBindGroups as n, createTexture as o, RingAllocator as p, pipelineLayout as r, fullMipLevelCount as s, resolveVertexState as t, paddedBytesPerRow as u, BUFFER_USAGE_PRESETS as v, mergeReflections as w, updateBuffer as x, createBuffer as y, debugStats as z };
+export { assertBlockAlignedOrigin as $, disposeTiming as A, usageNames as B, reflectWGSL as C, debugGroupsEnabled as D, debugCounters as E, timingEnabled as F, updateBuffer as G, BUFFER_USAGE_PRESETS as H, trackCollectable as I, brand as J, SCHEMA as K, trackPassTiming as L, resetFrameCounters as M, resetFrameTiming as N, debugLog as O, resolveFrameTiming as P, alignTo as Q, trackResource as R, reflectStages as S, debug as T, createBuffer as U, createTimestampQuery as V, isGpuBuffer as W, objectId as X, nextId as Y, shared as Z, PipelineCache as _, copyExternalImage as a, toTypedArray as at, normalizeType as b, generateMipmaps as c, textureByteSize as d, blockInfo as et, updateTexture as f, peekCommandsState as g, frameState as h, packStruct as i, texelCopyLayout as it, recordCacheAccess as j, debugStats as k, isGpuTexture as l, commandsState as m, buildBindGroups as n, isCompressedFormat as nt, createTexture as o, RingAllocator as p, assertSchema as q, pipelineLayout as r, physicalExtent as rt, fullMipLevelCount as s, resolveVertexState as t, bytesPerTexel as tt, paddedBytesPerRow as u, resolveShaders as v, completeFrameTiming as w, parseWGSL as x, mergeReflections as y, untrackResource as z };

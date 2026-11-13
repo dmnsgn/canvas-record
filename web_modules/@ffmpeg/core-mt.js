@@ -1,4 +1,4 @@
-import { c as Buffer, d as init__polyfill_node_process, f as _polyfill_node_global_default, l as init__polyfill_node_buffer, p as init__polyfill_node_global, u as browser$1 } from "../_chunks/polyfills-bhUCZgV4.js";
+import { c as Buffer, d as init__polyfill_node_process, f as _polyfill_node_global_default, l as init__polyfill_node_buffer, p as init__polyfill_node_global, u as browser$1 } from "../_chunks/polyfills-CIayRlbL.js";
 
 init__polyfill_node_process();
 init__polyfill_node_global();
@@ -114,7 +114,7 @@ var createFFmpegCore = (() => {
 		}
 		var read_, readAsync, readBinary;
 		if (ENVIRONMENT_IS_NODE) {
-			const { createRequire } = await import("../_chunks/polyfills-bhUCZgV4.js").then((n) => n.t);
+			const { createRequire } = await import("../_chunks/polyfills-CIayRlbL.js").then((n) => n.t);
 			var require = createRequire(import.meta.url);
 			var fs = require("fs");
 			var nodePath = require("path");
@@ -841,7 +841,7 @@ var createFFmpegCore = (() => {
 			expandFileStorage: function(node, newCapacity) {
 				var prevCapacity = node.contents ? node.contents.length : 0;
 				if (prevCapacity >= newCapacity) return;
-				newCapacity = Math.max(newCapacity, prevCapacity * (prevCapacity < 1024 * 1024 ? 2 : 1.125) >>> 0);
+				newCapacity = Math.max(newCapacity, prevCapacity * (prevCapacity < 1048576 ? 2 : 1.125) >>> 0);
 				if (prevCapacity != 0) newCapacity = Math.max(newCapacity, 256);
 				var oldContents = node.contents;
 				node.contents = new Uint8Array(newCapacity);
@@ -988,8 +988,10 @@ var createFFmpegCore = (() => {
 						allocated = false;
 						ptr = contents.byteOffset;
 					} else {
-						if (position > 0 || position + length < contents.length) if (contents.subarray) contents = contents.subarray(position, position + length);
-						else contents = Array.prototype.slice.call(contents, position, position + length);
+						if (position > 0 || position + length < contents.length) {
+							if (contents.subarray) contents = contents.subarray(position, position + length);
+							else contents = Array.prototype.slice.call(contents, position, position + length);
+						}
 						allocated = true;
 						ptr = mmapAlloc(length);
 						if (!ptr) throw new FS.ErrnoError(48);
@@ -1621,11 +1623,13 @@ var createFFmpegCore = (() => {
 					} catch (e) {}
 				}
 				var created = false;
-				if (flags & 64) if (node) {
-					if (flags & 128) throw new FS.ErrnoError(20);
-				} else {
-					node = FS.mknod(path, mode, 0);
-					created = true;
+				if (flags & 64) {
+					if (node) {
+						if (flags & 128) throw new FS.ErrnoError(20);
+					} else {
+						node = FS.mknod(path, mode, 0);
+						created = true;
+					}
 				}
 				if (!node) throw new FS.ErrnoError(44);
 				if (FS.isChrdev(node.mode)) flags &= -513;
@@ -2015,7 +2019,7 @@ var createFFmpegCore = (() => {
 					var header;
 					var hasByteServing = (header = xhr.getResponseHeader("Accept-Ranges")) && header === "bytes";
 					var usesGzip = (header = xhr.getResponseHeader("Content-Encoding")) && header === "gzip";
-					var chunkSize = 1024 * 1024;
+					var chunkSize = 1048576;
 					if (!hasByteServing) chunkSize = datalength;
 					var doXHR = (from, to) => {
 						if (from > to) throw new Error("invalid range (" + from + ", " + to + ") or no bytes requested!");
@@ -2448,12 +2452,13 @@ var createFFmpegCore = (() => {
 			return spawnThread(threadParams);
 		}
 		function ___pthread_kill_js(thread, signal) {
-			if (signal === 33) if (!ENVIRONMENT_IS_PTHREAD) cancelThread(thread);
-			else postMessage({
-				"cmd": "cancelThread",
-				"thread": thread
-			});
-			else if (!ENVIRONMENT_IS_PTHREAD) killThread(thread);
+			if (signal === 33) {
+				if (!ENVIRONMENT_IS_PTHREAD) cancelThread(thread);
+				else postMessage({
+					"cmd": "cancelThread",
+					"thread": thread
+				});
+			} else if (!ENVIRONMENT_IS_PTHREAD) killThread(thread);
 			else postMessage({
 				"cmd": "killThread",
 				"thread": thread
@@ -2593,16 +2598,17 @@ var createFFmpegCore = (() => {
 						addr = null;
 						port = null;
 					}
-					if (ws) if (ws._socket) {
-						addr = ws._socket.remoteAddress;
-						port = ws._socket.remotePort;
-					} else {
-						var result = /ws[s]?:\/\/([^:]+):(\d+)/.exec(ws.url);
-						if (!result) throw new Error("WebSocket URL must be in the format ws(s)://address:port");
-						addr = result[1];
-						port = parseInt(result[2], 10);
-					}
-					else try {
+					if (ws) {
+						if (ws._socket) {
+							addr = ws._socket.remoteAddress;
+							port = ws._socket.remotePort;
+						} else {
+							var result = /ws[s]?:\/\/([^:]+):(\d+)/.exec(ws.url);
+							if (!result) throw new Error("WebSocket URL must be in the format ws(s)://address:port");
+							addr = result[1];
+							port = parseInt(result[2], 10);
+						}
+					} else try {
 						var runtimeConfig = Module["websocket"] && "object" === typeof Module["websocket"];
 						var url = "ws:#".replace("#", "//");
 						if (runtimeConfig) {
@@ -2793,8 +2799,10 @@ var createFFmpegCore = (() => {
 					if (sock.server) throw new FS.ErrnoError(138);
 					if (typeof sock.daddr != "undefined" && typeof sock.dport != "undefined") {
 						var dest = SOCKFS.websocket_sock_ops.getPeer(sock, sock.daddr, sock.dport);
-						if (dest) if (dest.socket.readyState === dest.socket.CONNECTING) throw new FS.ErrnoError(7);
-						else throw new FS.ErrnoError(30);
+						if (dest) {
+							if (dest.socket.readyState === dest.socket.CONNECTING) throw new FS.ErrnoError(7);
+							else throw new FS.ErrnoError(30);
+						}
 					}
 					var peer = SOCKFS.websocket_sock_ops.createPeer(sock, addr, port);
 					sock.daddr = peer.addr;
@@ -2973,11 +2981,12 @@ var createFFmpegCore = (() => {
 			} else words = str.split(":");
 			offset = 0;
 			z = 0;
-			for (w = 0; w < words.length; w++) if (typeof words[w] == "string") if (words[w] === "Z") {
-				for (z = 0; z < 8 - words.length + 1; z++) parts[w + z] = 0;
-				offset = z - 1;
-			} else parts[w + offset] = _htons(parseInt(words[w], 16));
-			else parts[w + offset] = words[w];
+			for (w = 0; w < words.length; w++) if (typeof words[w] == "string") {
+				if (words[w] === "Z") {
+					for (z = 0; z < 8 - words.length + 1; z++) parts[w + z] = 0;
+					offset = z - 1;
+				} else parts[w + offset] = _htons(parseInt(words[w], 16));
+			} else parts[w + offset] = words[w];
 			return [
 				parts[1] << 16 | parts[0],
 				parts[3] << 16 | parts[2],
@@ -3607,7 +3616,7 @@ var createFFmpegCore = (() => {
 			HEAP32[tmPtr + 20 >> 2] = date.getUTCFullYear() - 1900;
 			HEAP32[tmPtr + 24 >> 2] = date.getUTCDay();
 			var start = Date.UTC(date.getUTCFullYear(), 0, 1, 0, 0, 0, 0);
-			var yday = (date.getTime() - start) / (1e3 * 60 * 60 * 24) | 0;
+			var yday = (date.getTime() - start) / 864e5 | 0;
 			HEAP32[tmPtr + 28 >> 2] = yday;
 		}
 		function isLeapYear(year) {
@@ -4039,33 +4048,38 @@ var createFFmpegCore = (() => {
 			}
 			if (!node) {
 				if (family === 0) family = 2;
-				if ((flags & 1) === 0) if (family === 2) addr = _htonl(2130706433);
-				else addr = [
-					0,
-					0,
-					0,
-					1
-				];
+				if ((flags & 1) === 0) {
+					if (family === 2) addr = _htonl(2130706433);
+					else addr = [
+						0,
+						0,
+						0,
+						1
+					];
+				}
 				ai = allocaddrinfo(family, type, proto, null, addr, port);
 				HEAPU32[out >> 2] = ai;
 				return 0;
 			}
 			node = UTF8ToString(node);
 			addr = inetPton4(node);
-			if (addr !== null) if (family === 0 || family === 2) family = 2;
-			else if (family === 10 && flags & 8) {
-				addr = [
-					0,
-					0,
-					_htonl(65535),
-					addr
-				];
-				family = 10;
-			} else return -2;
-			else {
+			if (addr !== null) {
+				if (family === 0 || family === 2) family = 2;
+				else if (family === 10 && flags & 8) {
+					addr = [
+						0,
+						0,
+						_htonl(65535),
+						addr
+					];
+					family = 10;
+				} else return -2;
+			} else {
 				addr = inetPton6(node);
-				if (addr !== null) if (family === 0 || family === 10) family = 10;
-				else return -2;
+				if (addr !== null) {
+					if (family === 0 || family === 10) family = 10;
+					else return -2;
+				}
 			}
 			if (addr != null) {
 				ai = allocaddrinfo(family, type, proto, node, addr, port);
@@ -4561,9 +4575,6 @@ var createFFmpegCore = (() => {
 			"g": _strftime
 		};
 		createWasm();
-		var ___wasm_call_ctors = function() {
-			return (___wasm_call_ctors = Module["asm"]["Fa"]).apply(null, arguments);
-		};
 		var _malloc = Module["_malloc"] = function() {
 			return (_malloc = Module["_malloc"] = Module["asm"]["Ga"]).apply(null, arguments);
 		};
@@ -4594,20 +4605,11 @@ var createFFmpegCore = (() => {
 		var __emscripten_thread_crashed = Module["__emscripten_thread_crashed"] = function() {
 			return (__emscripten_thread_crashed = Module["__emscripten_thread_crashed"] = Module["asm"]["Qa"]).apply(null, arguments);
 		};
-		var _emscripten_main_thread_process_queued_calls = function() {
-			return (_emscripten_main_thread_process_queued_calls = Module["asm"]["emscripten_main_thread_process_queued_calls"]).apply(null, arguments);
-		};
 		var _htonl = function() {
 			return (_htonl = Module["asm"]["Ra"]).apply(null, arguments);
 		};
-		var _emscripten_main_runtime_thread_id = function() {
-			return (_emscripten_main_runtime_thread_id = Module["asm"]["emscripten_main_runtime_thread_id"]).apply(null, arguments);
-		};
 		var __emscripten_run_in_main_runtime_thread_js = function() {
 			return (__emscripten_run_in_main_runtime_thread_js = Module["asm"]["Sa"]).apply(null, arguments);
-		};
-		var _emscripten_dispatch_to_thread_ = function() {
-			return (_emscripten_dispatch_to_thread_ = Module["asm"]["emscripten_dispatch_to_thread_"]).apply(null, arguments);
 		};
 		var __emscripten_thread_free_data = function() {
 			return (__emscripten_thread_free_data = Module["asm"]["Ta"]).apply(null, arguments);

@@ -713,14 +713,15 @@ var wcln = function(fn, fnStr, td) {
 		if (typeof v == "function") {
 			fnStr += ";" + k + "=";
 			var st_1 = v.toString();
-			if (v.prototype) if (st_1.indexOf("[native code]") != -1) {
-				var spInd = st_1.indexOf(" ", 8) + 1;
-				fnStr += st_1.slice(spInd, st_1.indexOf("(", spInd));
-			} else {
-				fnStr += st_1;
-				for (var t in v.prototype) fnStr += ";" + k + ".prototype." + t + "=" + v.prototype[t].toString();
-			}
-			else fnStr += st_1;
+			if (v.prototype) {
+				if (st_1.indexOf("[native code]") != -1) {
+					var spInd = st_1.indexOf(" ", 8) + 1;
+					fnStr += st_1.slice(spInd, st_1.indexOf("(", spInd));
+				} else {
+					fnStr += st_1;
+					for (var t in v.prototype) fnStr += ";" + k + ".prototype." + t + "=" + v.prototype[t].toString();
+				}
+			} else fnStr += st_1;
 		} else td[k] = v;
 	}
 	return fnStr;
@@ -2362,17 +2363,18 @@ function unzip(data, opts, cb) {
 				size: sc,
 				originalSize: su,
 				compression: c_1
-			})) if (!c_1) cbl(null, slc(data, b, b + sc));
-			else if (c_1 == 8) {
-				var infl = data.subarray(b, b + sc);
-				if (su < 524288 || sc > .8 * su) try {
-					cbl(null, inflateSync(infl, { out: new u8(su) }));
-				} catch (e) {
-					cbl(e, null);
-				}
-				else term.push(inflate(infl, { size: su }, cbl));
-			} else cbl(err(14, "unknown compression type " + c_1, 1), null);
-			else cbl(null, null);
+			})) {
+				if (!c_1) cbl(null, slc(data, b, b + sc));
+				else if (c_1 == 8) {
+					var infl = data.subarray(b, b + sc);
+					if (su < 524288 || sc > .8 * su) try {
+						cbl(null, inflateSync(infl, { out: new u8(su) }));
+					} catch (e) {
+						cbl(e, null);
+					}
+					else term.push(inflate(infl, { size: su }, cbl));
+				} else cbl(err(14, "unknown compression type " + c_1, 1), null);
+			} else cbl(null, null);
 		};
 		for (var i = 0; i < c; ++i) _loop_3(i);
 	} else cbd(null, {});
@@ -2410,9 +2412,11 @@ function unzipSync(data, opts) {
 			size: sc,
 			originalSize: su,
 			compression: c_2
-		})) if (!c_2) files[fn] = slc(data, b, b + sc);
-		else if (c_2 == 8) files[fn] = inflateSync(data.subarray(b, b + sc), { out: new u8(su) });
-		else err(14, "unknown compression type " + c_2);
+		})) {
+			if (!c_2) files[fn] = slc(data, b, b + sc);
+			else if (c_2 == 8) files[fn] = inflateSync(data.subarray(b, b + sc), { out: new u8(su) });
+			else err(14, "unknown compression type " + c_2);
+		}
 	}
 	return files;
 }
