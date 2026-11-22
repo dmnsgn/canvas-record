@@ -87,6 +87,28 @@ await canvasRecorder.start();
 tick(canvasRecorder);
 ```
 
+### Add audio to an exported MP4
+
+After saving the canvas recording, you can add a soundtrack with FFmpeg on the command line. These examples use the exported video as the clock: a shorter soundtrack is padded with silence, a longer one is trimmed, and the video stream is copied without re-encoding.
+
+For one audio file, run the following in a POSIX shell:
+
+```sh
+duration=$(ffprobe -v error -select_streams v:0 -show_entries stream=duration -of csv=p=0 canvas.mp4)
+ffmpeg -i canvas.mp4 -i narration.wav \
+  -map 0:v:0 -map 1:a:0 -af apad -c:v copy -c:a aac -t "$duration" with-audio.mp4
+```
+
+To mix narration and background music instead, reuse the same `duration`:
+
+```sh
+ffmpeg -i canvas.mp4 -i narration.wav -i music.wav \
+  -filter_complex "[1:a][2:a]amix=inputs=2:weights='0.75 0.25':normalize=0,apad[a]" \
+  -map 0:v:0 -map "[a]" -c:v copy -c:a aac -t "$duration" with-music.mp4
+```
+
+Both inputs start at video time zero. To sync a sound with a particular frame, place it at `frameIndex / frameRate` seconds in the audio file (frame indices start at zero). For example, frame 30 at 30 fps starts at 1 second, regardless of how long rendering took.
+
 ## API
 
 Encoder comparison:
